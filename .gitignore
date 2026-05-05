@@ -6,3 +6,12 @@ data/raw/*
 
 data/processed/*
 !data/processed/.gitkeep
+
+# Backtest outputs
+runs/
+
+# CSV outputs
+*.csv
+
+# temp scripts
+pirulo.js
