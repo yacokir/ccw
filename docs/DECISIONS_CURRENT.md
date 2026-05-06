@@ -19,6 +19,14 @@
 - Option data via Deribit OHLC
 - Fill assumption: candle open
 
+### Option entry pricing fallback
+
+Observed option candles remain the preferred source for option entry premium. When a valid option entry candle is missing, the planned fallback is theoretical pricing rather than silently dropping the covered-call leg.
+
+For the MVP, the theoretical fallback model is Black-76 call pricing using a Garman-Klass realized volatility estimate from `BTC-PERPETUAL` OHLC. Interest rates and BTC yield are ignored for now because their expected impact is small relative to the current data-quality and execution-timing uncertainties.
+
+This fallback exists to reduce missing-data bias. It does not mean the trade was actually observed or executable at that theoretical price. Any theoretical entry price must be explicitly flagged in trade output and must never be mixed silently with observed option candles.
+
 ### Pricing model rationale
 
 The backtest separates the price used to value BTC exposure from the price used to settle the option payoff.
@@ -38,11 +46,13 @@ Official Deribit delivery price / 30-min TWAP is not implemented yet because it 
 - No official Deribit delivery price / 30-min TWAP usage yet
 - Settlement proxy may fall back to the BTC exposure exit price if the index proxy is unavailable; this must be visible in trade output
 - Basis risk between `BTC-PERPETUAL` and the settlement/index proxy is measured implicitly but not yet analyzed as a separate risk metric
+- Theoretical option pricing fallback is a planned MVP decision, not implemented yet
 
 ## Pending Improvements
 - Support execution modes: 08->08, 16->16, 08->16
 - Use proper instrument discovery (exchange APIs)
 - Add liquidity filters and fallback logic
+- Implement Black-76 / Garman-Klass theoretical option entry fallback with explicit trade flags
 - Improve accounting clarity (capital vs premium handling)
 - Add risk metrics (drawdown, volatility, benchmark vs BTC)
 - Monte Carlo simulation

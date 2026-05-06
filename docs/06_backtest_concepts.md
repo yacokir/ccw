@@ -15,6 +15,14 @@ The separation is important for reproducibility. BTC PnL should come from the ma
 
 A `Trade` represents one weekly cycle of a position under the strategy. Every trade covers a single week from entry to exit and captures both option and underlying exposure. A `Trade` represents a self-contained capital transition from `capital_before` to `capital_after`. Each trade also includes dynamic position sizing based on current capital, so capital evolves over time and affects position size.
 
+### Option entry price sources
+
+Observed option candles are the preferred source for `C_entry`. If the entry candle is missing, the planned MVP fallback is theoretical pricing: Black-76 for call value, with volatility estimated using Garman-Klass realized volatility from `BTC-PERPETUAL` OHLC.
+
+The theoretical fallback is intended to reduce missing-data bias in research runs. It should not be interpreted as an observed or executable market quote. Interest rates and BTC yield are ignored for MVP unless later evidence shows they materially affect results.
+
+Any trade using theoretical pricing must be explicitly marked in the trade output. Observed and theoretical option prices must be distinguishable in every run artifact.
+
 ### Typical trade fields
 
 - `cycle`: sequential index of the trade within the run
@@ -34,6 +42,10 @@ A `Trade` represents one weekly cycle of a position under the strategy. Every tr
 - `S_exit`: BTC exposure price at trade exit
 - `S_settlement`: settlement/index price used to compute option payoff
 - `C_entry`: option premium or cost at entry
+- `C_entry_source`: source of the option entry price, for example `observed_ohlc_open` or `theoretical_black76`
+- `C_entry_is_theoretical`: boolean flag indicating whether `C_entry` came from theoretical fallback
+- `C_entry_model`: theoretical pricing model used when applicable, for example `black76`
+- `C_entry_vol_model`: volatility estimator used when applicable, for example `garman_klass`
 - `payoff`: cash payoff of the option leg at expiry, based on `S_settlement`
 - `pnl_call`: profit and loss from the option leg
 - `pnl_underlying`: profit and loss from the underlying position
@@ -51,6 +63,7 @@ A `Trade` represents one weekly cycle of a position under the strategy. Every tr
 - `payoff` should be derived from `S_settlement`, not `S_exit`. `S_exit` belongs to BTC exposure PnL; `S_settlement` belongs to option intrinsic value.
 - If official Deribit delivery price / 30-min TWAP is unavailable, the run should clearly identify the settlement proxy used.
 - If the settlement proxy is unavailable and the implementation falls back to the BTC exposure exit price, that fallback must be explicit in trade output.
+- If `C_entry` comes from theoretical fallback, that fact must be explicit in trade output; theoretical prices must not be silently combined with observed option candles.
 - `return_pct` is calculated relative to `capital_before` and reflects trade-level performance normalized to starting capital.
 - Position sizing is dynamic: the trade size is determined from current capital, and capital evolves over time as each trade closes.
 
