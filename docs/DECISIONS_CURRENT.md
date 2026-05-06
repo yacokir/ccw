@@ -4,6 +4,8 @@
 - Weekly cycles (Friday-based)
 - Entry: configurable (default 08:00 UTC)
 - Exit: currently fixed at 08:00 UTC (to be generalized)
+- `endDate` is a completed-cycle boundary: a weekly cycle is included only if its exit datetime is `<= endDate`
+- Date-only `endDate` values (`YYYY-MM-DD`) are interpreted at the current exit time, currently `08:00 UTC`; full timestamps are preserved exactly
 
 ## Strategy
 - Covered Call (BTC)

@@ -70,6 +70,12 @@ A `Run` is one complete backtest execution using a fixed set of parameters. A ru
 3. Compute the `equity curve` from trade outcomes
 4. Produce a `summary` with aggregated performance statistics
 
+### Date range semantics
+
+`startDate` determines the first eligible Friday entry. `endDate` is the maximum allowed exit timestamp, not the last allowed entry date. A weekly cycle is included only after its exit datetime is computed and confirmed to be `<= endDate`.
+
+If `endDate` is provided as a date-only string such as `2025-12-26`, it is interpreted at the current/default cycle exit time, currently `2025-12-26T08:00:00Z`. If `endDate` includes an explicit timestamp, that timestamp is preserved exactly; for example, `2025-12-26T00:00:00Z` remains midnight UTC.
+
 ## Suggested run output structure
 
 A practical output layout for a single run is:

@@ -6,6 +6,9 @@ const OPTION_SETTLEMENT_PRICE_SOURCE_MAP = {
   DERIBIT_BTC_USD_INDEX_OHLC_PROXY: 'BTC_USD'
 };
 
+const CURRENT_EXIT_HOUR_UTC = 8;
+const CURRENT_EXIT_MINUTE_UTC = 0;
+
 // Generate expiry code from date (e.g., "10OCT25" for 2025-10-10)
 function getExpiryCode(date) {
   const day = String(date.getUTCDate()).padStart(2, '0');
@@ -26,7 +29,9 @@ function generateCandidateStrikes(target, strikeRange, strikeStep) {
   return strikes;
 }
 
-// Generate all Fridays from start to end date at a configurable UTC entry time
+// Generate Friday-based weekly cycles at a configurable UTC entry time.
+// endDate is a completed-cycle boundary: include a cycle only when its
+// computed exit timestamp is <= endDate, not merely when entry is <= endDate.
 function generateFridayCycles(startDate, endDate, entryHourUtc, entryMinuteUtc) {
   const cycles = [];
   let current = new Date(startDate);
@@ -41,13 +46,28 @@ function generateFridayCycles(startDate, endDate, entryHourUtc, entryMinuteUtc) 
     entry.setUTCHours(entryHourUtc, entryMinuteUtc, 0, 0);
     const exit = new Date(current);
     exit.setUTCDate(exit.getUTCDate() + 7);
-    exit.setUTCHours(8, 0, 0, 0);
+    exit.setUTCHours(CURRENT_EXIT_HOUR_UTC, CURRENT_EXIT_MINUTE_UTC, 0, 0);
+
+    // Include only fully completed cycles inside the requested run window.
+    if (exit > endDate) {
+      break;
+    }
     
     cycles.push({ entry: entry.getTime(), exit: exit.getTime() });
     current.setUTCDate(current.getUTCDate() + 7);
   }
   
   return cycles;
+}
+
+function parseEndDateForCycleBoundary(endDate, exitHourUtc, exitMinuteUtc) {
+  if (typeof endDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+    const hour = String(exitHourUtc).padStart(2, '0');
+    const minute = String(exitMinuteUtc).padStart(2, '0');
+    return new Date(`${endDate}T${hour}:${minute}:00Z`);
+  }
+
+  return new Date(endDate);
 }
 
 async function getOptionSettlementPrice(source, exitTime, window, fallbackPrice) {
@@ -116,7 +136,9 @@ async function runStrategy(config = {}) {
 
   try {
     const startDateObj = new Date(startDate);
-    const endDateObj = new Date(endDate);
+    // Date-only endDate values mean "through the cycle exit on that date".
+    // Full timestamps remain exact, so 2025-12-26T00:00:00Z stays midnight.
+    const endDateObj = parseEndDateForCycleBoundary(endDate, CURRENT_EXIT_HOUR_UTC, CURRENT_EXIT_MINUTE_UTC);
     const cycles = generateFridayCycles(startDateObj, endDateObj, entryHourUtc, entryMinuteUtc);
     const trades = [];
     const equityCurve = [];
