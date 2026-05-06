@@ -1,6 +1,8 @@
 const { getOHLCData } = require('../data/deribit');
 const { selectStrike } = require('../data/discovery');
 const { getCandleAt, getCandleAtOrAfter } = require('../data/ohlc');
+const { computeGarmanKlassVolatility } = require('../models/volatility/garman_klass');
+const { black76CallPrice } = require('../models/options/black76');
 
 const OPTION_SETTLEMENT_PRICE_SOURCE_MAP = {
   DERIBIT_BTC_USD_INDEX_OHLC_PROXY: 'BTC_USD'
@@ -8,6 +10,11 @@ const OPTION_SETTLEMENT_PRICE_SOURCE_MAP = {
 
 const CURRENT_EXIT_HOUR_UTC = 8;
 const CURRENT_EXIT_MINUTE_UTC = 0;
+const THEORETICAL_VOL_SOURCE = 'BTC-PERPETUAL';
+const THEORETICAL_VOL_LOOKBACK_DAYS = 14;
+const THEORETICAL_VOL_PERIODS_PER_YEAR = 24 * 365;
+const MILLISECONDS_PER_YEAR_365D = 365 * 24 * 60 * 60 * 1000;
+const THEORETICAL_RISK_FREE_RATE = 0;
 
 // Generate expiry code from date (e.g., "10OCT25" for 2025-10-10)
 function getExpiryCode(date) {
@@ -68,6 +75,78 @@ function parseEndDateForCycleBoundary(endDate, exitHourUtc, exitMinuteUtc) {
   }
 
   return new Date(endDate);
+}
+
+function chartDataToCandles(chartData) {
+  const ticks = chartData.ticks || [];
+  return ticks.map((timestamp, index) => ({
+    timestamp,
+    open: chartData.open[index],
+    high: chartData.high[index],
+    low: chartData.low[index],
+    close: chartData.close[index]
+  }));
+}
+
+async function getTheoreticalCallEntryPrice({ entryTime, exitTime, S_entry, strike }) {
+  const lookbackMs = THEORETICAL_VOL_LOOKBACK_DAYS * 24 * 60 * 60 * 1000;
+  const volStartTime = entryTime - lookbackMs;
+  const volEndTime = entryTime - 1;
+  const timeToExpiryYears = (exitTime - entryTime) / MILLISECONDS_PER_YEAR_365D;
+
+  try {
+    const volData = await getOHLCData(THEORETICAL_VOL_SOURCE, volStartTime, volEndTime, 60);
+    const volCandles = chartDataToCandles(volData);
+    const volResult = computeGarmanKlassVolatility(volCandles, {
+      periodsPerYear: THEORETICAL_VOL_PERIODS_PER_YEAR
+    });
+    const optionVol = volResult.annualizedVolatility;
+
+    if (!optionVol || optionVol <= 0) {
+      return {
+        ok: false,
+        reason: 'invalid_garman_klass_volatility',
+        volatilityDiagnostics: volResult.diagnostics,
+        pricingDiagnostics: null
+      };
+    }
+
+    const pricingResult = black76CallPrice({
+      forwardPrice: S_entry,
+      strike,
+      timeToExpiryYears,
+      volatility: optionVol,
+      riskFreeRate: THEORETICAL_RISK_FREE_RATE
+    });
+
+    if (!pricingResult.diagnostics.valid || !pricingResult.price || pricingResult.price <= 0) {
+      return {
+        ok: false,
+        reason: 'invalid_black76_price',
+        volatilityDiagnostics: volResult.diagnostics,
+        pricingDiagnostics: pricingResult.diagnostics
+      };
+    }
+
+    return {
+      ok: true,
+      theoreticalPremiumUsd: pricingResult.price,
+      theoreticalPremiumBtc: pricingResult.price / S_entry,
+      optionVol,
+      volatilityDiagnostics: volResult.diagnostics,
+      pricingDiagnostics: pricingResult.diagnostics,
+      timeToExpiryYears,
+      volStartTime,
+      volEndTime
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: error.message,
+      volatilityDiagnostics: null,
+      pricingDiagnostics: null
+    };
+  }
 }
 
 async function getOptionSettlementPrice(source, exitTime, window, fallbackPrice) {
@@ -229,9 +308,18 @@ async function runStrategy(config = {}) {
         let selectedInstrument = null;
         let selectedStrike = null;
         let C_entry = null;
+        let C_entry_usd = null;
+        let C_entry_btc = null;
         let payoff = null;
         let optionEntryTimestamp = null;
         let optionEntryDelayMinutes = null;
+        let optionEntryPriceSource = null;
+        let optionEntryModel = null;
+        let optionEntryVolModel = null;
+        let optionEntryVol = null;
+        let optionEntryFallbackReason = null;
+        let optionEntryIsSynthetic = false;
+        let optionEntryDiagnostics = null;
 
         if (validInstruments.length > 0) {
           console.log(`Found ${validInstruments.length} valid instruments`);
@@ -260,9 +348,18 @@ async function runStrategy(config = {}) {
             optionEntryDelayMinutes = 0;
           }
           
-          C_entry = optionCandle ? optionCandle.open : null;
+          const observedOptionOpen = optionCandle ? Number(optionCandle.open) : null;
+          const observedOptionOpenIsValid = Number.isFinite(observedOptionOpen) && observedOptionOpen > 0;
+          const theoreticalFallbackReason = optionCandle
+            ? 'invalid_observed_option_open'
+            : 'missing_observed_option_candle';
+          optionEntryFallbackReason = observedOptionOpenIsValid ? null : theoreticalFallbackReason;
+          C_entry = observedOptionOpenIsValid ? observedOptionOpen : null;
 
-          if (C_entry) {
+          if (observedOptionOpenIsValid) {
+            C_entry_btc = C_entry;
+            C_entry_usd = C_entry * S_entry;
+            optionEntryPriceSource = 'observed';
             console.log(`C_entry: ${C_entry} (Entry delay: ${optionEntryDelayMinutes !== null ? optionEntryDelayMinutes.toFixed(2) : 'N/A'} minutes)`);
 
             // Calculate call P&L
@@ -272,10 +369,127 @@ async function runStrategy(config = {}) {
 
             console.log(`Payoff: ${payoff}, Call P&L: ${pnlCall}`);
           } else {
-            console.log('Entry candle not found for option within delay window');
+            console.log(`Observed option entry price unavailable: ${theoreticalFallbackReason}`);
+
+            const theoreticalEntry = await getTheoreticalCallEntryPrice({
+              entryTime,
+              exitTime,
+              S_entry,
+              strike: selectedStrike
+            });
+
+            if (theoreticalEntry.ok) {
+              C_entry = theoreticalEntry.theoreticalPremiumBtc;
+              C_entry_btc = theoreticalEntry.theoreticalPremiumBtc;
+              C_entry_usd = theoreticalEntry.theoreticalPremiumUsd;
+              optionEntryTimestamp = entryTime;
+              optionEntryDelayMinutes = 0;
+              optionEntryPriceSource = 'theoretical';
+              optionEntryModel = 'black76';
+              optionEntryVolModel = 'garman_klass';
+              optionEntryVol = theoreticalEntry.optionVol;
+              optionEntryDiagnostics = JSON.stringify({
+                volatility: theoreticalEntry.volatilityDiagnostics,
+                pricing: theoreticalEntry.pricingDiagnostics,
+                volatilitySource: THEORETICAL_VOL_SOURCE,
+                volatilityLookbackDays: THEORETICAL_VOL_LOOKBACK_DAYS,
+                volatilityWindowStart: new Date(theoreticalEntry.volStartTime).toISOString(),
+                volatilityWindowEnd: new Date(theoreticalEntry.volEndTime).toISOString(),
+                timeToExpiryYears: theoreticalEntry.timeToExpiryYears,
+                riskFreeRate: THEORETICAL_RISK_FREE_RATE,
+                theoreticalFallbackReason,
+                observedOptionOpen: optionCandle ? optionCandle.open : null
+              });
+
+              payoff = Math.max(S_settlement - selectedStrike, 0);
+              pnlCall = btcPosition * ((C_entry * S_entry) - payoff);
+              hasCall = true;
+
+              console.log('Using theoretical option entry fallback');
+              console.log(`  model: Black-76 call, vol: Garman-Klass ${optionEntryVol}`);
+              console.log(`  vol window: ${new Date(theoreticalEntry.volStartTime).toISOString()} to ${new Date(theoreticalEntry.volEndTime).toISOString()}`);
+              console.log(`  theoretical premium USD: ${C_entry_usd}, BTC: ${C_entry_btc}`);
+              console.log(`  payoff: ${payoff}, Call P&L: ${pnlCall}`);
+            } else {
+              optionEntryPriceSource = null;
+              optionEntryDiagnostics = JSON.stringify({
+                reason: theoreticalEntry.reason,
+                theoreticalFallbackReason,
+                observedOptionOpen: optionCandle ? optionCandle.open : null,
+                volatility: theoreticalEntry.volatilityDiagnostics,
+                pricing: theoreticalEntry.pricingDiagnostics
+              });
+              console.log(`Theoretical option entry fallback unavailable: ${theoreticalEntry.reason}`);
+            }
           }
         } else {
-          console.log('No valid instruments found - no call week');
+          const intendedOption = selectStrike(
+            strikes.map(strike => ({ instrument_name: null, strike })),
+            target
+          );
+          selectedStrike = intendedOption ? intendedOption.strike : null;
+          optionEntryFallbackReason = 'missing_observed_option_instrument';
+
+          console.log('No observed option instruments found');
+          console.log(`Using intended strike for synthetic theoretical entry: ${selectedStrike}`);
+
+          if (selectedStrike !== null) {
+            const theoreticalEntry = await getTheoreticalCallEntryPrice({
+              entryTime,
+              exitTime,
+              S_entry,
+              strike: selectedStrike
+            });
+
+            if (theoreticalEntry.ok) {
+              C_entry = theoreticalEntry.theoreticalPremiumBtc;
+              C_entry_btc = theoreticalEntry.theoreticalPremiumBtc;
+              C_entry_usd = theoreticalEntry.theoreticalPremiumUsd;
+              optionEntryTimestamp = entryTime;
+              optionEntryDelayMinutes = 0;
+              optionEntryPriceSource = 'theoretical';
+              optionEntryModel = 'black76';
+              optionEntryVolModel = 'garman_klass';
+              optionEntryVol = theoreticalEntry.optionVol;
+              optionEntryIsSynthetic = true;
+              optionEntryDiagnostics = JSON.stringify({
+                volatility: theoreticalEntry.volatilityDiagnostics,
+                pricing: theoreticalEntry.pricingDiagnostics,
+                volatilitySource: THEORETICAL_VOL_SOURCE,
+                volatilityLookbackDays: THEORETICAL_VOL_LOOKBACK_DAYS,
+                volatilityWindowStart: new Date(theoreticalEntry.volStartTime).toISOString(),
+                volatilityWindowEnd: new Date(theoreticalEntry.volEndTime).toISOString(),
+                timeToExpiryYears: theoreticalEntry.timeToExpiryYears,
+                riskFreeRate: THEORETICAL_RISK_FREE_RATE,
+                theoreticalFallbackReason: optionEntryFallbackReason,
+                intendedStrike: selectedStrike,
+                observedOptionInstrument: null
+              });
+
+              payoff = Math.max(S_settlement - selectedStrike, 0);
+              pnlCall = btcPosition * ((C_entry * S_entry) - payoff);
+              hasCall = true;
+
+              console.log('Using synthetic theoretical option entry');
+              console.log('  observed instrument: none');
+              console.log(`  intended strike: ${selectedStrike}`);
+              console.log(`  model: Black-76 call, vol: Garman-Klass ${optionEntryVol}`);
+              console.log(`  vol window: ${new Date(theoreticalEntry.volStartTime).toISOString()} to ${new Date(theoreticalEntry.volEndTime).toISOString()}`);
+              console.log(`  theoretical premium USD: ${C_entry_usd}, BTC: ${C_entry_btc}`);
+              console.log(`  payoff: ${payoff}, Call P&L: ${pnlCall}`);
+            } else {
+              optionEntryPriceSource = null;
+              optionEntryDiagnostics = JSON.stringify({
+                reason: theoreticalEntry.reason,
+                theoreticalFallbackReason: optionEntryFallbackReason,
+                intendedStrike: selectedStrike,
+                observedOptionInstrument: null,
+                volatility: theoreticalEntry.volatilityDiagnostics,
+                pricing: theoreticalEntry.pricingDiagnostics
+              });
+              console.log(`Synthetic theoretical option entry unavailable: ${theoreticalEntry.reason}`);
+            }
+          }
         }
 
         // Calculate total P&L
@@ -317,6 +531,15 @@ async function runStrategy(config = {}) {
           strike: selectedStrike ?? null,
           S_entry: S_entry,
           C_entry: C_entry ?? null,
+          C_entry_btc: C_entry_btc ?? null,
+          C_entry_usd: C_entry_usd ?? null,
+          option_entry_price_source: optionEntryPriceSource,
+          option_entry_model: optionEntryModel,
+          option_entry_vol_model: optionEntryVolModel,
+          option_entry_vol: optionEntryVol,
+          option_entry_fallback_reason: optionEntryFallbackReason,
+          option_entry_is_synthetic: optionEntryIsSynthetic,
+          option_entry_diagnostics: optionEntryDiagnostics,
           S_exit: S_exit,
           S_settlement: S_settlement,
           payoff: payoff ?? null,
@@ -360,6 +583,13 @@ async function runStrategy(config = {}) {
         S_exit: trade.S_exit !== null ? Number(trade.S_exit).toFixed(2) : null,
         S_settlement: trade.S_settlement !== null ? Number(trade.S_settlement).toFixed(2) : null,
         C_entry: trade.C_entry !== null ? Number(trade.C_entry).toFixed(4) : null,
+        C_entry_usd: trade.C_entry_usd !== null ? Number(trade.C_entry_usd).toFixed(2) : null,
+        price_src: trade.option_entry_price_source,
+        model: trade.option_entry_model,
+        vol_model: trade.option_entry_vol_model,
+        opt_vol: trade.option_entry_vol !== null ? Number(trade.option_entry_vol).toFixed(4) : null,
+        fallback_reason: trade.option_entry_fallback_reason,
+        synthetic: trade.option_entry_is_synthetic,
         payoff: trade.payoff !== null ? Number(trade.payoff).toFixed(2) : null,
         pnl_c: trade.pnl_call.toFixed(2),
         pnl_u: trade.pnl_underlying.toFixed(2),
