@@ -1,6 +1,15 @@
 # Backtest Concepts for CCW
 
-This document defines the key concepts used by the CCW backtest project: Trade, Run, Config, Equity Curve, and Summary.
+This document defines the key concepts used by the CCW backtest project: Trade, Run, Config, Equity Curve, Summary, and the distinction between BTC exposure pricing and option settlement pricing.
+
+## Pricing Sources
+
+The CCW backtest uses two separate BTC price concepts:
+
+- `underlyingPriceSource`: price source for BTC exposure entry and exit. In the current MVP this defaults to `BTC-PERPETUAL`, which is a temporary proxy for holding BTC through the weekly cycle.
+- `optionSettlementPriceSource`: price source for option expiration payoff. In the current MVP this defaults to a Deribit BTC/USD index OHLC proxy (`BTC_USD`) until official Deribit delivery price / 30-min TWAP support is implemented.
+
+The separation is important for reproducibility. BTC PnL should come from the market used to represent BTC exposure, while option payoff should come from the settlement/index source used by the option contract. The difference between these two prices is basis risk and should not be hidden by reusing one price for both legs.
 
 ## Trade
 
@@ -14,12 +23,18 @@ A `Trade` represents one weekly cycle of a position under the strategy. Every tr
 - `expiry`: option expiry date for the trade
 - `has_call`: boolean flag indicating whether the trade includes a call option
 - `option_instrument`: option identifier (e.g. `BTC-10OCT25-126000-C`)
-- `underlying`: underlying asset price source used for `S`, such as `BTC-PERPETUAL` or `BTC_USD` index
+- `underlying`: legacy field for the BTC exposure price source
+- `underlying_price_source`: price source used for BTC exposure entry/exit
+- `option_settlement_price_source`: configured price source used for option payoff
+- `option_settlement_price_source_resolved`: actual source resolved by the implementation
+- `option_settlement_price_is_proxy`: boolean flag indicating whether the settlement price is a proxy rather than official delivery/TWAP
+- `option_settlement_price_note`: diagnostic note for proxy/fallback behavior
 - `strike`: option strike price
-- `S_entry`: underlying spot price (index or perpetual) at trade entry
-- `S_exit`: underlying spot price (index or perpetual) at trade exit
+- `S_entry`: BTC exposure price at trade entry
+- `S_exit`: BTC exposure price at trade exit
+- `S_settlement`: settlement/index price used to compute option payoff
 - `C_entry`: option premium or cost at entry
-- `payoff`: cash payoff of the option leg at exit
+- `payoff`: cash payoff of the option leg at expiry, based on `S_settlement`
 - `pnl_call`: profit and loss from the option leg
 - `pnl_underlying`: profit and loss from the underlying position
 - `pnl_total`: total profit and loss for the trade (`pnl_call + pnl_underlying`)
@@ -33,7 +48,9 @@ A `Trade` represents one weekly cycle of a position under the strategy. Every tr
 ### Notes
 
 - A single `Trade` should represent one complete weekly execution cycle.
-- `payoff` is generally derived from the option settlement or mark-to-market at `exit_date`.
+- `payoff` should be derived from `S_settlement`, not `S_exit`. `S_exit` belongs to BTC exposure PnL; `S_settlement` belongs to option intrinsic value.
+- If official Deribit delivery price / 30-min TWAP is unavailable, the run should clearly identify the settlement proxy used.
+- If the settlement proxy is unavailable and the implementation falls back to the BTC exposure exit price, that fallback must be explicit in trade output.
 - `return_pct` is calculated relative to `capital_before` and reflects trade-level performance normalized to starting capital.
 - Position sizing is dynamic: the trade size is determined from current capital, and capital evolves over time as each trade closes.
 
@@ -81,6 +98,8 @@ runs/
 - start date
 - end date
 - OTM percentage
+- BTC exposure price source
+- option settlement price source
 - fallback mode
 - sizing mode
 - sequential suffix when needed to distinguish multiple runs with the same main parameters
