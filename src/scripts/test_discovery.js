@@ -2,6 +2,10 @@ const { getOHLCData } = require('../data/deribit');
 const { selectStrike } = require('../data/discovery');
 const { getCandleAt, getCandleAtOrAfter } = require('../data/ohlc');
 
+const OPTION_SETTLEMENT_PRICE_SOURCE_MAP = {
+  DERIBIT_BTC_USD_INDEX_OHLC_PROXY: 'BTC_USD'
+};
+
 // Generate expiry code from date (e.g., "10OCT25" for 2025-10-10)
 function getExpiryCode(date) {
   const day = String(date.getUTCDate()).padStart(2, '0');
@@ -46,12 +50,45 @@ function generateFridayCycles(startDate, endDate, entryHourUtc, entryMinuteUtc) 
   return cycles;
 }
 
+async function getOptionSettlementPrice(source, exitTime, window, fallbackPrice) {
+  const mappedSource = OPTION_SETTLEMENT_PRICE_SOURCE_MAP[source] || source;
+
+  try {
+    const data = await getOHLCData(mappedSource, exitTime, exitTime + window, 60);
+    const candle = getCandleAt(data, exitTime);
+
+    if (candle && candle.open) {
+      return {
+        price: candle.open,
+        source,
+        resolvedSource: mappedSource,
+        isProxy: true,
+        note: source === 'DERIBIT_BTC_USD_INDEX_OHLC_PROXY'
+          ? 'Deribit BTC USD index OHLC proxy; official delivery price / 30-min TWAP not implemented'
+          : null
+      };
+    }
+  } catch (error) {
+    // Fall through to explicit compatibility fallback below.
+  }
+
+  return {
+    price: fallbackPrice,
+    source,
+    resolvedSource: 'BTC-PERPETUAL',
+    isProxy: true,
+    note: 'Settlement source unavailable; using BTC exposure exit price as explicit compatibility fallback'
+  };
+}
+
 async function runStrategy(config = {}) {
+  const underlyingPriceSource = config.underlyingPriceSource || config.underlying || 'BTC-PERPETUAL';
+  const optionSettlementPriceSource = config.optionSettlementPriceSource || 'DERIBIT_BTC_USD_INDEX_OHLC_PROXY';
   const {
     startDate = '2025-10-03',
     endDate = '2025-12-26',
     xOtm = 0.05,
-    underlying = 'BTC-PERPETUAL',
+    underlying = underlyingPriceSource,
     strikeStep = 1000,
     strikeRange = 3000,
     fallbackMode = 'long_btc',
@@ -66,6 +103,8 @@ async function runStrategy(config = {}) {
     endDate,
     xOtm,
     underlying,
+    underlyingPriceSource,
+    optionSettlementPriceSource,
     strikeStep,
     strikeRange,
     fallbackMode,
@@ -99,27 +138,30 @@ async function runStrategy(config = {}) {
       try {
         const window = 3600000; // 1 hour
 
-        // Fetch underlying candle at entry timestamp for S_entry
-        const spotEntryData = await getOHLCData(underlying, entryTime, entryTime + window, 60);
+        // Fetch BTC exposure candle at entry timestamp for S_entry
+        const spotEntryData = await getOHLCData(underlyingPriceSource, entryTime, entryTime + window, 60);
         const spotEntryCandle = getCandleAt(spotEntryData, entryTime);
         const S_entry = spotEntryCandle ? spotEntryCandle.open : null;
 
         if (!S_entry) {
-          console.log(`Entry candle not found for ${underlying}`);
+          console.log(`Entry candle not found for ${underlyingPriceSource}`);
           continue;
         }
 
-        // Fetch underlying candle at exit timestamp for S_exit
-        const spotExitData = await getOHLCData(underlying, exitTime, exitTime + window, 60);
+        // Fetch BTC exposure candle at exit timestamp for S_exit
+        const spotExitData = await getOHLCData(underlyingPriceSource, exitTime, exitTime + window, 60);
         const spotExitCandle = getCandleAt(spotExitData, exitTime);
         const S_exit = spotExitCandle ? spotExitCandle.open : null;
 
         if (!S_exit) {
-          console.log(`Exit candle not found for ${underlying}`);
+          console.log(`Exit candle not found for ${underlyingPriceSource}`);
           continue;
         }
 
-        console.log(`S_entry: ${S_entry}, S_exit: ${S_exit}`);
+        const settlementPrice = await getOptionSettlementPrice(optionSettlementPriceSource, exitTime, window, S_exit);
+        const S_settlement = settlementPrice.price;
+
+        console.log(`S_entry: ${S_entry}, S_exit: ${S_exit}, S_settlement: ${S_settlement}`);
 
         // Determine BTC position: 1 for first cycle, else based on current capital
         let btcPosition;
@@ -202,7 +244,7 @@ async function runStrategy(config = {}) {
             console.log(`C_entry: ${C_entry} (Entry delay: ${optionEntryDelayMinutes !== null ? optionEntryDelayMinutes.toFixed(2) : 'N/A'} minutes)`);
 
             // Calculate call P&L
-            payoff = Math.max(S_exit - selectedStrike, 0);
+            payoff = Math.max(S_settlement - selectedStrike, 0);
             pnlCall = btcPosition * ((C_entry * S_entry) - payoff);
             hasCall = true;
 
@@ -244,11 +286,17 @@ async function runStrategy(config = {}) {
           expiry: expiry,
           has_call: hasCall,
           option_instrument: selectedInstrument ? selectedInstrument.instrument_name : null,
-          underlying: underlying,
+          underlying: underlyingPriceSource,
+          underlying_price_source: underlyingPriceSource,
+          option_settlement_price_source: settlementPrice.source,
+          option_settlement_price_source_resolved: settlementPrice.resolvedSource,
+          option_settlement_price_is_proxy: settlementPrice.isProxy,
+          option_settlement_price_note: settlementPrice.note,
           strike: selectedStrike ?? null,
           S_entry: S_entry,
           C_entry: C_entry ?? null,
           S_exit: S_exit,
+          S_settlement: S_settlement,
           payoff: payoff ?? null,
           pnl_call: pnlCall,
           pnl_underlying: pnlUnderlying,
@@ -288,6 +336,7 @@ async function runStrategy(config = {}) {
         strike: trade.strike !== null ? Math.round(trade.strike) : null,
         S_entry: trade.S_entry !== null ? Number(trade.S_entry).toFixed(2) : null,
         S_exit: trade.S_exit !== null ? Number(trade.S_exit).toFixed(2) : null,
+        S_settlement: trade.S_settlement !== null ? Number(trade.S_settlement).toFixed(2) : null,
         C_entry: trade.C_entry !== null ? Number(trade.C_entry).toFixed(4) : null,
         payoff: trade.payoff !== null ? Number(trade.payoff).toFixed(2) : null,
         pnl_c: trade.pnl_call.toFixed(2),

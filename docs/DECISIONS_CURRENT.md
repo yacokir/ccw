@@ -1,4 +1,4 @@
-# Current Baseline – CCW System
+# Current Baseline - CCW System
 
 ## Execution
 - Weekly cycles (Friday-based)
@@ -11,7 +11,9 @@
 - Default fallback: stay long BTC when no call is available
 
 ## Data
-- Underlying: Deribit BTC index (temporary proxy)
+- BTC exposure entry/exit price: `BTC-PERPETUAL` (temporary proxy for holding BTC)
+- Option settlement/payoff price: separate settlement/index price concept
+- Current option settlement proxy: Deribit BTC USD index OHLC proxy (`BTC_USD`), pending official delivery price / 30-min TWAP implementation
 - Option data via Deribit OHLC
 - Fill assumption: candle open
 
@@ -19,10 +21,11 @@
 - No liquidity modeling (volume, spread, slippage ignored)
 - Manual option discovery (instrument naming heuristics)
 - No fallback to next valid strike yet
-- No settlement price (TWAP) usage yet
+- No official Deribit delivery price / 30-min TWAP usage yet
+- Settlement proxy may fall back to the BTC exposure exit price if the index proxy is unavailable; this must be visible in trade output
 
 ## Pending Improvements
-- Support execution modes: 08→08, 16→16, 08→16
+- Support execution modes: 08->08, 16->16, 08->16
 - Use proper instrument discovery (exchange APIs)
 - Add liquidity filters and fallback logic
 - Improve accounting clarity (capital vs premium handling)

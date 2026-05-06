@@ -26,13 +26,15 @@ function parseArgs(argv) {
 }
 
 function buildRunName(config, suffix) {
-  const asset = config.underlying && config.underlying.toUpperCase().includes('BTC') ? 'btc' : String(config.underlying).toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const underlyingPriceSource = config.underlyingPriceSource || config.underlying;
+  const asset = underlyingPriceSource && underlyingPriceSource.toUpperCase().includes('BTC') ? 'btc' : String(underlyingPriceSource).toLowerCase().replace(/[^a-z0-9]+/g, '');
   const xOtm = Number(config.xOtm);
   const xOtmLabel = `x${String(Math.round(xOtm * 100)).padStart(2, '0')}`;
   const stepLabel = `step${config.strikeStep}`;
   const fallbackLabel = String(config.fallbackMode).replace(/_/g, '');
   const sizingLabel = config.sizingMode === 'dynamic' ? 'dyn' : String(config.sizingMode).replace(/_/g, '');
-  const base = `${asset}_${config.startDate}_${config.endDate}_${xOtmLabel}_${stepLabel}_${fallbackLabel}_${sizingLabel}`;
+  const settlementLabel = String(config.optionSettlementPriceSource || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const base = `${asset}_${config.startDate}_${config.endDate}_${xOtmLabel}_${stepLabel}_${fallbackLabel}_${sizingLabel}_${settlementLabel}`;
   return suffix ? `${base}_${suffix}` : base;
 }
 
@@ -107,6 +109,8 @@ function formatRowForIndex(row) {
     row.startDate,
     row.endDate,
     row.underlying,
+    row.underlyingPriceSource,
+    row.optionSettlementPriceSource,
     row.xOtm,
     row.strikeStep,
     row.strikeRange,
@@ -122,7 +126,7 @@ function formatRowForIndex(row) {
 }
 
 function buildIndexCsv(rows) {
-  const headers = ['run_name','startDate','endDate','underlying','xOtm','strikeStep','strikeRange','fallbackMode','sizingMode','finalCapital','totalPnL','callWeeks','totalWeeks','path','createdAt'];
+  const headers = ['run_name','startDate','endDate','underlying','underlyingPriceSource','optionSettlementPriceSource','xOtm','strikeStep','strikeRange','fallbackMode','sizingMode','finalCapital','totalPnL','callWeeks','totalWeeks','path','createdAt'];
   const lines = [headers.join(',')];
   for (const row of rows) {
     const values = headers.map(header => {
@@ -144,11 +148,15 @@ function normalizeArgValue(value, defaultValue) {
 
 async function main() {
   const argv = parseArgs(process.argv);
+  const underlyingPriceSource = normalizeArgValue(argv.underlyingPriceSource, normalizeArgValue(argv.underlying, 'BTC-PERPETUAL'));
+  const optionSettlementPriceSource = normalizeArgValue(argv.optionSettlementPriceSource, 'DERIBIT_BTC_USD_INDEX_OHLC_PROXY');
   const config = {
     startDate: normalizeArgValue(argv.startDate, '2025-10-03'),
     endDate: normalizeArgValue(argv.endDate, '2025-12-26'),
     xOtm: argv.xOtm !== undefined ? parseFloat(argv.xOtm) : 0.05,
-    underlying: normalizeArgValue(argv.underlying, 'BTC-PERPETUAL'),
+    underlying: underlyingPriceSource,
+    underlyingPriceSource,
+    optionSettlementPriceSource,
     strikeStep: argv.strikeStep !== undefined ? parseInt(argv.strikeStep, 10) : 1000,
     strikeRange: argv.strikeRange !== undefined ? parseInt(argv.strikeRange, 10) : 3000,
     fallbackMode: normalizeArgValue(argv.fallbackMode, 'long_btc'),
@@ -165,7 +173,8 @@ async function main() {
   const identicalRow = indexRows.find(row =>
     row.startDate === config.startDate &&
     row.endDate === config.endDate &&
-    row.underlying === config.underlying &&
+    (row.underlyingPriceSource || row.underlying) === config.underlyingPriceSource &&
+    row.optionSettlementPriceSource === config.optionSettlementPriceSource &&
     Number(row.xOtm) === config.xOtm &&
     Number(row.strikeStep) === config.strikeStep &&
     Number(row.strikeRange) === config.strikeRange &&
@@ -181,7 +190,8 @@ async function main() {
   }
 
   const overlaps = indexRows.filter(row =>
-    row.underlying === config.underlying &&
+    (row.underlyingPriceSource || row.underlying) === config.underlyingPriceSource &&
+    row.optionSettlementPriceSource === config.optionSettlementPriceSource &&
     Number(row.xOtm) === config.xOtm &&
     Number(row.strikeStep) === config.strikeStep &&
     Number(row.strikeRange) === config.strikeRange &&
@@ -228,6 +238,8 @@ async function main() {
     startDate: config.startDate,
     endDate: config.endDate,
     underlying: config.underlying,
+    underlyingPriceSource: config.underlyingPriceSource,
+    optionSettlementPriceSource: config.optionSettlementPriceSource,
     xOtm: config.xOtm,
     strikeStep: config.strikeStep,
     strikeRange: config.strikeRange,
