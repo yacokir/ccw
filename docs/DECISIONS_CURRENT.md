@@ -15,7 +15,7 @@
 ## Data
 - BTC exposure entry/exit price: `BTC-PERPETUAL` (temporary proxy for holding BTC)
 - Option settlement/payoff price: separate settlement/index price concept
-- Current option settlement proxy: Deribit BTC USD index OHLC proxy (`BTC_USD`), pending official delivery price / 30-min TWAP implementation
+- Current option settlement proxy: Deribit `btc_usd` index chart data via `public/get_index_chart_data`, normalized into candle-like rows, pending official delivery price / 30-min TWAP implementation
 - Option data via Deribit OHLC
 - Fill assumption: candle open
 
@@ -23,9 +23,21 @@
 
 Observed option candles remain the preferred source for option entry premium. When a valid option entry candle is missing, the planned fallback is theoretical pricing rather than silently dropping the covered-call leg.
 
-For the MVP, the theoretical fallback model is Black-76 call pricing using a Garman-Klass realized volatility estimate from `BTC-PERPETUAL` OHLC. Interest rates and BTC yield are ignored for now because their expected impact is small relative to the current data-quality and execution-timing uncertainties.
+For the MVP, the theoretical fallback model is Black-76 call pricing using a Garman-Klass realized volatility estimate from `BTC-PERPETUAL` OHLC. For the current weekly CCW strategy horizon, the working volatility input is hourly `BTC-PERPETUAL` OHLC candles over a 14-day backward-looking window, annualized with `24 * 365` periods. Interest rates and BTC yield are ignored for now because their expected impact is small relative to the current data-quality and execution-timing uncertainties.
+
+The 14-day hourly volatility setup is tied to the current 1-week strategy horizon. Longer-dated strategies may require separate lookback analysis and volatility calibration. The volatility window must use only candles available before the option entry timestamp to avoid lookahead bias.
 
 This fallback exists to reduce missing-data bias. It does not mean the trade was actually observed or executable at that theoretical price. Any theoretical entry price must be explicitly flagged in trade output and must never be mixed silently with observed option candles.
+
+### Option premium currency
+
+Historical Deribit option premiums are currently represented in BTC terms. The backtester therefore expects `C_entry` to be a BTC-denominated premium, and converts it to USD value with `C_entry * S_entry`.
+
+The Black-76 theoretical pricing module computes option prices in USD terms because its `forwardPrice` and `strike` inputs are modeled in USD, and option payoff is modeled in USD. When theoretical pricing is integrated, the integration layer must convert the theoretical USD premium into BTC units:
+
+`theoreticalPremiumBtc = theoreticalPremiumUsd / S_entry`
+
+This conversion belongs in the pricing/backtest integration layer, not inside the Black-76 model. Trade outputs should eventually distinguish `C_entry_btc`, `C_entry_usd`, `option_entry_price_currency`, and `option_entry_price_source` so observed BTC premiums and theoretical USD-derived premiums are never mixed silently.
 
 ### Pricing model rationale
 
@@ -37,7 +49,7 @@ Deribit option payoff should reference a BTC/USD settlement/index source because
 
 This creates basis risk: `BTC-PERPETUAL` and the BTC/USD settlement index can differ at the same timestamp. That difference is part of the research problem and should remain visible in trade output through `S_exit` for BTC exposure and `S_settlement` for option payoff.
 
-Official Deribit delivery price / 30-min TWAP is not implemented yet because it requires a dedicated data path and validation against Deribit's delivery methodology. For the MVP, `BTC_USD` OHLC is used as a clearly named settlement proxy so results are reproducible while the exact delivery-price implementation is still pending.
+Official Deribit delivery price / 30-min TWAP is not implemented yet because it requires a dedicated data path and validation against Deribit's delivery methodology. For the MVP, Deribit `btc_usd` index chart points are used as a clearly named settlement proxy via the index endpoint, so results are reproducible while the exact delivery-price implementation is still pending.
 
 ## Known Limitations (Accepted for MVP)
 - No liquidity modeling (volume, spread, slippage ignored)
@@ -53,6 +65,8 @@ Official Deribit delivery price / 30-min TWAP is not implemented yet because it 
 - Use proper instrument discovery (exchange APIs)
 - Add liquidity filters and fallback logic
 - Implement Black-76 / Garman-Klass theoretical option entry fallback with explicit trade flags
+- Integrate the current volatility assumption for theoretical fallback: hourly `BTC-PERPETUAL`, 14-day backward-looking window, annualized with `24 * 365`
+- Add explicit option premium currency fields and convert theoretical USD premiums to BTC units in the integration layer
 - Improve accounting clarity (capital vs premium handling)
 - Add risk metrics (drawdown, volatility, benchmark vs BTC)
 - Monte Carlo simulation

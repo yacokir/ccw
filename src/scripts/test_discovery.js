@@ -1,11 +1,15 @@
-const { getOHLCData } = require('../data/deribit');
+const { getOHLCData, getIndexChartOhlcData } = require('../data/deribit');
 const { selectStrike } = require('../data/discovery');
 const { getCandleAt, getCandleAtOrAfter } = require('../data/ohlc');
 const { computeGarmanKlassVolatility } = require('../models/volatility/garman_klass');
 const { black76CallPrice } = require('../models/options/black76');
 
 const OPTION_SETTLEMENT_PRICE_SOURCE_MAP = {
-  DERIBIT_BTC_USD_INDEX_OHLC_PROXY: 'BTC_USD'
+  DERIBIT_BTC_USD_INDEX_OHLC_PROXY: {
+    type: 'deribit_index_chart',
+    indexName: 'btc_usd',
+    range: '1m'
+  }
 };
 
 const CURRENT_EXIT_HOUR_UTC = 8;
@@ -150,20 +154,27 @@ async function getTheoreticalCallEntryPrice({ entryTime, exitTime, S_entry, stri
 }
 
 async function getOptionSettlementPrice(source, exitTime, window, fallbackPrice) {
-  const mappedSource = OPTION_SETTLEMENT_PRICE_SOURCE_MAP[source] || source;
+  const mappedSource = OPTION_SETTLEMENT_PRICE_SOURCE_MAP[source] || {
+    type: 'instrument_ohlc',
+    instrumentName: source
+  };
 
   try {
-    const data = await getOHLCData(mappedSource, exitTime, exitTime + window, 60);
-    const candle = getCandleAt(data, exitTime);
+    const data = mappedSource.type === 'deribit_index_chart'
+      ? await getIndexChartOhlcData(mappedSource.indexName, exitTime, exitTime + window, mappedSource.range)
+      : await getOHLCData(mappedSource.instrumentName, exitTime, exitTime + window, 60);
+    const candle = getCandleAt(data, exitTime) || getCandleAtOrAfter(data, exitTime);
 
     if (candle && candle.open) {
       return {
         price: candle.open,
         source,
-        resolvedSource: mappedSource,
+        resolvedSource: mappedSource.indexName || mappedSource.instrumentName,
+        resolvedSourceType: mappedSource.type,
+        fallbackOccurred: false,
         isProxy: true,
         note: source === 'DERIBIT_BTC_USD_INDEX_OHLC_PROXY'
-          ? 'Deribit BTC USD index OHLC proxy; official delivery price / 30-min TWAP not implemented'
+          ? 'Deribit btc_usd index chart proxy; official delivery price / 30-min TWAP not implemented'
           : null
       };
     }
@@ -175,8 +186,10 @@ async function getOptionSettlementPrice(source, exitTime, window, fallbackPrice)
     price: fallbackPrice,
     source,
     resolvedSource: 'BTC-PERPETUAL',
+    resolvedSourceType: 'instrument_ohlc',
+    fallbackOccurred: true,
     isProxy: true,
-    note: 'Settlement source unavailable; using BTC exposure exit price as explicit compatibility fallback'
+    note: 'Settlement index proxy unavailable; using BTC exposure exit price as explicit compatibility fallback'
   };
 }
 
@@ -526,6 +539,8 @@ async function runStrategy(config = {}) {
           underlying_price_source: underlyingPriceSource,
           option_settlement_price_source: settlementPrice.source,
           option_settlement_price_source_resolved: settlementPrice.resolvedSource,
+          option_settlement_price_source_type: settlementPrice.resolvedSourceType,
+          option_settlement_price_fallback_occurred: settlementPrice.fallbackOccurred,
           option_settlement_price_is_proxy: settlementPrice.isProxy,
           option_settlement_price_note: settlementPrice.note,
           strike: selectedStrike ?? null,

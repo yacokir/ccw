@@ -33,8 +33,10 @@ function buildRunName(config, suffix) {
   const stepLabel = `step${config.strikeStep}`;
   const fallbackLabel = String(config.fallbackMode).replace(/_/g, '');
   const sizingLabel = config.sizingMode === 'dynamic' ? 'dyn' : String(config.sizingMode).replace(/_/g, '');
+  const entryLabel = `entry${String(config.entryHourUtc).padStart(2, '0')}h${String(config.entryMinuteUtc).padStart(2, '0')}`;
+  const delayLabel = `delay${config.maxEntryDelayMinutes}m`;
   const settlementLabel = String(config.optionSettlementPriceSource || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '');
-  const base = `${asset}_${config.startDate}_${config.endDate}_${xOtmLabel}_${stepLabel}_${fallbackLabel}_${sizingLabel}_${settlementLabel}`;
+  const base = `${asset}_${config.startDate}_${config.endDate}_${xOtmLabel}_${stepLabel}_${fallbackLabel}_${sizingLabel}_${entryLabel}_${delayLabel}_${settlementLabel}`;
   return suffix ? `${base}_${suffix}` : base;
 }
 
@@ -111,6 +113,9 @@ function formatRowForIndex(row) {
     row.underlying,
     row.underlyingPriceSource,
     row.optionSettlementPriceSource,
+    row.entryHourUtc,
+    row.entryMinuteUtc,
+    row.maxEntryDelayMinutes,
     row.xOtm,
     row.strikeStep,
     row.strikeRange,
@@ -126,7 +131,7 @@ function formatRowForIndex(row) {
 }
 
 function buildIndexCsv(rows) {
-  const headers = ['run_name','startDate','endDate','underlying','underlyingPriceSource','optionSettlementPriceSource','xOtm','strikeStep','strikeRange','fallbackMode','sizingMode','finalCapital','totalPnL','callWeeks','totalWeeks','path','createdAt'];
+  const headers = ['run_name','startDate','endDate','underlying','underlyingPriceSource','optionSettlementPriceSource','entryHourUtc','entryMinuteUtc','maxEntryDelayMinutes','xOtm','strikeStep','strikeRange','fallbackMode','sizingMode','finalCapital','totalPnL','callWeeks','totalWeeks','path','createdAt'];
   const lines = [headers.join(',')];
   for (const row of rows) {
     const values = headers.map(header => {
@@ -144,6 +149,33 @@ function buildIndexCsv(rows) {
 function normalizeArgValue(value, defaultValue) {
   if (value === null || value === undefined) return defaultValue;
   return value;
+}
+
+function getLegacyAwareUnderlyingPriceSource(row) {
+  return row.underlyingPriceSource || row.underlying;
+}
+
+function getLegacyAwareOptionSettlementPriceSource(row) {
+  return row.optionSettlementPriceSource || '__legacy_unspecified_settlement__';
+}
+
+function getLegacyAwareNumber(row, key, defaultValue) {
+  return row[key] === null || row[key] === undefined ? defaultValue : Number(row[key]);
+}
+
+function hasSameRunIdentityFields(row, config) {
+  return (
+    getLegacyAwareUnderlyingPriceSource(row) === config.underlyingPriceSource &&
+    getLegacyAwareOptionSettlementPriceSource(row) === config.optionSettlementPriceSource &&
+    getLegacyAwareNumber(row, 'entryHourUtc', 8) === config.entryHourUtc &&
+    getLegacyAwareNumber(row, 'entryMinuteUtc', 0) === config.entryMinuteUtc &&
+    getLegacyAwareNumber(row, 'maxEntryDelayMinutes', 60) === config.maxEntryDelayMinutes &&
+    Number(row.xOtm) === config.xOtm &&
+    Number(row.strikeStep) === config.strikeStep &&
+    Number(row.strikeRange) === config.strikeRange &&
+    row.fallbackMode === config.fallbackMode &&
+    row.sizingMode === config.sizingMode
+  );
 }
 
 async function main() {
@@ -173,13 +205,7 @@ async function main() {
   const identicalRow = indexRows.find(row =>
     row.startDate === config.startDate &&
     row.endDate === config.endDate &&
-    (row.underlyingPriceSource || row.underlying) === config.underlyingPriceSource &&
-    row.optionSettlementPriceSource === config.optionSettlementPriceSource &&
-    Number(row.xOtm) === config.xOtm &&
-    Number(row.strikeStep) === config.strikeStep &&
-    Number(row.strikeRange) === config.strikeRange &&
-    row.fallbackMode === config.fallbackMode &&
-    row.sizingMode === config.sizingMode
+    hasSameRunIdentityFields(row, config)
   );
 
   if (identicalRow) {
@@ -190,13 +216,7 @@ async function main() {
   }
 
   const overlaps = indexRows.filter(row =>
-    (row.underlyingPriceSource || row.underlying) === config.underlyingPriceSource &&
-    row.optionSettlementPriceSource === config.optionSettlementPriceSource &&
-    Number(row.xOtm) === config.xOtm &&
-    Number(row.strikeStep) === config.strikeStep &&
-    Number(row.strikeRange) === config.strikeRange &&
-    row.fallbackMode === config.fallbackMode &&
-    row.sizingMode === config.sizingMode &&
+    hasSameRunIdentityFields(row, config) &&
     !(new Date(config.endDate) < new Date(row.startDate) || new Date(config.startDate) > new Date(row.endDate))
   );
 
@@ -240,6 +260,9 @@ async function main() {
     underlying: config.underlying,
     underlyingPriceSource: config.underlyingPriceSource,
     optionSettlementPriceSource: config.optionSettlementPriceSource,
+    entryHourUtc: config.entryHourUtc,
+    entryMinuteUtc: config.entryMinuteUtc,
+    maxEntryDelayMinutes: config.maxEntryDelayMinutes,
     xOtm: config.xOtm,
     strikeStep: config.strikeStep,
     strikeRange: config.strikeRange,

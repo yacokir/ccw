@@ -23,7 +23,7 @@ async function getOHLCData(instrumentName, startTimestamp, endTimestamp, resolut
   return data.result;
 }
 
-async function getIndexChartData(indexName, range) {
+async function getIndexChartData(indexName, range = '1m') {
   const url = 'https://www.deribit.com/api/v2/public/get_index_chart_data';
   
   const params = new URLSearchParams({
@@ -44,6 +44,47 @@ async function getIndexChartData(indexName, range) {
   }
 
   return data.result;
+}
+
+function indexChartPointsToOhlc(points, startTimestamp, endTimestamp, metadata = {}) {
+  if (!Array.isArray(points)) {
+    throw new Error('Deribit index chart response result must be an array');
+  }
+
+  const parsedPoints = points
+    .filter(point => Array.isArray(point) && point.length >= 2)
+    .map(([timestamp, price]) => [Number(timestamp), Number(price)])
+    .filter(([timestamp, price]) => Number.isFinite(timestamp) && Number.isFinite(price) && price > 0)
+    .filter(([timestamp]) => timestamp >= startTimestamp && timestamp <= endTimestamp)
+    .sort(([a], [b]) => a - b);
+
+  return {
+    status: parsedPoints.length > 0 ? 'ok' : 'no_data',
+    ticks: parsedPoints.map(([timestamp]) => timestamp),
+    open: parsedPoints.map(([, price]) => price),
+    high: parsedPoints.map(([, price]) => price),
+    low: parsedPoints.map(([, price]) => price),
+    close: parsedPoints.map(([, price]) => price),
+    volume: parsedPoints.map(() => 0),
+    metadata: {
+      source_type: 'deribit_index_chart_points',
+      ohlc_note: 'Index chart endpoint returns timestamp/price points; open/high/low/close are all set to the point price.',
+      requested_start_timestamp: startTimestamp,
+      requested_end_timestamp: endTimestamp,
+      raw_point_count: points.length,
+      filtered_point_count: parsedPoints.length,
+      ...metadata
+    }
+  };
+}
+
+async function getIndexChartOhlcData(indexName, startTimestamp, endTimestamp, range = '1m') {
+  const points = await getIndexChartData(indexName, range);
+  return indexChartPointsToOhlc(points, startTimestamp, endTimestamp, {
+    endpoint: 'public/get_index_chart_data',
+    index_name: indexName,
+    range
+  });
 }
 
 async function fetchInstruments(currency = 'BTC', kind = 'option', expired = true) {
@@ -70,4 +111,4 @@ async function fetchInstruments(currency = 'BTC', kind = 'option', expired = tru
   return data.result;
 }
 
-module.exports = { getOHLCData, getIndexChartData, fetchInstruments };
+module.exports = { getOHLCData, getIndexChartData, getIndexChartOhlcData, fetchInstruments };

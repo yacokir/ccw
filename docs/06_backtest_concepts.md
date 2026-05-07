@@ -7,7 +7,7 @@ This document defines the key concepts used by the CCW backtest project: Trade, 
 The CCW backtest uses two separate BTC price concepts:
 
 - `underlyingPriceSource`: price source for BTC exposure entry and exit. In the current MVP this defaults to `BTC-PERPETUAL`, which is a temporary proxy for holding BTC through the weekly cycle.
-- `optionSettlementPriceSource`: price source for option expiration payoff. In the current MVP this defaults to a Deribit BTC/USD index OHLC proxy (`BTC_USD`) until official Deribit delivery price / 30-min TWAP support is implemented.
+- `optionSettlementPriceSource`: price source for option expiration payoff. In the current MVP this defaults to Deribit `btc_usd` index chart data normalized into a candle-like proxy until official Deribit delivery price / 30-min TWAP support is implemented.
 
 The separation is important for reproducibility. BTC PnL should come from the market used to represent BTC exposure, while option payoff should come from the settlement/index source used by the option contract. The difference between these two prices is basis risk and should not be hidden by reusing one price for both legs.
 
@@ -19,9 +19,23 @@ A `Trade` represents one weekly cycle of a position under the strategy. Every tr
 
 Observed option candles are the preferred source for `C_entry`. If the entry candle is missing, the planned MVP fallback is theoretical pricing: Black-76 for call value, with volatility estimated using Garman-Klass realized volatility from `BTC-PERPETUAL` OHLC.
 
+For the current weekly CCW strategy horizon, the planned MVP volatility input is hourly `BTC-PERPETUAL` OHLC candles over a 14-day lookback window, annualized with `24 * 365` periods. The lookback window is intentionally backward-looking only: it must end before or at the option entry timestamp and must not include future candles.
+
 The theoretical fallback is intended to reduce missing-data bias in research runs. It should not be interpreted as an observed or executable market quote. Interest rates and BTC yield are ignored for MVP unless later evidence shows they materially affect results.
 
+This volatility assumption is horizon-specific. Longer-dated strategies may require different lookback windows, sampling frequency, and calibration against observed option prices.
+
 Any trade using theoretical pricing must be explicitly marked in the trade output. Observed and theoretical option prices must be distinguishable in every run artifact.
+
+### Option premium currency
+
+Historical Deribit option premium candles are currently treated as BTC-denominated prices. The current backtester expects `C_entry` in BTC terms, so premium value in USD is computed as `C_entry * S_entry`.
+
+Black-76 theoretical prices are USD-denominated in this project because `forwardPrice`, `strike`, and payoff are modeled in USD. When theoretical entry pricing is integrated, the conversion should happen outside the Black-76 model:
+
+`theoreticalPremiumBtc = theoreticalPremiumUsd / S_entry`
+
+The Black-76 module should remain a pure pricing model. The pricing/backtest integration layer is responsible for converting units and recording whether the entry premium came from an observed BTC-denominated option candle or a theoretical USD-denominated model output converted into BTC.
 
 ### Typical trade fields
 
@@ -41,8 +55,12 @@ Any trade using theoretical pricing must be explicitly marked in the trade outpu
 - `S_entry`: BTC exposure price at trade entry
 - `S_exit`: BTC exposure price at trade exit
 - `S_settlement`: settlement/index price used to compute option payoff
-- `C_entry`: option premium or cost at entry
+- `C_entry`: legacy option premium field, currently expected in BTC terms
+- `C_entry_btc`: option entry premium in BTC terms
+- `C_entry_usd`: option entry premium value in USD terms
 - `C_entry_source`: source of the option entry price, for example `observed_ohlc_open` or `theoretical_black76`
+- `option_entry_price_currency`: source currency of the option entry price before any conversion, for example `BTC` or `USD`
+- `option_entry_price_source`: explicit source label for the option entry price
 - `C_entry_is_theoretical`: boolean flag indicating whether `C_entry` came from theoretical fallback
 - `C_entry_model`: theoretical pricing model used when applicable, for example `black76`
 - `C_entry_vol_model`: volatility estimator used when applicable, for example `garman_klass`
