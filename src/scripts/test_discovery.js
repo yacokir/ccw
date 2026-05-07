@@ -8,7 +8,7 @@ const OPTION_SETTLEMENT_PRICE_SOURCE_MAP = {
   DERIBIT_BTC_USD_INDEX_OHLC_PROXY: {
     type: 'deribit_index_chart',
     indexName: 'btc_usd',
-    range: '1m'
+    range: '1h'
   }
 };
 
@@ -92,6 +92,35 @@ function chartDataToCandles(chartData) {
   }));
 }
 
+function getNearestCandleWithinTolerance(chartData, timestamp, toleranceMs) {
+  if (!chartData || !Array.isArray(chartData.ticks)) return null;
+
+  let nearestIndex = -1;
+  let nearestDistance = Infinity;
+
+  for (let index = 0; index < chartData.ticks.length; index++) {
+    const tick = chartData.ticks[index];
+    const distance = Math.abs(tick - timestamp);
+
+    if (distance <= toleranceMs && distance < nearestDistance) {
+      nearestIndex = index;
+      nearestDistance = distance;
+    }
+  }
+
+  if (nearestIndex === -1) return null;
+
+  return {
+    timestamp: chartData.ticks[nearestIndex],
+    open: chartData.open[nearestIndex],
+    high: chartData.high[nearestIndex],
+    low: chartData.low[nearestIndex],
+    close: chartData.close[nearestIndex],
+    volume: chartData.volume[nearestIndex],
+    distanceMs: nearestDistance
+  };
+}
+
 async function getTheoreticalCallEntryPrice({ entryTime, exitTime, S_entry, strike }) {
   const lookbackMs = THEORETICAL_VOL_LOOKBACK_DAYS * 24 * 60 * 60 * 1000;
   const volStartTime = entryTime - lookbackMs;
@@ -161,9 +190,11 @@ async function getOptionSettlementPrice(source, exitTime, window, fallbackPrice)
 
   try {
     const data = mappedSource.type === 'deribit_index_chart'
-      ? await getIndexChartOhlcData(mappedSource.indexName, exitTime, exitTime + window, mappedSource.range)
+      ? await getIndexChartOhlcData(mappedSource.indexName, exitTime - window, exitTime + window, mappedSource.range)
       : await getOHLCData(mappedSource.instrumentName, exitTime, exitTime + window, 60);
-    const candle = getCandleAt(data, exitTime) || getCandleAtOrAfter(data, exitTime);
+    const candle = mappedSource.type === 'deribit_index_chart'
+      ? getNearestCandleWithinTolerance(data, exitTime, window)
+      : getCandleAt(data, exitTime) || getCandleAtOrAfter(data, exitTime);
 
     if (candle && candle.open) {
       return {
@@ -172,6 +203,8 @@ async function getOptionSettlementPrice(source, exitTime, window, fallbackPrice)
         resolvedSource: mappedSource.indexName || mappedSource.instrumentName,
         resolvedSourceType: mappedSource.type,
         fallbackOccurred: false,
+        settlementTimestamp: candle.timestamp,
+        settlementTimestampDistanceMs: candle.distanceMs ?? 0,
         isProxy: true,
         note: source === 'DERIBIT_BTC_USD_INDEX_OHLC_PROXY'
           ? 'Deribit btc_usd index chart proxy; official delivery price / 30-min TWAP not implemented'
@@ -541,6 +574,8 @@ async function runStrategy(config = {}) {
           option_settlement_price_source_resolved: settlementPrice.resolvedSource,
           option_settlement_price_source_type: settlementPrice.resolvedSourceType,
           option_settlement_price_fallback_occurred: settlementPrice.fallbackOccurred,
+          option_settlement_timestamp: settlementPrice.settlementTimestamp ?? null,
+          option_settlement_timestamp_distance_ms: settlementPrice.settlementTimestampDistanceMs ?? null,
           option_settlement_price_is_proxy: settlementPrice.isProxy,
           option_settlement_price_note: settlementPrice.note,
           strike: selectedStrike ?? null,
