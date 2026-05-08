@@ -1,14 +1,20 @@
-const { getOHLCData, getIndexChartOhlcData } = require('../data/deribit');
+const { getOHLCData, getDeliveryPriceByDate } = require('../data/deribit');
 const { selectStrike } = require('../data/discovery');
 const { getCandleAt, getCandleAtOrAfter } = require('../data/ohlc');
 const { computeGarmanKlassVolatility } = require('../models/volatility/garman_klass');
 const { black76CallPrice } = require('../models/options/black76');
 
 const OPTION_SETTLEMENT_PRICE_SOURCE_MAP = {
+  DERIBIT_BTC_USD_DELIVERY_PRICE: {
+    type: 'deribit_delivery_price',
+    indexName: 'btc_usd'
+  },
+  // Backward-compatible alias for old run configs. Settlement now resolves
+  // through official Deribit delivery prices, not index chart point matching.
   DERIBIT_BTC_USD_INDEX_OHLC_PROXY: {
-    type: 'deribit_index_chart',
+    type: 'deribit_delivery_price',
     indexName: 'btc_usd',
-    range: '1h'
+    deprecatedAlias: true
   }
 };
 
@@ -92,32 +98,52 @@ function chartDataToCandles(chartData) {
   }));
 }
 
-function getNearestCandleWithinTolerance(chartData, timestamp, toleranceMs) {
-  if (!chartData || !Array.isArray(chartData.ticks)) return null;
+function calculateAnnualizedVolatilityOfWeeklyReturns(trades) {
+  const returns = trades
+    .map(trade => Number(trade.return_pct))
+    .filter(value => Number.isFinite(value));
 
-  let nearestIndex = -1;
-  let nearestDistance = Infinity;
-
-  for (let index = 0; index < chartData.ticks.length; index++) {
-    const tick = chartData.ticks[index];
-    const distance = Math.abs(tick - timestamp);
-
-    if (distance <= toleranceMs && distance < nearestDistance) {
-      nearestIndex = index;
-      nearestDistance = distance;
-    }
+  if (returns.length < 2) {
+    return null;
   }
 
-  if (nearestIndex === -1) return null;
+  const mean = returns.reduce((sum, value) => sum + value, 0) / returns.length;
+  const variance = returns.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / (returns.length - 1);
+  return Math.sqrt(variance) * Math.sqrt(52);
+}
+
+function buildSummaryMetrics(trades, capitalUsd) {
+  const initialCapital = trades.length > 0 ? trades[0].capital_before : 0;
+  const initialBtcPrice = trades.length > 0 ? trades[0].S_entry : 0;
+  const finalBtcPrice = trades.length > 0 ? trades[trades.length - 1].S_exit : 0;
+  const finalCapital = capitalUsd;
+  const runReturnPct = initialCapital > 0 ? ((finalCapital / initialCapital) - 1) * 100 : 0;
+  const btcReturnPct = initialBtcPrice > 0 ? ((finalBtcPrice / initialBtcPrice) - 1) * 100 : 0;
+  const annualizedVolatilityOfWeeklyReturns = calculateAnnualizedVolatilityOfWeeklyReturns(trades);
 
   return {
-    timestamp: chartData.ticks[nearestIndex],
-    open: chartData.open[nearestIndex],
-    high: chartData.high[nearestIndex],
-    low: chartData.low[nearestIndex],
-    close: chartData.close[nearestIndex],
-    volume: chartData.volume[nearestIndex],
-    distanceMs: nearestDistance
+    initialCapital,
+    finalCapital,
+    totalPnLCall: trades.reduce((sum, trade) => sum + trade.pnl_call, 0),
+    totalPnLUnderlying: trades.reduce((sum, trade) => sum + trade.pnl_underlying, 0),
+    totalPnL: trades.reduce((sum, trade) => sum + trade.pnl_total, 0),
+    callWeeks: trades.filter(trade => trade.has_call).length,
+    totalWeeks: trades.length,
+    observedOptionWeeks: trades.filter(trade => trade.option_entry_price_source === 'observed').length,
+    theoreticalFallbackWeeks: trades.filter(trade => trade.option_entry_price_source === 'theoretical').length,
+    syntheticOptionWeeks: trades.filter(trade => trade.option_entry_is_synthetic).length,
+    missingObservedInstrumentWeeks: trades.filter(trade => trade.option_entry_fallback_reason === 'missing_observed_option_instrument').length,
+    missingObservedCandleWeeks: trades.filter(trade => trade.option_entry_fallback_reason === 'missing_observed_option_candle').length,
+    invalidObservedOpenWeeks: trades.filter(trade => trade.option_entry_fallback_reason === 'invalid_observed_option_open').length,
+    settlementFallbackWeeks: trades.filter(trade => trade.option_settlement_price_fallback_occurred).length,
+    initialBtcPrice,
+    finalBtcPrice,
+    runReturnPct,
+    btcReturnPct,
+    annualizedVolatilityOfWeeklyReturns,
+    annualizedVolatilityOfWeeklyReturnsPct: annualizedVolatilityOfWeeklyReturns !== null
+      ? annualizedVolatilityOfWeeklyReturns * 100
+      : null
   };
 }
 
@@ -187,48 +213,99 @@ async function getOptionSettlementPrice(source, exitTime, window, fallbackPrice)
     type: 'instrument_ohlc',
     instrumentName: source
   };
+  let fallbackReason = null;
+  let caughtErrorMessage = null;
+  let deliveryLookup = null;
+  let instrumentData = null;
 
   try {
-    const data = mappedSource.type === 'deribit_index_chart'
-      ? await getIndexChartOhlcData(mappedSource.indexName, exitTime - window, exitTime + window, mappedSource.range)
-      : await getOHLCData(mappedSource.instrumentName, exitTime, exitTime + window, 60);
-    const candle = mappedSource.type === 'deribit_index_chart'
-      ? getNearestCandleWithinTolerance(data, exitTime, window)
-      : getCandleAt(data, exitTime) || getCandleAtOrAfter(data, exitTime);
+    if (mappedSource.type === 'deribit_delivery_price') {
+      deliveryLookup = await getDeliveryPriceByDate(mappedSource.indexName, exitTime);
+      const deliveryPrice = deliveryLookup.found ? Number(deliveryLookup.deliveryPrice) : null;
 
-    if (candle && candle.open) {
-      return {
-        price: candle.open,
-        source,
-        resolvedSource: mappedSource.indexName || mappedSource.instrumentName,
-        resolvedSourceType: mappedSource.type,
-        fallbackOccurred: false,
-        settlementTimestamp: candle.timestamp,
-        settlementTimestampDistanceMs: candle.distanceMs ?? 0,
-        isProxy: true,
-        note: source === 'DERIBIT_BTC_USD_INDEX_OHLC_PROXY'
-          ? 'Deribit btc_usd index chart proxy; official delivery price / 30-min TWAP not implemented'
-          : null
-      };
+      if (Number.isFinite(deliveryPrice) && deliveryPrice > 0) {
+        return {
+          price: deliveryPrice,
+          source,
+          resolvedSource: mappedSource.indexName,
+          resolvedSourceType: 'deribit_delivery_price',
+          fallbackOccurred: false,
+          fallbackReason: null,
+          deliveryDate: deliveryLookup.date,
+          isProxy: false,
+          note: mappedSource.deprecatedAlias
+            ? 'Deprecated index-chart source alias resolved to official Deribit delivery price'
+            : 'Official Deribit delivery settlement price'
+        };
+      }
+
+      fallbackReason = deliveryLookup.found
+        ? 'settlement_invalid_delivery_price'
+        : 'settlement_delivery_price_not_found';
+    } else {
+      instrumentData = await getOHLCData(mappedSource.instrumentName, exitTime, exitTime + window, 60);
+
+      if (!instrumentData || !Array.isArray(instrumentData.ticks) || instrumentData.ticks.length === 0) {
+        fallbackReason = 'settlement_no_points';
+      }
+
+      const candle = getCandleAt(instrumentData, exitTime) || getCandleAtOrAfter(instrumentData, exitTime);
+      const candleOpen = candle ? Number(candle.open) : null;
+
+      if (Number.isFinite(candleOpen) && candleOpen > 0) {
+        return {
+          price: candleOpen,
+          source,
+          resolvedSource: mappedSource.instrumentName,
+          resolvedSourceType: 'instrument_ohlc',
+          fallbackOccurred: false,
+          fallbackReason: null,
+          deliveryDate: null,
+          isProxy: true,
+          note: 'Instrument OHLC settlement source'
+        };
+      }
+
+      if (!fallbackReason) {
+        fallbackReason = candle ? 'settlement_invalid_price' : 'settlement_no_candle';
+      }
     }
   } catch (error) {
-    // Fall through to explicit compatibility fallback below.
+    fallbackReason = 'settlement_fetch_error';
+    caughtErrorMessage = error.message;
   }
+
+  const ticks = instrumentData && Array.isArray(instrumentData.ticks) ? instrumentData.ticks : [];
+  console.log('Settlement fallback debug:', {
+    reason: fallbackReason,
+    source,
+    mappedSource,
+    exitTime: new Date(exitTime).toISOString(),
+    deliveryDate: deliveryLookup ? deliveryLookup.date : new Date(exitTime).toISOString().slice(0, 10),
+    deliveryFound: deliveryLookup ? deliveryLookup.found : null,
+    deliveryPrice: deliveryLookup ? deliveryLookup.deliveryPrice : null,
+    instrumentPointCount: ticks.length,
+    instrumentFirstTimestamp: ticks.length > 0 ? new Date(ticks[0]).toISOString() : null,
+    instrumentLastTimestamp: ticks.length > 0 ? new Date(ticks[ticks.length - 1]).toISOString() : null,
+    caughtErrorMessage,
+  });
 
   return {
     price: fallbackPrice,
     source,
     resolvedSource: 'BTC-PERPETUAL',
-    resolvedSourceType: 'instrument_ohlc',
+    resolvedSourceType: 'instrument_ohlc_fallback',
     fallbackOccurred: true,
+    fallbackReason,
+    deliveryDate: deliveryLookup ? deliveryLookup.date : new Date(exitTime).toISOString().slice(0, 10),
     isProxy: true,
-    note: 'Settlement index proxy unavailable; using BTC exposure exit price as explicit compatibility fallback'
+    note: 'Official delivery settlement unavailable; using BTC exposure exit price as explicit compatibility fallback'
   };
 }
 
 async function runStrategy(config = {}) {
   const underlyingPriceSource = config.underlyingPriceSource || config.underlying || 'BTC-PERPETUAL';
-  const optionSettlementPriceSource = config.optionSettlementPriceSource || 'DERIBIT_BTC_USD_INDEX_OHLC_PROXY';
+  const optionSettlementPriceSource = config.optionSettlementPriceSource || 'DERIBIT_BTC_USD_DELIVERY_PRICE';
   const {
     startDate = '2025-10-03',
     endDate = '2025-12-26',
@@ -574,8 +651,8 @@ async function runStrategy(config = {}) {
           option_settlement_price_source_resolved: settlementPrice.resolvedSource,
           option_settlement_price_source_type: settlementPrice.resolvedSourceType,
           option_settlement_price_fallback_occurred: settlementPrice.fallbackOccurred,
-          option_settlement_timestamp: settlementPrice.settlementTimestamp ?? null,
-          option_settlement_timestamp_distance_ms: settlementPrice.settlementTimestampDistanceMs ?? null,
+          option_settlement_price_fallback_reason: settlementPrice.fallbackReason ?? null,
+          option_settlement_delivery_date: settlementPrice.deliveryDate ?? null,
           option_settlement_price_is_proxy: settlementPrice.isProxy,
           option_settlement_price_note: settlementPrice.note,
           strike: selectedStrike ?? null,
@@ -651,33 +728,33 @@ async function runStrategy(config = {}) {
         vol: trade.weekly_vol
       }));
       console.table(formattedTrades);
-      const totalPnLCall = trades.reduce((sum, trade) => sum + trade.pnl_call, 0);
-      const totalPnLUnderlying = trades.reduce((sum, trade) => sum + trade.pnl_underlying, 0);
-      const totalPnL = trades.reduce((sum, trade) => sum + trade.pnl_total, 0);
-      const callCount = trades.filter(trade => trade.has_call).length;
+      const summaryMetrics = buildSummaryMetrics(trades, capitalUsd);
 
       // Calculate summary metrics
-      const initialBtcPrice = trades[0].S_entry;
-      const initialCapital = trades[0].capital_before;
-      const finalCapital = capitalUsd;
-      const lastS_exit = trades[trades.length - 1].S_exit;
-      const runReturn = ((finalCapital / initialCapital) - 1) * 100;
-      const btcReturn = ((lastS_exit / initialBtcPrice) - 1) * 100;
       const bestTrade = Math.max(...trades.map(t => t.pnl_total));
       const worstTrade = Math.min(...trades.map(t => t.pnl_total));
 
       console.log('\n=== SUMMARY ===\n');
-      console.log(`Initial BTC Price: ${initialBtcPrice.toFixed(2)} USD`);
-      console.log(`Initial Capital: ${initialCapital.toFixed(2)} USD`);
-      console.log(`Final Capital: ${finalCapital.toFixed(2)} USD`);
-      console.log(`Run Return: ${runReturn.toFixed(2)}%`);
-      console.log(`BTC Return: ${btcReturn.toFixed(2)}%`);
+      console.log(`Initial BTC Price: ${summaryMetrics.initialBtcPrice.toFixed(2)} USD`);
+      console.log(`Final BTC Price: ${summaryMetrics.finalBtcPrice.toFixed(2)} USD`);
+      console.log(`Initial Capital: ${summaryMetrics.initialCapital.toFixed(2)} USD`);
+      console.log(`Final Capital: ${summaryMetrics.finalCapital.toFixed(2)} USD`);
+      console.log(`Run Return: ${summaryMetrics.runReturnPct.toFixed(2)}%`);
+      console.log(`BTC Return: ${summaryMetrics.btcReturnPct.toFixed(2)}%`);
+      console.log(`Annualized Volatility of Weekly Returns: ${summaryMetrics.annualizedVolatilityOfWeeklyReturnsPct !== null ? summaryMetrics.annualizedVolatilityOfWeeklyReturnsPct.toFixed(2) : 'N/A'}%`);
       console.log(`\nBest Trade: ${bestTrade.toFixed(2)} USD`);
       console.log(`Worst Trade: ${worstTrade.toFixed(2)} USD`);
-      console.log(`\nCall Weeks: ${callCount} / ${trades.length}`);
-      console.log(`Total Call P&L: ${totalPnLCall.toFixed(2)} USD`);
-      console.log(`Total Underlying P&L: ${totalPnLUnderlying.toFixed(2)} USD`);
-      console.log(`Total P&L: ${totalPnL.toFixed(2)} USD`);
+      console.log(`\nCall Weeks: ${summaryMetrics.callWeeks} / ${summaryMetrics.totalWeeks}`);
+      console.log(`Observed Option Weeks: ${summaryMetrics.observedOptionWeeks}`);
+      console.log(`Theoretical Fallback Weeks: ${summaryMetrics.theoreticalFallbackWeeks}`);
+      console.log(`Synthetic Option Weeks: ${summaryMetrics.syntheticOptionWeeks}`);
+      console.log(`Missing Observed Instrument Weeks: ${summaryMetrics.missingObservedInstrumentWeeks}`);
+      console.log(`Missing Observed Candle Weeks: ${summaryMetrics.missingObservedCandleWeeks}`);
+      console.log(`Invalid Observed Open Weeks: ${summaryMetrics.invalidObservedOpenWeeks}`);
+      console.log(`Settlement Fallback Weeks: ${summaryMetrics.settlementFallbackWeeks}`);
+      console.log(`\nTotal Call P&L: ${summaryMetrics.totalPnLCall.toFixed(2)} USD`);
+      console.log(`Total Underlying P&L: ${summaryMetrics.totalPnLUnderlying.toFixed(2)} USD`);
+      console.log(`Total P&L: ${summaryMetrics.totalPnL.toFixed(2)} USD`);
 
       console.log('\n=== EQUITY CURVE ===\n');
       console.table(equityCurve);
@@ -685,15 +762,7 @@ async function runStrategy(config = {}) {
       console.log('No trades collected.');
     }
 
-    const summary = {
-      initialCapital: trades.length > 0 ? trades[0].capital_before : 0,
-      finalCapital: capitalUsd,
-      totalPnLCall: trades.reduce((sum, trade) => sum + trade.pnl_call, 0),
-      totalPnLUnderlying: trades.reduce((sum, trade) => sum + trade.pnl_underlying, 0),
-      totalPnL: trades.reduce((sum, trade) => sum + trade.pnl_total, 0),
-      callWeeks: trades.filter(trade => trade.has_call).length,
-      totalWeeks: trades.length
-    };
+    const summary = buildSummaryMetrics(trades, capitalUsd);
 
     return {
       config: normalizedConfig,
@@ -714,7 +783,20 @@ async function runStrategy(config = {}) {
         totalPnLUnderlying: 0,
         totalPnL: 0,
         callWeeks: 0,
-        totalWeeks: 0
+        totalWeeks: 0,
+        observedOptionWeeks: 0,
+        theoreticalFallbackWeeks: 0,
+        syntheticOptionWeeks: 0,
+        missingObservedInstrumentWeeks: 0,
+        missingObservedCandleWeeks: 0,
+        invalidObservedOpenWeeks: 0,
+        settlementFallbackWeeks: 0,
+        initialBtcPrice: 0,
+        finalBtcPrice: 0,
+        runReturnPct: 0,
+        btcReturnPct: 0,
+        annualizedVolatilityOfWeeklyReturns: null,
+        annualizedVolatilityOfWeeklyReturnsPct: null
       }
     };
   }

@@ -7,9 +7,9 @@ This document defines the key concepts used by the CCW backtest project: Trade, 
 The CCW backtest uses two separate BTC price concepts:
 
 - `underlyingPriceSource`: price source for BTC exposure entry and exit. In the current MVP this defaults to `BTC-PERPETUAL`, which is a temporary proxy for holding BTC through the weekly cycle.
-- `optionSettlementPriceSource`: price source for option expiration payoff. In the current MVP this defaults to Deribit `btc_usd` index chart data normalized into a candle-like proxy until official Deribit delivery price / 30-min TWAP support is implemented.
+- `optionSettlementPriceSource`: price source for option expiration payoff. The intended source is official Deribit delivery settlement prices. The older Deribit `btc_usd` index-chart proxy is deprecated/experimental because it does not support the arbitrary historical timestamp lookup needed for this backtest.
 
-The separation is important for reproducibility. BTC PnL should come from the market used to represent BTC exposure, while option payoff should come from the settlement/index source used by the option contract. The difference between these two prices is basis risk and should not be hidden by reusing one price for both legs.
+The separation is important for reproducibility. BTC PnL should come from the market used to represent BTC exposure, while option payoff should come from the official settlement source used by the option contract. The difference between these two prices is basis risk and should not be hidden by reusing one price for both legs.
 
 ## Trade
 
@@ -49,12 +49,12 @@ The Black-76 module should remain a pure pricing model. The pricing/backtest int
 - `underlying_price_source`: price source used for BTC exposure entry/exit
 - `option_settlement_price_source`: configured price source used for option payoff
 - `option_settlement_price_source_resolved`: actual source resolved by the implementation
-- `option_settlement_price_is_proxy`: boolean flag indicating whether the settlement price is a proxy rather than official delivery/TWAP
+- `option_settlement_price_is_proxy`: boolean flag indicating whether the settlement price is a proxy rather than official delivery settlement
 - `option_settlement_price_note`: diagnostic note for proxy/fallback behavior
 - `strike`: option strike price
 - `S_entry`: BTC exposure price at trade entry
 - `S_exit`: BTC exposure price at trade exit
-- `S_settlement`: settlement/index price used to compute option payoff
+- `S_settlement`: official Deribit delivery settlement price used to compute option payoff
 - `C_entry`: legacy option premium field, currently expected in BTC terms
 - `C_entry_btc`: option entry premium in BTC terms
 - `C_entry_usd`: option entry premium value in USD terms
@@ -79,8 +79,9 @@ The Black-76 module should remain a pure pricing model. The pricing/backtest int
 
 - A single `Trade` should represent one complete weekly execution cycle.
 - `payoff` should be derived from `S_settlement`, not `S_exit`. `S_exit` belongs to BTC exposure PnL; `S_settlement` belongs to option intrinsic value.
-- If official Deribit delivery price / 30-min TWAP is unavailable, the run should clearly identify the settlement proxy used.
-- If the settlement proxy is unavailable and the implementation falls back to the BTC exposure exit price, that fallback must be explicit in trade output.
+- `S_settlement` should come from official Deribit delivery settlement data. Settlement timestamps are daily expiry settlement records, not candle timestamps.
+- If any deprecated proxy path is used, the run should clearly identify that proxy.
+- If settlement falls back to the BTC exposure exit price, that fallback must be explicit in trade output and treated as temporary compatibility behavior.
 - If `C_entry` comes from theoretical fallback, that fact must be explicit in trade output; theoretical prices must not be silently combined with observed option candles.
 - `return_pct` is calculated relative to `capital_before` and reflects trade-level performance normalized to starting capital.
 - Position sizing is dynamic: the trade size is determined from current capital, and capital evolves over time as each trade closes.

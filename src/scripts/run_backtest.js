@@ -25,6 +25,15 @@ function parseArgs(argv) {
   return args;
 }
 
+function safeRunNamePart(value) {
+  return String(value)
+    .replace(/:/g, '-')
+    .replace(/[<>:"/\\|?*]+/g, '-')
+    .replace(/\s+/g, '_')
+    .replace(/-+/g, '-')
+    .replace(/^[-_.]+|[-_.]+$/g, '');
+}
+
 function buildRunName(config, suffix) {
   const underlyingPriceSource = config.underlyingPriceSource || config.underlying;
   const asset = underlyingPriceSource && underlyingPriceSource.toUpperCase().includes('BTC') ? 'btc' : String(underlyingPriceSource).toLowerCase().replace(/[^a-z0-9]+/g, '');
@@ -36,7 +45,9 @@ function buildRunName(config, suffix) {
   const entryLabel = `entry${String(config.entryHourUtc).padStart(2, '0')}h${String(config.entryMinuteUtc).padStart(2, '0')}`;
   const delayLabel = `delay${config.maxEntryDelayMinutes}m`;
   const settlementLabel = String(config.optionSettlementPriceSource || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '');
-  const base = `${asset}_${config.startDate}_${config.endDate}_${xOtmLabel}_${stepLabel}_${fallbackLabel}_${sizingLabel}_${entryLabel}_${delayLabel}_${settlementLabel}`;
+  const startDateLabel = safeRunNamePart(config.startDate);
+  const endDateLabel = safeRunNamePart(config.endDate);
+  const base = `${asset}_${startDateLabel}_${endDateLabel}_${xOtmLabel}_${stepLabel}_${fallbackLabel}_${sizingLabel}_${entryLabel}_${delayLabel}_${settlementLabel}`;
   return suffix ? `${base}_${suffix}` : base;
 }
 
@@ -125,13 +136,26 @@ function formatRowForIndex(row) {
     row.totalPnL,
     row.callWeeks,
     row.totalWeeks,
+    row.observedOptionWeeks,
+    row.theoreticalFallbackWeeks,
+    row.syntheticOptionWeeks,
+    row.missingObservedInstrumentWeeks,
+    row.missingObservedCandleWeeks,
+    row.invalidObservedOpenWeeks,
+    row.settlementFallbackWeeks,
+    row.initialBtcPrice,
+    row.finalBtcPrice,
+    row.runReturnPct,
+    row.btcReturnPct,
+    row.annualizedVolatilityOfWeeklyReturns,
+    row.annualizedVolatilityOfWeeklyReturnsPct,
     row.path,
     row.createdAt
   ];
 }
 
 function buildIndexCsv(rows) {
-  const headers = ['run_name','startDate','endDate','underlying','underlyingPriceSource','optionSettlementPriceSource','entryHourUtc','entryMinuteUtc','maxEntryDelayMinutes','xOtm','strikeStep','strikeRange','fallbackMode','sizingMode','finalCapital','totalPnL','callWeeks','totalWeeks','path','createdAt'];
+  const headers = ['run_name','startDate','endDate','underlying','underlyingPriceSource','optionSettlementPriceSource','entryHourUtc','entryMinuteUtc','maxEntryDelayMinutes','xOtm','strikeStep','strikeRange','fallbackMode','sizingMode','finalCapital','totalPnL','callWeeks','totalWeeks','observedOptionWeeks','theoreticalFallbackWeeks','syntheticOptionWeeks','missingObservedInstrumentWeeks','missingObservedCandleWeeks','invalidObservedOpenWeeks','settlementFallbackWeeks','initialBtcPrice','finalBtcPrice','runReturnPct','btcReturnPct','annualizedVolatilityOfWeeklyReturns','annualizedVolatilityOfWeeklyReturnsPct','path','createdAt'];
   const lines = [headers.join(',')];
   for (const row of rows) {
     const values = headers.map(header => {
@@ -178,11 +202,10 @@ function hasSameRunIdentityFields(row, config) {
   );
 }
 
-async function main() {
-  const argv = parseArgs(process.argv);
+function buildConfigFromArgs(argv) {
   const underlyingPriceSource = normalizeArgValue(argv.underlyingPriceSource, normalizeArgValue(argv.underlying, 'BTC-PERPETUAL'));
-  const optionSettlementPriceSource = normalizeArgValue(argv.optionSettlementPriceSource, 'DERIBIT_BTC_USD_INDEX_OHLC_PROXY');
-  const config = {
+  const optionSettlementPriceSource = normalizeArgValue(argv.optionSettlementPriceSource, 'DERIBIT_BTC_USD_DELIVERY_PRICE');
+  return {
     startDate: normalizeArgValue(argv.startDate, '2025-10-03'),
     endDate: normalizeArgValue(argv.endDate, '2025-12-26'),
     xOtm: argv.xOtm !== undefined ? parseFloat(argv.xOtm) : 0.05,
@@ -197,63 +220,41 @@ async function main() {
     entryHourUtc: argv.entryHourUtc !== undefined ? parseInt(argv.entryHourUtc, 10) : 8,
     entryMinuteUtc: argv.entryMinuteUtc !== undefined ? parseInt(argv.entryMinuteUtc, 10) : 0
   };
+}
 
+function getRunIndexContext() {
   const runsDir = path.resolve(__dirname, '..', '..', 'runs');
   const indexPath = path.join(runsDir, 'index.csv');
   const indexRows = readRunIndex(indexPath);
+  return { runsDir, indexPath, indexRows };
+}
 
-  const identicalRow = indexRows.find(row =>
+function findIdenticalRun(indexRows, config) {
+  return indexRows.find(row =>
     row.startDate === config.startDate &&
     row.endDate === config.endDate &&
     hasSameRunIdentityFields(row, config)
   );
+}
 
-  if (identicalRow) {
-    console.warn('Warning: an identical run already exists.');
-    console.warn(`Existing run: ${identicalRow.run_name}`);
-    console.warn(`Path: ${identicalRow.path}`);
-    return;
-  }
-
-  const overlaps = indexRows.filter(row =>
+function findOverlappingRuns(indexRows, config) {
+  return indexRows.filter(row =>
     hasSameRunIdentityFields(row, config) &&
     !(new Date(config.endDate) < new Date(row.startDate) || new Date(config.startDate) > new Date(row.endDate))
   );
+}
 
+function warnOverlappingRuns(overlaps) {
   if (overlaps.length > 0) {
     console.warn('Warning: overlapping run periods found for the same strategy parameters:');
     overlaps.forEach(row => {
       console.warn(`- ${row.run_name} (${row.startDate} to ${row.endDate})`);
     });
   }
+}
 
-  fs.mkdirSync(runsDir, { recursive: true });
-
-  const baseRunName = buildRunName(config);
-  const existingSuffixes = indexRows
-    .filter(row => row.run_name.startsWith(`${baseRunName}_`))
-    .map(row => {
-      const match = row.run_name.match(/_(\d{3})$/);
-      return match ? Number(match[1]) : 0;
-    });
-  const nextSuffix = String((Math.max(0, ...existingSuffixes) + 1)).padStart(3, '0');
-  const runName = buildRunName(config, nextSuffix);
-  const runPath = path.join(runsDir, runName);
-
-  const result = await runStrategy(config);
-  fs.mkdirSync(runPath, { recursive: true });
-
-  const configPath = path.join(runPath, 'config.json');
-  const tradesPath = path.join(runPath, 'trades.csv');
-  const equityPath = path.join(runPath, 'equity_curve.csv');
-  const summaryPath = path.join(runPath, 'summary.json');
-
-  fs.writeFileSync(configPath, JSON.stringify(result.config, null, 2), 'utf8');
-  fs.writeFileSync(tradesPath, objectsToCsv(result.trades), 'utf8');
-  fs.writeFileSync(equityPath, objectsToCsv(result.equityCurve), 'utf8');
-  fs.writeFileSync(summaryPath, JSON.stringify(result.summary, null, 2), 'utf8');
-
-  const newIndexRow = {
+function buildIndexRow(config, result, runName) {
+  return {
     run_name: runName,
     startDate: config.startDate,
     endDate: config.endDate,
@@ -272,13 +273,112 @@ async function main() {
     totalPnL: result.summary.totalPnL,
     callWeeks: result.summary.callWeeks,
     totalWeeks: result.summary.totalWeeks,
+    observedOptionWeeks: result.summary.observedOptionWeeks,
+    theoreticalFallbackWeeks: result.summary.theoreticalFallbackWeeks,
+    syntheticOptionWeeks: result.summary.syntheticOptionWeeks,
+    missingObservedInstrumentWeeks: result.summary.missingObservedInstrumentWeeks,
+    missingObservedCandleWeeks: result.summary.missingObservedCandleWeeks,
+    invalidObservedOpenWeeks: result.summary.invalidObservedOpenWeeks,
+    settlementFallbackWeeks: result.summary.settlementFallbackWeeks,
+    initialBtcPrice: result.summary.initialBtcPrice,
+    finalBtcPrice: result.summary.finalBtcPrice,
+    runReturnPct: result.summary.runReturnPct,
+    btcReturnPct: result.summary.btcReturnPct,
+    annualizedVolatilityOfWeeklyReturns: result.summary.annualizedVolatilityOfWeeklyReturns,
+    annualizedVolatilityOfWeeklyReturnsPct: result.summary.annualizedVolatilityOfWeeklyReturnsPct,
     path: runName,
     createdAt: new Date().toISOString()
   };
+}
 
+function saveBacktestRun(config, result, options = {}) {
+  const { duplicateMode = 'skip', warnOnOverlap = true } = options;
+  const { runsDir, indexPath, indexRows } = getRunIndexContext();
+  const identicalRow = findIdenticalRun(indexRows, config);
+
+  if (identicalRow && duplicateMode === 'skip') {
+    console.warn('Warning: an identical run already exists.');
+    console.warn(`Existing run: ${identicalRow.run_name}`);
+    console.warn(`Path: ${identicalRow.path}`);
+    return {
+      saved: false,
+      reason: 'duplicate',
+      existingRow: identicalRow,
+      runName: identicalRow.run_name,
+      runPath: path.join(runsDir, identicalRow.path)
+    };
+  }
+
+  if (warnOnOverlap) {
+    const overlaps = findOverlappingRuns(indexRows, config)
+      .filter(row => !identicalRow || row.run_name !== identicalRow.run_name);
+    warnOverlappingRuns(overlaps);
+  }
+
+  fs.mkdirSync(runsDir, { recursive: true });
+
+  const baseRunName = buildRunName(config);
+  const existingSuffixes = indexRows
+    .filter(row => row.run_name.startsWith(`${baseRunName}_`))
+    .map(row => {
+      const match = row.run_name.match(/_(\d{3})$/);
+      return match ? Number(match[1]) : 0;
+    });
+  const nextSuffix = String((Math.max(0, ...existingSuffixes) + 1)).padStart(3, '0');
+  const runName = buildRunName(config, nextSuffix);
+  const runPath = path.join(runsDir, runName);
+
+  fs.mkdirSync(runPath, { recursive: true });
+
+  const configPath = path.join(runPath, 'config.json');
+  const tradesPath = path.join(runPath, 'trades.csv');
+  const equityPath = path.join(runPath, 'equity_curve.csv');
+  const summaryPath = path.join(runPath, 'summary.json');
+
+  fs.writeFileSync(configPath, JSON.stringify(result.config, null, 2), 'utf8');
+  fs.writeFileSync(tradesPath, objectsToCsv(result.trades), 'utf8');
+  fs.writeFileSync(equityPath, objectsToCsv(result.equityCurve), 'utf8');
+  fs.writeFileSync(summaryPath, JSON.stringify(result.summary, null, 2), 'utf8');
+
+  const newIndexRow = buildIndexRow(config, result, runName);
   const updatedIndexRows = [...indexRows, newIndexRow];
   fs.writeFileSync(indexPath, buildIndexCsv(updatedIndexRows), 'utf8');
 
+  return {
+    saved: true,
+    reason: null,
+    runName,
+    runPath,
+    indexRow: newIndexRow
+  };
+}
+
+async function main() {
+  const argv = parseArgs(process.argv);
+  const config = buildConfigFromArgs(argv);
+  const { runsDir, indexRows } = getRunIndexContext();
+  const identicalRow = findIdenticalRun(indexRows, config);
+
+  if (identicalRow) {
+    console.warn('Warning: an identical run already exists.');
+    console.warn(`Existing run: ${identicalRow.run_name}`);
+    console.warn(`Path: ${identicalRow.path}`);
+    return;
+  }
+
+  warnOverlappingRuns(findOverlappingRuns(indexRows, config));
+
+  const result = await runStrategy(config);
+  const savedRun = saveBacktestRun(config, result, {
+    duplicateMode: 'skip',
+    warnOnOverlap: false
+  });
+
+  if (!savedRun.saved) {
+    return;
+  }
+
+  const runPath = savedRun.runPath || path.join(runsDir, savedRun.runName);
   console.log(`Run saved to ${runPath}`);
 }
 
@@ -286,4 +386,11 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { main };
+module.exports = {
+  main,
+  parseArgs,
+  buildConfigFromArgs,
+  saveBacktestRun,
+  buildRunName,
+  safeRunNamePart
+};

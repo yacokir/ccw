@@ -1,0 +1,261 @@
+const fs = require('fs');
+const path = require('path');
+const { runStrategy } = require('./test_discovery');
+const { saveBacktestRun } = require('./run_backtest');
+
+const BASELINE_EXIT_HOUR_UTC = 8;
+const BASELINE_EXIT_MINUTE_UTC = 0;
+
+function parseArgs(argv) {
+  const args = {};
+  for (let i = 2; i < argv.length; i++) {
+    const arg = argv[i];
+    if (!arg.startsWith('--')) continue;
+
+    const keyValue = arg.slice(2);
+    if (keyValue.includes('=')) {
+      const [key, value] = keyValue.split('=');
+      args[key] = value;
+    } else {
+      const next = argv[i + 1];
+      args[keyValue] = next && !next.startsWith('--') ? next : true;
+      if (args[keyValue] === next) i++;
+    }
+  }
+  return args;
+}
+
+function formatDateOnly(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function firstFridayOfYear(year) {
+  const date = new Date(Date.UTC(year, 0, 1));
+  while (date.getUTCDay() !== 5) {
+    date.setUTCDate(date.getUTCDate() + 1);
+  }
+  return formatDateOnly(date);
+}
+
+function formatExitBoundary(dateOnly) {
+  const hour = String(BASELINE_EXIT_HOUR_UTC).padStart(2, '0');
+  const minute = String(BASELINE_EXIT_MINUTE_UTC).padStart(2, '0');
+  return `${dateOnly}T${hour}:${minute}:00Z`;
+}
+
+function endDateForYear(year, currentUtcDate) {
+  if (year === currentUtcDate.getUTCFullYear()) {
+    return formatExitBoundary(formatDateOnly(currentUtcDate));
+  }
+  return formatExitBoundary(`${year}-12-31`);
+}
+
+function xOtmLabel(xOtm) {
+  return `x${String(Math.round(xOtm * 100)).padStart(2, '0')}`;
+}
+
+function objectsToCsv(rows) {
+  if (!rows || rows.length === 0) return '';
+  const headers = Object.keys(rows[0]);
+  const escapeValue = value => {
+    if (value === null || value === undefined) return '';
+    const raw = String(value);
+    if (raw.includes('"') || raw.includes(',') || raw.includes('\n')) {
+      return `"${raw.replace(/"/g, '""')}"`;
+    }
+    return raw;
+  };
+  const lines = [headers.join(',')];
+  for (const row of rows) {
+    lines.push(headers.map(header => escapeValue(row[header])).join(','));
+  }
+  return lines.join('\n');
+}
+
+function chainReturnsPct(rows, field) {
+  const cumulative = rows.reduce((product, row) => {
+    const value = Number(row[field]);
+    return Number.isFinite(value) ? product * (1 + value / 100) : product;
+  }, 1);
+  return (cumulative - 1) * 100;
+}
+
+function sumRows(rows, field) {
+  return rows.reduce((sum, row) => {
+    const value = Number(row[field]);
+    return Number.isFinite(value) ? sum + value : sum;
+  }, 0);
+}
+
+function buildYearRow(year, startDate, endDate, summary) {
+  return {
+    year,
+    startDate,
+    endDate,
+    runReturnPct: summary.runReturnPct,
+    btcReturnPct: summary.btcReturnPct,
+    annualizedVolatilityOfWeeklyReturns: summary.annualizedVolatilityOfWeeklyReturns,
+    totalWeeks: summary.totalWeeks,
+    callWeeks: summary.callWeeks,
+    observedOptionWeeks: summary.observedOptionWeeks,
+    theoreticalFallbackWeeks: summary.theoreticalFallbackWeeks,
+    syntheticOptionWeeks: summary.syntheticOptionWeeks,
+    settlementFallbackWeeks: summary.settlementFallbackWeeks,
+    totalPnLCall: summary.totalPnLCall,
+    totalPnLUnderlying: summary.totalPnLUnderlying,
+    totalPnL: summary.totalPnL
+  };
+}
+
+function buildTotalRow(rows) {
+  const totalWeeks = sumRows(rows, 'totalWeeks');
+  const callWeeks = sumRows(rows, 'callWeeks');
+  const observedOptionWeeks = sumRows(rows, 'observedOptionWeeks');
+  const theoreticalFallbackWeeks = sumRows(rows, 'theoreticalFallbackWeeks');
+  const syntheticOptionWeeks = sumRows(rows, 'syntheticOptionWeeks');
+  const settlementFallbackWeeks = sumRows(rows, 'settlementFallbackWeeks');
+
+  return {
+    year: 'TOTAL',
+    startDate: rows.length > 0 ? rows[0].startDate : null,
+    endDate: rows.length > 0 ? rows[rows.length - 1].endDate : null,
+    runReturnPct: chainReturnsPct(rows, 'runReturnPct'),
+    btcReturnPct: chainReturnsPct(rows, 'btcReturnPct'),
+    annualizedVolatilityOfWeeklyReturns: null,
+    totalWeeks,
+    callWeeks,
+    observedOptionWeeks,
+    theoreticalFallbackWeeks,
+    syntheticOptionWeeks,
+    settlementFallbackWeeks,
+    totalPnLCall: sumRows(rows, 'totalPnLCall'),
+    totalPnLUnderlying: sumRows(rows, 'totalPnLUnderlying'),
+    totalPnL: sumRows(rows, 'totalPnL'),
+    observedOptionCoveragePct: totalWeeks > 0 ? (observedOptionWeeks / totalWeeks) * 100 : null,
+    theoreticalFallbackCoveragePct: totalWeeks > 0 ? (theoreticalFallbackWeeks / totalWeeks) * 100 : null,
+    syntheticOptionCoveragePct: totalWeeks > 0 ? (syntheticOptionWeeks / totalWeeks) * 100 : null,
+    settlementFallbackCoveragePct: totalWeeks > 0 ? (settlementFallbackWeeks / totalWeeks) * 100 : null
+  };
+}
+
+function formatConsoleRows(rows) {
+  return rows.map(row => ({
+    year: row.year,
+    startDate: row.startDate,
+    endDate: row.endDate,
+    runReturnPct: row.runReturnPct !== null && row.runReturnPct !== undefined ? Number(row.runReturnPct).toFixed(2) : null,
+    btcReturnPct: row.btcReturnPct !== null && row.btcReturnPct !== undefined ? Number(row.btcReturnPct).toFixed(2) : null,
+    annVolWeeklyRet: row.annualizedVolatilityOfWeeklyReturns !== null && row.annualizedVolatilityOfWeeklyReturns !== undefined
+      ? Number(row.annualizedVolatilityOfWeeklyReturns).toFixed(4)
+      : null,
+    totalWeeks: row.totalWeeks,
+    callWeeks: row.callWeeks,
+    observedOptionWeeks: row.observedOptionWeeks,
+    theoreticalFallbackWeeks: row.theoreticalFallbackWeeks,
+    syntheticOptionWeeks: row.syntheticOptionWeeks,
+    settlementFallbackWeeks: row.settlementFallbackWeeks,
+    totalPnLCall: row.totalPnLCall !== null && row.totalPnLCall !== undefined ? Number(row.totalPnLCall).toFixed(2) : null,
+    totalPnLUnderlying: row.totalPnLUnderlying !== null && row.totalPnLUnderlying !== undefined ? Number(row.totalPnLUnderlying).toFixed(2) : null,
+    totalPnL: row.totalPnL !== null && row.totalPnL !== undefined ? Number(row.totalPnL).toFixed(2) : null
+  }));
+}
+
+async function runQuietly(config) {
+  const originalLog = console.log;
+  try {
+    console.log = () => {};
+    return await runStrategy(config);
+  } finally {
+    console.log = originalLog;
+  }
+}
+
+async function main() {
+  const args = parseArgs(process.argv);
+  const currentUtcDate = new Date();
+  const currentYear = currentUtcDate.getUTCFullYear();
+  const xOtm = args.xOtm !== undefined ? Number(args.xOtm) : 0.05;
+  const startYear = args.startYear !== undefined ? Number(args.startYear) : 2020;
+  const requestedEndYear = args.endYear !== undefined ? Number(args.endYear) : currentYear;
+  const endYear = Math.min(requestedEndYear, currentYear);
+
+  if (!Number.isFinite(xOtm) || xOtm <= 0) {
+    throw new Error('Invalid --xOtm. Example: --xOtm=0.05');
+  }
+  if (!Number.isInteger(startYear) || !Number.isInteger(endYear) || startYear > endYear) {
+    throw new Error('Invalid year range. Example: --startYear=2020 --endYear=2026');
+  }
+
+  const rows = [];
+  const results = [];
+
+  for (let year = startYear; year <= endYear; year++) {
+    const startDate = firstFridayOfYear(year);
+    const endDate = endDateForYear(year, currentUtcDate);
+    const config = { startDate, endDate, xOtm };
+
+    console.log(`Running ${year}: ${startDate} to ${endDate}, xOtm=${xOtm}`);
+    const result = await runQuietly(config);
+    const savedRun = saveBacktestRun(result.config, result, {
+      duplicateMode: 'skip',
+      warnOnOverlap: true
+    });
+    if (savedRun.saved) {
+      console.log(`Saved ${year}: ${savedRun.runName}`);
+      console.log(`Path: ${savedRun.runPath}`);
+    } else if (savedRun.reason === 'duplicate') {
+      console.log(`Skipped ${year}: duplicate run already exists`);
+      console.log(`Run: ${savedRun.runName}`);
+      console.log(`Path: ${savedRun.runPath}`);
+    } else {
+      console.log(`Skipped ${year}: ${savedRun.reason || 'not saved'}`);
+      console.log(`Run: ${savedRun.runName || null}`);
+      console.log(`Path: ${savedRun.runPath || null}`);
+    }
+    rows.push(buildYearRow(year, startDate, endDate, result.summary));
+    results.push({
+      year,
+      config: result.config,
+      summary: result.summary,
+      savedRun: {
+        saved: savedRun.saved,
+        reason: savedRun.reason,
+        duplicate: savedRun.reason === 'duplicate',
+        runName: savedRun.runName,
+        runPath: savedRun.runPath,
+        existingRunName: savedRun.existingRow ? savedRun.existingRow.run_name : null,
+        existingRunPath: savedRun.existingRow ? savedRun.runPath : null
+      }
+    });
+  }
+
+  const totalRow = buildTotalRow(rows);
+  const allRows = [...rows, totalRow];
+  const batchName = `batch_years_${xOtmLabel(xOtm)}_${startYear}_${endYear}`;
+  const batchDir = path.resolve(__dirname, '..', '..', 'runs', 'batches', batchName);
+
+  fs.mkdirSync(batchDir, { recursive: true });
+  fs.writeFileSync(path.join(batchDir, 'summary.csv'), objectsToCsv(allRows), 'utf8');
+  fs.writeFileSync(path.join(batchDir, 'summary.json'), JSON.stringify({
+    batchName,
+    xOtm,
+    startYear,
+    endYear,
+    generatedAt: new Date().toISOString(),
+    rows: allRows,
+    annualResults: results
+  }, null, 2), 'utf8');
+
+  console.log('\n=== BATCH SUMMARY ===\n');
+  console.table(formatConsoleRows(allRows));
+  console.log(`Saved batch outputs to ${batchDir}`);
+}
+
+if (require.main === module) {
+  main().catch(error => {
+    console.error('Error running yearly batch:', error.message);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { main };

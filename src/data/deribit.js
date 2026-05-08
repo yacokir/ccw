@@ -87,6 +87,82 @@ async function getIndexChartOhlcData(indexName, startTimestamp, endTimestamp, ra
   });
 }
 
+async function getDeliveryPrices(indexName, offset = 0, count = 1000) {
+  const url = 'https://www.deribit.com/api/v2/public/get_delivery_prices';
+
+  const params = new URLSearchParams({
+    index_name: indexName,
+    offset: String(offset),
+    count: String(count)
+  });
+
+  const response = await fetch(`${url}?${params}`);
+
+  if (!response.ok) {
+    throw new Error(`Deribit API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+
+  if (data.error) {
+    throw new Error(`Deribit API error: ${data.error.message}`);
+  }
+
+  return data.result;
+}
+
+function normalizeDeliveryDate(targetDate) {
+  const date = targetDate instanceof Date ? targetDate : new Date(targetDate);
+
+  if (!Number.isFinite(date.getTime())) {
+    throw new Error(`Invalid delivery target date: ${targetDate}`);
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
+function normalizeDeliveryRecordDate(recordDate) {
+  if (typeof recordDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(recordDate)) {
+    return recordDate;
+  }
+
+  const date = new Date(recordDate);
+  return Number.isFinite(date.getTime()) ? date.toISOString().slice(0, 10) : null;
+}
+
+async function getDeliveryPriceByDate(indexName, targetDate) {
+  const normalizedDate = normalizeDeliveryDate(targetDate);
+  const pageSize = 1000;
+  let offset = 0;
+
+  while (true) {
+    const result = await getDeliveryPrices(indexName, offset, pageSize);
+    const records = Array.isArray(result.data) ? result.data : Array.isArray(result) ? result : [];
+    const match = records.find(record => record && normalizeDeliveryRecordDate(record.date) === normalizedDate);
+
+    if (match) {
+      return {
+        found: true,
+        date: normalizedDate,
+        deliveryPrice: match.delivery_price,
+        rawRecord: match
+      };
+    }
+
+    const recordsTotal = Number(result.records_total);
+    offset += records.length;
+
+    if (records.length === 0 || (Number.isFinite(recordsTotal) && offset >= recordsTotal) || (!Number.isFinite(recordsTotal) && records.length < pageSize)) {
+      return {
+        found: false,
+        date: normalizedDate,
+        deliveryPrice: null,
+        rawRecord: null
+      };
+    }
+  }
+}
+
 async function fetchInstruments(currency = 'BTC', kind = 'option', expired = true) {
   const url = 'https://www.deribit.com/api/v2/public/get_instruments';
   
@@ -111,4 +187,4 @@ async function fetchInstruments(currency = 'BTC', kind = 'option', expired = tru
   return data.result;
 }
 
-module.exports = { getOHLCData, getIndexChartData, getIndexChartOhlcData, fetchInstruments };
+module.exports = { getOHLCData, getIndexChartData, getIndexChartOhlcData, getDeliveryPrices, getDeliveryPriceByDate, fetchInstruments };

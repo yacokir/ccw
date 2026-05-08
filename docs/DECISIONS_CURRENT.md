@@ -1,5 +1,7 @@
 # Current Baseline - CCW System
 
+Frozen baseline reference: see `docs/BASELINE_REGISTRY.md`, entry `Baseline-v1-weekly-income`.
+
 ## Execution
 - Weekly cycles (Friday-based)
 - Entry: configurable (default 08:00 UTC)
@@ -15,7 +17,8 @@
 ## Data
 - BTC exposure entry/exit price: `BTC-PERPETUAL` (temporary proxy for holding BTC)
 - Option settlement/payoff price: separate settlement/index price concept
-- Current option settlement proxy: Deribit `btc_usd` index chart data via `public/get_index_chart_data`, normalized into candle-like rows, pending official delivery price / 30-min TWAP implementation
+- Intended option settlement source: official Deribit delivery settlement prices via Deribit delivery-price data
+- Previous settlement proxy using Deribit `btc_usd` index chart data is deprecated/experimental
 - Option data via Deribit OHLC
 - Fill assumption: candle open
 
@@ -45,24 +48,29 @@ The backtest separates the price used to value BTC exposure from the price used 
 
 `BTC-PERPETUAL` is currently used for BTC exposure because the strategy is modeled as staying long BTC between weekly entry and exit. The perpetual market provides a continuous, liquid proxy for executable BTC exposure during the holding period. It is not intended to represent the official option settlement price.
 
-Deribit option payoff should reference a BTC/USD settlement/index source because listed option expiration is tied to Deribit's index/delivery mechanism, not to the perpetual contract mark. Using the perpetual for option payoff would mix two different markets: one for holding BTC exposure and one for determining the option's intrinsic value at expiry.
+Deribit option payoff should reference official Deribit delivery settlement prices because listed option expiration is tied to Deribit's delivery/TWAP process, not to the perpetual contract mark. Using the perpetual for option payoff would mix two different markets: one for holding BTC exposure and one for determining the option's intrinsic value at expiry.
 
-This creates basis risk: `BTC-PERPETUAL` and the BTC/USD settlement index can differ at the same timestamp. That difference is part of the research problem and should remain visible in trade output through `S_exit` for BTC exposure and `S_settlement` for option payoff.
+This creates basis risk: `BTC-PERPETUAL` and official delivery settlement can differ. That difference is part of the research problem and should remain visible in trade output through `S_exit` for BTC exposure and `S_settlement` for option payoff.
 
-Official Deribit delivery price / 30-min TWAP is not implemented yet because it requires a dedicated data path and validation against Deribit's delivery methodology. For the MVP, Deribit `btc_usd` index chart points are used as a clearly named settlement proxy via the index endpoint, so results are reproducible while the exact delivery-price implementation is still pending.
+Official Deribit delivery prices are now the intended settlement architecture because they provide direct historical expiration settlement values and are simpler and more accurate for backtesting than reconstructing settlement from index chart points. `public/get_index_chart_data` only accepts `index_name` and `range`; it does not support arbitrary historical timestamp lookup in the way this backtest needs. The former `btc_usd` index-chart approach is retained only as a deprecated/experimental historical note. `BTC-PERPETUAL` settlement fallback remains temporary compatibility logic only.
+
+### Settlement terminology
+
+`S_settlement` refers to the official Deribit delivery settlement price for the option expiry. Settlement timestamps are daily expiry settlement records, not candle timestamps.
 
 ## Known Limitations (Accepted for MVP)
 - No liquidity modeling (volume, spread, slippage ignored)
 - Manual option discovery (instrument naming heuristics)
 - No fallback to next valid strike yet
-- No official Deribit delivery price / 30-min TWAP usage yet
-- Settlement proxy may fall back to the BTC exposure exit price if the index proxy is unavailable; this must be visible in trade output
-- Basis risk between `BTC-PERPETUAL` and the settlement/index proxy is measured implicitly but not yet analyzed as a separate risk metric
+- Delivery-price integration is the intended architecture; any remaining `btc_usd` index-chart use is deprecated/experimental
+- Settlement may fall back to the BTC exposure exit price only as temporary compatibility logic; this must be visible in trade output
+- Basis risk between `BTC-PERPETUAL` and official delivery settlement is measured implicitly but not yet analyzed as a separate risk metric
 - Theoretical option pricing fallback is a planned MVP decision, not implemented yet
 
 ## Pending Improvements
 - Support execution modes: 08->08, 16->16, 08->16
 - Use proper instrument discovery (exchange APIs)
+- Integrate official Deribit delivery prices for `S_settlement`
 - Add liquidity filters and fallback logic
 - Implement Black-76 / Garman-Klass theoretical option entry fallback with explicit trade flags
 - Integrate the current volatility assumption for theoretical fallback: hourly `BTC-PERPETUAL`, 14-day backward-looking window, annualized with `24 * 365`
