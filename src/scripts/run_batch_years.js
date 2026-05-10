@@ -51,7 +51,10 @@ function endDateForYear(year, currentUtcDate) {
 }
 
 function xOtmLabel(xOtm) {
-  return `x${String(Math.round(xOtm * 100)).padStart(2, '0')}`;
+  const pct = String(Math.abs(Math.round(xOtm * 100))).padStart(2, '0');
+  if (xOtm > 0) return `otm${pct}`;
+  if (xOtm < 0) return `itm${pct}`;
+  return 'atm00';
 }
 
 function objectsToCsv(rows) {
@@ -160,11 +163,32 @@ function formatConsoleRows(rows) {
   }));
 }
 
-async function runQuietly(config) {
+function createProgressWriter(year, startDate, endDate, xOtm) {
+  let lastLength = 0;
+
+  return {
+    update(progress) {
+      const current = progress.currentCycle ?? '?';
+      const total = progress.totalCycles ?? '?';
+      const line = `Running ${year}: ${startDate} to ${endDate}, xOtm=${xOtm} week=${current}/${total}`;
+      const padding = lastLength > line.length ? ' '.repeat(lastLength - line.length) : '';
+      process.stdout.write(`\r${line}${padding}`);
+      lastLength = line.length;
+    },
+    clear() {
+      if (lastLength > 0) {
+        process.stdout.write(`\r${' '.repeat(lastLength)}\r`);
+        lastLength = 0;
+      }
+    }
+  };
+}
+
+async function runQuietly(config, onProgress) {
   const originalLog = console.log;
   try {
     console.log = () => {};
-    return await runStrategy(config);
+    return await runStrategy(config, { onProgress });
   } finally {
     console.log = originalLog;
   }
@@ -179,8 +203,8 @@ async function main() {
   const requestedEndYear = args.endYear !== undefined ? Number(args.endYear) : currentYear;
   const endYear = Math.min(requestedEndYear, currentYear);
 
-  if (!Number.isFinite(xOtm) || xOtm <= 0) {
-    throw new Error('Invalid --xOtm. Example: --xOtm=0.05');
+  if (!Number.isFinite(xOtm) || xOtm <= -1) {
+    throw new Error('Invalid --xOtm. Use a finite value greater than -1. Examples: --xOtm=0.05, --xOtm=0, --xOtm=-0.05');
   }
   if (!Number.isInteger(startYear) || !Number.isInteger(endYear) || startYear > endYear) {
     throw new Error('Invalid year range. Example: --startYear=2020 --endYear=2026');
@@ -192,10 +216,12 @@ async function main() {
   for (let year = startYear; year <= endYear; year++) {
     const startDate = firstFridayOfYear(year);
     const endDate = endDateForYear(year, currentUtcDate);
+    // Deeper ITM/OTM studies may need wider strikeRange; keep baseline defaults here.
     const config = { startDate, endDate, xOtm };
+    const progressWriter = createProgressWriter(year, startDate, endDate, xOtm);
 
-    console.log(`Running ${year}: ${startDate} to ${endDate}, xOtm=${xOtm}`);
-    const result = await runQuietly(config);
+    const result = await runQuietly(config, progressWriter.update);
+    progressWriter.clear();
     const savedRun = saveBacktestRun(result.config, result, {
       duplicateMode: 'skip',
       warnOnOverlap: true

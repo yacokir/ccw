@@ -303,7 +303,18 @@ async function getOptionSettlementPrice(source, exitTime, window, fallbackPrice)
   };
 }
 
-async function runStrategy(config = {}) {
+function emitProgress(onProgress, progress) {
+  if (typeof onProgress !== 'function') return;
+
+  try {
+    onProgress(progress);
+  } catch (error) {
+    // Progress reporting is observational only; it must not affect results.
+  }
+}
+
+async function runStrategy(config = {}, options = {}) {
+  const { onProgress } = options;
   const underlyingPriceSource = config.underlyingPriceSource || config.underlying || 'BTC-PERPETUAL';
   const optionSettlementPriceSource = config.optionSettlementPriceSource || 'DERIBIT_BTC_USD_DELIVERY_PRICE';
   const {
@@ -352,6 +363,13 @@ async function runStrategy(config = {}) {
       const cycle = cycles[i];
       const entryTime = cycle.entry;
       const exitTime = cycle.exit;
+
+      emitProgress(onProgress, {
+        currentCycle: i + 1,
+        totalCycles: cycles.length,
+        entryTime,
+        exitTime
+      });
 
       const entryDate = new Date(entryTime);
       const exitDate = new Date(exitTime);
