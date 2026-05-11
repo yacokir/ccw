@@ -2,6 +2,8 @@
 
 Frozen baseline reference: see `docs/BASELINE_REGISTRY.md`, entry `Baseline-v1-weekly-income`.
 
+Development roadmap: see `docs/ROADMAP.md`.
+
 ## Execution
 - Weekly cycles (Friday-based)
 - Entry: configurable (default 08:00 UTC)
@@ -72,6 +74,9 @@ Official Deribit delivery prices are now the intended settlement architecture be
 - Use proper instrument discovery (exchange APIs)
 - Integrate official Deribit delivery prices for `S_settlement`
 - Add liquidity filters and fallback logic
+- Add execution-friction analysis as post-processing first, preserving frictionless raw backtest outputs and original `trades.csv`, `summary.json`, and `equity_curve.csv`
+- Support option premium haircut sensitivity outputs for single-run and batch modes, with default scenarios of 5%, 10%, and 20%, saved under each run or batch folder
+- Use the haircut layer as a first-order approximation to test whether strategy edge survives realistic bid/ask/slippage assumptions, not as a full bid/ask simulator
 - Implement Black-76 / Garman-Klass theoretical option entry fallback with explicit trade flags
 - Integrate the current volatility assumption for theoretical fallback: hourly `BTC-PERPETUAL`, 14-day backward-looking window, annualized with `24 * 365`
 - Add explicit option premium currency fields and convert theoretical USD premiums to BTC units in the integration layer
