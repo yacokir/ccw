@@ -7,11 +7,20 @@ data/raw/*
 data/processed/*
 !data/processed/.gitkeep
 
-# Backtest outputs
-runs/
-
 # CSV outputs
 *.csv
+
+# Backtest outputs
+runs/*
+!runs/index.csv
+!runs/batches/
+!runs/batches/**
+!analysis/
+!analysis/**
+!docs/analysis/
+!docs/analysis/**
+!docs/handoffs/
+!docs/handoffs/**
 
 # temp scripts
 pirulo.js
