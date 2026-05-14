@@ -1,0 +1,9 @@
+year,frictionModel,scenario,haircutPct,relativeMoneyness,appliedHaircutPct,originalReturnPct,adjustedReturnPct,deltaReturnPct,originalTotalPnL,adjustedTotalPnL,totalPremiumHaircutUsd,adjustedFinalCapital,adjustedCallPnL,tradeCount,runName,originalCallPnL
+2020,moneyness,moneyness,,0.0281,0.0576,113.91,106.04,-7.87,7838.18,7296.65,541.53,14177.72,-6583.95,51,btc_2020-01-03_2020-12-31T08-00-00Z_otm03_step1000_longbtc_dyn_entry08h00_delay60m_deribitbtcusddeliveryprice_001,-6042.43
+2021,moneyness,moneyness,,0.0298,0.0585,104.45,88.29,-16.15,29395.91,24849.81,4546.1,52994,3318.36,52,btc_2021-01-01_2021-12-31T08-00-00Z_otm03_step1000_longbtc_dyn_entry08h00_delay60m_deribitbtcusddeliveryprice_001,7864.46
+2022,moneyness,moneyness,,0.0301,0.0569,-18.68,-24.18,-5.51,-7603.1,-9844.4,2241.3,30862.61,21775.99,51,btc_2022-01-07_2022-12-31T08-00-00Z_otm03_step1000_longbtc_dyn_entry08h00_delay60m_deribitbtcusddeliveryprice_001,24017.29
+2023,moneyness,moneyness,,0.0303,0.0561,67.28,62.7,-4.58,11161.4,10401.37,760.03,26991.36,-9735.7,51,btc_2023-01-06_2023-12-31T08-00-00Z_otm03_step1000_longbtc_dyn_entry08h00_delay60m_deribitbtcusddeliveryprice_001,-8975.67
+2024,moneyness,moneyness,,0.0278,0.0596,72.88,65.8,-7.08,30839.62,27842.76,2996.86,70155.6,-17220.96,51,btc_2024-01-05_2024-12-31T08-00-00Z_otm03_step1000_longbtc_dyn_entry08h00_delay60m_deribitbtcusddeliveryprice_001,-14224.1
+2025,moneyness,moneyness,,0.0296,0.06,4.65,0.68,-3.97,4396.96,644.66,3752.3,95248.6,8462.75,51,btc_2025-01-03_2025-12-31T08-00-00Z_otm03_step1000_longbtc_dyn_entry08h00_delay60m_deribitbtcusddeliveryprice_001,12215.04
+2026,moneyness,moneyness,,0.0302,0.06,1.63,0.39,-1.24,1433.28,342.67,1090.61,88408.51,7882.78,18,btc_2026-01-02_2026-05-08T08-00-00Z_otm03_step1000_longbtc_dyn_entry08h00_delay60m_deribitbtcusddeliveryprice_001,8973.39
+TOTAL,moneyness,moneyness,,0.0293,0.0582,993.85,701.97,-291.88,77462.25,61533.53,15928.73,,7899.26,325,TOTAL,23827.99
