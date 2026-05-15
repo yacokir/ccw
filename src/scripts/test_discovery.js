@@ -77,6 +77,35 @@ function generateFridayCycles(startDate, endDate, entryHourUtc, entryMinuteUtc) 
   return cycles;
 }
 
+// Generate Friday-anchored 14-day cycles for BTC tenor experiments.
+// This intentionally mirrors the weekly boundary rules without changing
+// generateFridayCycles or introducing a generic scheduling layer.
+function generateFridayAnchored14dCycles(startDate, endDate, entryHourUtc, entryMinuteUtc) {
+  const cycles = [];
+  let current = new Date(startDate);
+
+  while (current.getUTCDay() !== 5) {
+    current.setUTCDate(current.getUTCDate() + 1);
+  }
+
+  while (current <= endDate) {
+    const entry = new Date(current);
+    entry.setUTCHours(entryHourUtc, entryMinuteUtc, 0, 0);
+    const exit = new Date(current);
+    exit.setUTCDate(exit.getUTCDate() + 14);
+    exit.setUTCHours(CURRENT_EXIT_HOUR_UTC, CURRENT_EXIT_MINUTE_UTC, 0, 0);
+
+    if (exit > endDate) {
+      break;
+    }
+
+    cycles.push({ entry: entry.getTime(), exit: exit.getTime() });
+    current.setUTCDate(current.getUTCDate() + 14);
+  }
+
+  return cycles;
+}
+
 function generateCycles(config) {
   // Tenor dispatch is intentionally minimal: weekly remains the default
   // compatibility baseline and continues to use the existing Friday logic.
@@ -84,6 +113,10 @@ function generateCycles(config) {
 
   if (tenor === 'weekly') {
     return generateFridayCycles(config.startDate, config.endDate, config.entryHourUtc, config.entryMinuteUtc);
+  }
+
+  if (tenor === '14d') {
+    return generateFridayAnchored14dCycles(config.startDate, config.endDate, config.entryHourUtc, config.entryMinuteUtc);
   }
 
   throw new Error(`Unsupported tenor: ${tenor}`);
