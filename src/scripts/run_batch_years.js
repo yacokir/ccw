@@ -57,6 +57,14 @@ function xOtmLabel(xOtm) {
   return 'atm00';
 }
 
+function batchNameForTenor(tenor, xOtm, startYear, endYear) {
+  const moneyness = xOtmLabel(xOtm);
+  if (tenor === 'weekly') {
+    return `batch_years_${moneyness}_${startYear}_${endYear}`;
+  }
+  return `batch_years_btc_${tenor}_${moneyness}_${startYear}_${endYear}`;
+}
+
 function objectsToCsv(rows) {
   if (!rows || rows.length === 0) return '';
   const headers = Object.keys(rows[0]);
@@ -90,8 +98,8 @@ function sumRows(rows, field) {
   }, 0);
 }
 
-function buildYearRow(year, startDate, endDate, summary) {
-  return {
+function buildYearRow(year, startDate, endDate, summary, tenor) {
+  const row = {
     year,
     startDate,
     endDate,
@@ -108,9 +116,15 @@ function buildYearRow(year, startDate, endDate, summary) {
     totalPnLUnderlying: summary.totalPnLUnderlying,
     totalPnL: summary.totalPnL
   };
+
+  if (tenor !== 'weekly') {
+    row.tenor = tenor;
+  }
+
+  return row;
 }
 
-function buildTotalRow(rows) {
+function buildTotalRow(rows, tenor) {
   const totalWeeks = sumRows(rows, 'totalWeeks');
   const callWeeks = sumRows(rows, 'callWeeks');
   const observedOptionWeeks = sumRows(rows, 'observedOptionWeeks');
@@ -118,7 +132,7 @@ function buildTotalRow(rows) {
   const syntheticOptionWeeks = sumRows(rows, 'syntheticOptionWeeks');
   const settlementFallbackWeeks = sumRows(rows, 'settlementFallbackWeeks');
 
-  return {
+  const row = {
     year: 'TOTAL',
     startDate: rows.length > 0 ? rows[0].startDate : null,
     endDate: rows.length > 0 ? rows[rows.length - 1].endDate : null,
@@ -139,6 +153,12 @@ function buildTotalRow(rows) {
     syntheticOptionCoveragePct: totalWeeks > 0 ? (syntheticOptionWeeks / totalWeeks) * 100 : null,
     settlementFallbackCoveragePct: totalWeeks > 0 ? (settlementFallbackWeeks / totalWeeks) * 100 : null
   };
+
+  if (tenor !== 'weekly') {
+    row.tenor = tenor;
+  }
+
+  return row;
 }
 
 function formatConsoleRows(rows) {
@@ -163,14 +183,16 @@ function formatConsoleRows(rows) {
   }));
 }
 
-function createProgressWriter(year, startDate, endDate, xOtm) {
+function createProgressWriter(year, startDate, endDate, xOtm, tenor) {
   let lastLength = 0;
 
   return {
     update(progress) {
       const current = progress.currentCycle ?? '?';
       const total = progress.totalCycles ?? '?';
-      const line = `Running ${year}: ${startDate} to ${endDate}, xOtm=${xOtm} week=${current}/${total}`;
+      const unitLabel = tenor === 'weekly' ? 'week' : 'cycle';
+      const tenorLabel = tenor === 'weekly' ? '' : `, tenor=${tenor}`;
+      const line = `Running ${year}: ${startDate} to ${endDate}, xOtm=${xOtm}${tenorLabel} ${unitLabel}=${current}/${total}`;
       const padding = lastLength > line.length ? ' '.repeat(lastLength - line.length) : '';
       process.stdout.write(`\r${line}${padding}`);
       lastLength = line.length;
@@ -202,6 +224,7 @@ async function main() {
   const startYear = args.startYear !== undefined ? Number(args.startYear) : 2020;
   const requestedEndYear = args.endYear !== undefined ? Number(args.endYear) : currentYear;
   const endYear = Math.min(requestedEndYear, currentYear);
+  const tenor = args.tenor || 'weekly';
 
   if (!Number.isFinite(xOtm) || xOtm <= -1) {
     throw new Error('Invalid --xOtm. Use a finite value greater than -1. Examples: --xOtm=0.05, --xOtm=0, --xOtm=-0.05');
@@ -217,8 +240,8 @@ async function main() {
     const startDate = firstFridayOfYear(year);
     const endDate = endDateForYear(year, currentUtcDate);
     // Deeper ITM/OTM studies may need wider strikeRange; keep baseline defaults here.
-    const config = { startDate, endDate, xOtm };
-    const progressWriter = createProgressWriter(year, startDate, endDate, xOtm);
+    const config = { startDate, endDate, xOtm, tenor };
+    const progressWriter = createProgressWriter(year, startDate, endDate, xOtm, tenor);
 
     const result = await runQuietly(config, progressWriter.update);
     progressWriter.clear();
@@ -238,7 +261,7 @@ async function main() {
       console.log(`Run: ${savedRun.runName || null}`);
       console.log(`Path: ${savedRun.runPath || null}`);
     }
-    rows.push(buildYearRow(year, startDate, endDate, result.summary));
+    rows.push(buildYearRow(year, startDate, endDate, result.summary, tenor));
     results.push({
       year,
       config: result.config,
@@ -255,9 +278,9 @@ async function main() {
     });
   }
 
-  const totalRow = buildTotalRow(rows);
+  const totalRow = buildTotalRow(rows, tenor);
   const allRows = [...rows, totalRow];
-  const batchName = `batch_years_${xOtmLabel(xOtm)}_${startYear}_${endYear}`;
+  const batchName = batchNameForTenor(tenor, xOtm, startYear, endYear);
   const batchDir = path.resolve(__dirname, '..', '..', 'runs', 'batches', batchName);
 
   fs.mkdirSync(batchDir, { recursive: true });
@@ -265,6 +288,7 @@ async function main() {
   fs.writeFileSync(path.join(batchDir, 'summary.json'), JSON.stringify({
     batchName,
     xOtm,
+    ...(tenor !== 'weekly' ? { tenor } : {}),
     startYear,
     endYear,
     generatedAt: new Date().toISOString(),

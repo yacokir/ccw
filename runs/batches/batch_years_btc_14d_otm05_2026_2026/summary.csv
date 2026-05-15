@@ -1,0 +1,3 @@
+year,startDate,endDate,runReturnPct,btcReturnPct,annualizedVolatilityOfWeeklyReturns,totalWeeks,callWeeks,observedOptionWeeks,theoreticalFallbackWeeks,syntheticOptionWeeks,settlementFallbackWeeks,totalPnLCall,totalPnLUnderlying,totalPnL,tenor
+2026,2026-01-02,2026-05-15T08:00:00Z,-2.1329103069293143,-10.263744678934206,0.6825675468035759,9,9,8,1,1,0,6080.5438598686105,-7951.797773883549,-1871.253914014941,14d
+TOTAL,2026-01-02,2026-05-15T08:00:00Z,-2.1329103069293143,-10.263744678934206,,9,9,8,1,1,0,6080.5438598686105,-7951.797773883549,-1871.253914014941,14d

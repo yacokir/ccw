@@ -1,0 +1,103 @@
+{
+  "batchName": "batch_years_btc_14d_otm05_2026_2026",
+  "xOtm": 0.05,
+  "tenor": "14d",
+  "startYear": 2026,
+  "endYear": 2026,
+  "generatedAt": "2026-05-15T15:03:37.741Z",
+  "rows": [
+    {
+      "year": 2026,
+      "startDate": "2026-01-02",
+      "endDate": "2026-05-15T08:00:00Z",
+      "runReturnPct": -2.1329103069293143,
+      "btcReturnPct": -10.263744678934206,
+      "annualizedVolatilityOfWeeklyReturns": 0.6825675468035759,
+      "totalWeeks": 9,
+      "callWeeks": 9,
+      "observedOptionWeeks": 8,
+      "theoreticalFallbackWeeks": 1,
+      "syntheticOptionWeeks": 1,
+      "settlementFallbackWeeks": 0,
+      "totalPnLCall": 6080.5438598686105,
+      "totalPnLUnderlying": -7951.797773883549,
+      "totalPnL": -1871.253914014941,
+      "tenor": "14d"
+    },
+    {
+      "year": "TOTAL",
+      "startDate": "2026-01-02",
+      "endDate": "2026-05-15T08:00:00Z",
+      "runReturnPct": -2.1329103069293143,
+      "btcReturnPct": -10.263744678934206,
+      "annualizedVolatilityOfWeeklyReturns": null,
+      "totalWeeks": 9,
+      "callWeeks": 9,
+      "observedOptionWeeks": 8,
+      "theoreticalFallbackWeeks": 1,
+      "syntheticOptionWeeks": 1,
+      "settlementFallbackWeeks": 0,
+      "totalPnLCall": 6080.5438598686105,
+      "totalPnLUnderlying": -7951.797773883549,
+      "totalPnL": -1871.253914014941,
+      "observedOptionCoveragePct": 88.88888888888889,
+      "theoreticalFallbackCoveragePct": 11.11111111111111,
+      "syntheticOptionCoveragePct": 11.11111111111111,
+      "settlementFallbackCoveragePct": 0,
+      "tenor": "14d"
+    }
+  ],
+  "annualResults": [
+    {
+      "year": 2026,
+      "config": {
+        "startDate": "2026-01-02",
+        "endDate": "2026-05-15T08:00:00Z",
+        "xOtm": 0.05,
+        "underlying": "BTC-PERPETUAL",
+        "underlyingPriceSource": "BTC-PERPETUAL",
+        "optionSettlementPriceSource": "DERIBIT_BTC_USD_DELIVERY_PRICE",
+        "strikeStep": 1000,
+        "strikeRange": 3000,
+        "fallbackMode": "long_btc",
+        "sizingMode": "dynamic",
+        "maxEntryDelayMinutes": 60,
+        "tenor": "14d",
+        "entryHourUtc": 8,
+        "entryMinuteUtc": 0
+      },
+      "summary": {
+        "tenor": "14d",
+        "initialCapital": 87732.424,
+        "finalCapital": 85861.17008598507,
+        "totalPnLCall": 6080.5438598686105,
+        "totalPnLUnderlying": -7951.797773883549,
+        "totalPnL": -1871.253914014941,
+        "callWeeks": 9,
+        "totalWeeks": 9,
+        "observedOptionWeeks": 8,
+        "theoreticalFallbackWeeks": 1,
+        "syntheticOptionWeeks": 1,
+        "missingObservedInstrumentWeeks": 1,
+        "missingObservedCandleWeeks": 0,
+        "invalidObservedOpenWeeks": 0,
+        "settlementFallbackWeeks": 0,
+        "initialBtcPrice": 88798,
+        "finalBtcPrice": 79684,
+        "runReturnPct": -2.1329103069293143,
+        "btcReturnPct": -10.263744678934206,
+        "annualizedVolatilityOfWeeklyReturns": 0.6825675468035759,
+        "annualizedVolatilityOfWeeklyReturnsPct": 68.25675468035759
+      },
+      "savedRun": {
+        "saved": true,
+        "reason": null,
+        "duplicate": false,
+        "runName": "btc_2026-01-02_2026-05-15T08-00-00Z_x05_step1000_longbtc_dyn_entry08h00_delay60m_deribitbtcusddeliveryprice_t14d_001",
+        "runPath": "C:\\Users\\Yaco\\Desktop\\ccw\\runs\\btc_2026-01-02_2026-05-15T08-00-00Z_x05_step1000_longbtc_dyn_entry08h00_delay60m_deribitbtcusddeliveryprice_t14d_001",
+        "existingRunName": null,
+        "existingRunPath": null
+      }
+    }
+  ]
+}
