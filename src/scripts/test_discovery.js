@@ -77,6 +77,18 @@ function generateFridayCycles(startDate, endDate, entryHourUtc, entryMinuteUtc) 
   return cycles;
 }
 
+function generateCycles(config) {
+  // Tenor dispatch is intentionally minimal: weekly remains the default
+  // compatibility baseline and continues to use the existing Friday logic.
+  const tenor = config.tenor || 'weekly';
+
+  if (tenor === 'weekly') {
+    return generateFridayCycles(config.startDate, config.endDate, config.entryHourUtc, config.entryMinuteUtc);
+  }
+
+  throw new Error(`Unsupported tenor: ${tenor}`);
+}
+
 function parseEndDateForCycleBoundary(endDate, exitHourUtc, exitMinuteUtc) {
   if (typeof endDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
     const hour = String(exitHourUtc).padStart(2, '0');
@@ -327,6 +339,7 @@ async function runStrategy(config = {}, options = {}) {
     fallbackMode = 'long_btc',
     sizingMode = 'dynamic',
     maxEntryDelayMinutes = 60,
+    tenor = 'weekly',
     entryHourUtc = 8,
     entryMinuteUtc = 0
   } = config;
@@ -343,6 +356,7 @@ async function runStrategy(config = {}, options = {}) {
     fallbackMode,
     sizingMode,
     maxEntryDelayMinutes,
+    tenor,
     entryHourUtc,
     entryMinuteUtc
   };
@@ -352,7 +366,13 @@ async function runStrategy(config = {}, options = {}) {
     // Date-only endDate values mean "through the cycle exit on that date".
     // Full timestamps remain exact, so 2025-12-26T00:00:00Z stays midnight.
     const endDateObj = parseEndDateForCycleBoundary(endDate, CURRENT_EXIT_HOUR_UTC, CURRENT_EXIT_MINUTE_UTC);
-    const cycles = generateFridayCycles(startDateObj, endDateObj, entryHourUtc, entryMinuteUtc);
+    const cycles = generateCycles({
+      startDate: startDateObj,
+      endDate: endDateObj,
+      entryHourUtc,
+      entryMinuteUtc,
+      tenor
+    });
     const trades = [];
     const equityCurve = [];
     let capitalUsd = null;
@@ -824,4 +844,4 @@ if (require.main === module) {
   runStrategy({});
 }
 
-module.exports = { runStrategy };
+module.exports = { runStrategy, generateCycles };

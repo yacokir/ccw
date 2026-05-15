@@ -217,6 +217,7 @@ function buildConfigFromArgs(argv) {
     fallbackMode: normalizeArgValue(argv.fallbackMode, 'long_btc'),
     sizingMode: normalizeArgValue(argv.sizingMode, 'dynamic'),
     maxEntryDelayMinutes: argv.maxEntryDelayMinutes !== undefined ? parseInt(argv.maxEntryDelayMinutes, 10) : 60,
+    tenor: normalizeArgValue(argv.tenor, 'weekly'),
     entryHourUtc: argv.entryHourUtc !== undefined ? parseInt(argv.entryHourUtc, 10) : 8,
     entryMinuteUtc: argv.entryMinuteUtc !== undefined ? parseInt(argv.entryMinuteUtc, 10) : 0
   };
