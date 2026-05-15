@@ -34,6 +34,15 @@ function safeRunNamePart(value) {
     .replace(/^[-_.]+|[-_.]+$/g, '');
 }
 
+function getConfigTenor(config) {
+  return config.tenor || 'weekly';
+}
+
+function tenorRunNameSuffix(tenor) {
+  if (tenor === 'weekly') return '';
+  return `_t${safeRunNamePart(tenor).toLowerCase()}`;
+}
+
 function buildRunName(config, suffix) {
   const underlyingPriceSource = config.underlyingPriceSource || config.underlying;
   const asset = underlyingPriceSource && underlyingPriceSource.toUpperCase().includes('BTC') ? 'btc' : String(underlyingPriceSource).toLowerCase().replace(/[^a-z0-9]+/g, '');
@@ -47,7 +56,8 @@ function buildRunName(config, suffix) {
   const settlementLabel = String(config.optionSettlementPriceSource || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '');
   const startDateLabel = safeRunNamePart(config.startDate);
   const endDateLabel = safeRunNamePart(config.endDate);
-  const base = `${asset}_${startDateLabel}_${endDateLabel}_${xOtmLabel}_${stepLabel}_${fallbackLabel}_${sizingLabel}_${entryLabel}_${delayLabel}_${settlementLabel}`;
+  const tenorSuffix = tenorRunNameSuffix(getConfigTenor(config));
+  const base = `${asset}_${startDateLabel}_${endDateLabel}_${xOtmLabel}_${stepLabel}_${fallbackLabel}_${sizingLabel}_${entryLabel}_${delayLabel}_${settlementLabel}${tenorSuffix}`;
   return suffix ? `${base}_${suffix}` : base;
 }
 
@@ -112,6 +122,8 @@ function readRunIndex(indexPath) {
     headers.forEach((header, index) => {
       row[header] = values[index] === '' ? null : values[index];
     });
+    // Existing index rows predate tenor; interpret them as the weekly baseline.
+    row.tenor = getLegacyAwareTenor(row);
     return row;
   });
 }
@@ -130,6 +142,7 @@ function formatRowForIndex(row) {
     row.xOtm,
     row.strikeStep,
     row.strikeRange,
+    getLegacyAwareTenor(row),
     row.fallbackMode,
     row.sizingMode,
     row.finalCapital,
@@ -155,11 +168,12 @@ function formatRowForIndex(row) {
 }
 
 function buildIndexCsv(rows) {
-  const headers = ['run_name','startDate','endDate','underlying','underlyingPriceSource','optionSettlementPriceSource','entryHourUtc','entryMinuteUtc','maxEntryDelayMinutes','xOtm','strikeStep','strikeRange','fallbackMode','sizingMode','finalCapital','totalPnL','callWeeks','totalWeeks','observedOptionWeeks','theoreticalFallbackWeeks','syntheticOptionWeeks','missingObservedInstrumentWeeks','missingObservedCandleWeeks','invalidObservedOpenWeeks','settlementFallbackWeeks','initialBtcPrice','finalBtcPrice','runReturnPct','btcReturnPct','annualizedVolatilityOfWeeklyReturns','annualizedVolatilityOfWeeklyReturnsPct','path','createdAt'];
+  const headers = ['run_name','startDate','endDate','underlying','underlyingPriceSource','optionSettlementPriceSource','entryHourUtc','entryMinuteUtc','maxEntryDelayMinutes','xOtm','strikeStep','strikeRange','tenor','fallbackMode','sizingMode','finalCapital','totalPnL','callWeeks','totalWeeks','observedOptionWeeks','theoreticalFallbackWeeks','syntheticOptionWeeks','missingObservedInstrumentWeeks','missingObservedCandleWeeks','invalidObservedOpenWeeks','settlementFallbackWeeks','initialBtcPrice','finalBtcPrice','runReturnPct','btcReturnPct','annualizedVolatilityOfWeeklyReturns','annualizedVolatilityOfWeeklyReturnsPct','path','createdAt'];
   const lines = [headers.join(',')];
   for (const row of rows) {
     const values = headers.map(header => {
-      const value = row[header] == null ? '' : String(row[header]);
+      const rawValue = header === 'tenor' ? getLegacyAwareTenor(row) : row[header];
+      const value = rawValue == null ? '' : String(rawValue);
       if (value.includes('"') || value.includes(',') || value.includes('\n')) {
         return `"${value.replace(/"/g, '""')}"`;
       }
@@ -187,6 +201,10 @@ function getLegacyAwareNumber(row, key, defaultValue) {
   return row[key] === null || row[key] === undefined ? defaultValue : Number(row[key]);
 }
 
+function getLegacyAwareTenor(row) {
+  return row.tenor || 'weekly';
+}
+
 function hasSameRunIdentityFields(row, config) {
   return (
     getLegacyAwareUnderlyingPriceSource(row) === config.underlyingPriceSource &&
@@ -197,6 +215,7 @@ function hasSameRunIdentityFields(row, config) {
     Number(row.xOtm) === config.xOtm &&
     Number(row.strikeStep) === config.strikeStep &&
     Number(row.strikeRange) === config.strikeRange &&
+    getLegacyAwareTenor(row) === getConfigTenor(config) &&
     row.fallbackMode === config.fallbackMode &&
     row.sizingMode === config.sizingMode
   );
@@ -268,6 +287,7 @@ function buildIndexRow(config, result, runName) {
     xOtm: config.xOtm,
     strikeStep: config.strikeStep,
     strikeRange: config.strikeRange,
+    tenor: getConfigTenor(config),
     fallbackMode: config.fallbackMode,
     sizingMode: config.sizingMode,
     finalCapital: result.summary.finalCapital,
@@ -393,5 +413,9 @@ module.exports = {
   buildConfigFromArgs,
   saveBacktestRun,
   buildRunName,
-  safeRunNamePart
+  safeRunNamePart,
+  readRunIndex,
+  buildIndexCsv,
+  findIdenticalRun,
+  findOverlappingRuns
 };

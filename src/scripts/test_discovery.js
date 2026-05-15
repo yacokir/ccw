@@ -377,7 +377,7 @@ async function runStrategy(config = {}, options = {}) {
     const equityCurve = [];
     let capitalUsd = null;
 
-    console.log(`Running ${cycles.length} weekly cycles from ${startDateObj.toISOString()} to ${endDateObj.toISOString()}\n`);
+    console.log(`Running ${cycles.length} ${tenor} cycles from ${startDateObj.toISOString()} to ${endDateObj.toISOString()}\n`);
 
     for (let i = 0; i < cycles.length; i++) {
       const cycle = cycles[i];
@@ -800,7 +800,10 @@ async function runStrategy(config = {}, options = {}) {
       console.log('No trades collected.');
     }
 
-    const summary = buildSummaryMetrics(trades, capitalUsd);
+    const summary = {
+      tenor,
+      ...buildSummaryMetrics(trades, capitalUsd)
+    };
 
     return {
       config: normalizedConfig,
@@ -815,6 +818,7 @@ async function runStrategy(config = {}, options = {}) {
       trades: [],
       equityCurve: [],
       summary: {
+        tenor,
         initialCapital: 0,
         finalCapital: 0,
         totalPnLCall: 0,
