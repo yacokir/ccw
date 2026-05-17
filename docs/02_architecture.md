@@ -80,6 +80,14 @@ No entanto, ajustes podem ocorrer de forma iterativa, retornando às camadas ant
 
 ---
 
+### 4.1 Output and artifact naming
+
+Run outputs are stored as artifacts under `runs/` and should be interpreted through structured metadata whenever possible. Current BTC artifacts temporarily contain two moneyness naming conventions: legacy weekly runs use explicit labels such as `atm00`, `otm05` and `itm05`, while newer 14d and monthly runs may use compact labels such as `x00`, `x05` and `x10` with an explicit tenor suffix.
+
+This coexistence is intentional for now to avoid retroactive renaming of indexed artifacts. Analysis code and manual reviews should prefer fields such as `xOtm`, `tenor`, `run_name` and `path` over folder-name parsing alone. A future naming normalization can standardize labels across tenors and assets while preserving compatibility with existing outputs.
+
+---
+
 ## 5. Design Principles
 
 ### 5.1 Separação de responsabilidades

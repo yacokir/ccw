@@ -106,6 +106,41 @@ function generateFridayAnchored14dCycles(startDate, endDate, entryHourUtc, entry
   return cycles;
 }
 
+function getLastFridayOfMonthUtc(year, monthIndex) {
+  const date = new Date(Date.UTC(year, monthIndex + 1, 0));
+  while (date.getUTCDay() !== 5) {
+    date.setUTCDate(date.getUTCDate() - 1);
+  }
+  return date;
+}
+
+function generateMonthlyCycles(startDate, endDate, entryHourUtc, entryMinuteUtc) {
+  const cycles = [];
+  let currentExpiryMonth = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), 1));
+
+  while (true) {
+    const exit = getLastFridayOfMonthUtc(currentExpiryMonth.getUTCFullYear(), currentExpiryMonth.getUTCMonth());
+    exit.setUTCHours(CURRENT_EXIT_HOUR_UTC, CURRENT_EXIT_MINUTE_UTC, 0, 0);
+
+    if (exit < startDate) {
+      currentExpiryMonth.setUTCMonth(currentExpiryMonth.getUTCMonth() + 1);
+      continue;
+    }
+
+    if (exit > endDate) {
+      break;
+    }
+
+    const entry = getLastFridayOfMonthUtc(currentExpiryMonth.getUTCFullYear(), currentExpiryMonth.getUTCMonth() - 1);
+    entry.setUTCHours(entryHourUtc, entryMinuteUtc, 0, 0);
+
+    cycles.push({ entry: entry.getTime(), exit: exit.getTime() });
+    currentExpiryMonth.setUTCMonth(currentExpiryMonth.getUTCMonth() + 1);
+  }
+
+  return cycles;
+}
+
 function generateCycles(config) {
   // Tenor dispatch is intentionally minimal: weekly remains the default
   // compatibility baseline and continues to use the existing Friday logic.
@@ -117,6 +152,10 @@ function generateCycles(config) {
 
   if (tenor === '14d') {
     return generateFridayAnchored14dCycles(config.startDate, config.endDate, config.entryHourUtc, config.entryMinuteUtc);
+  }
+
+  if (tenor === 'monthly') {
+    return generateMonthlyCycles(config.startDate, config.endDate, config.entryHourUtc, config.entryMinuteUtc);
   }
 
   throw new Error(`Unsupported tenor: ${tenor}`);
@@ -165,6 +204,15 @@ function buildSummaryMetrics(trades, capitalUsd) {
   const runReturnPct = initialCapital > 0 ? ((finalCapital / initialCapital) - 1) * 100 : 0;
   const btcReturnPct = initialBtcPrice > 0 ? ((finalBtcPrice / initialBtcPrice) - 1) * 100 : 0;
   const annualizedVolatilityOfWeeklyReturns = calculateAnnualizedVolatilityOfWeeklyReturns(trades);
+  const callWeeks = trades.filter(trade => trade.has_call).length;
+  const totalWeeks = trades.length;
+  const observedOptionWeeks = trades.filter(trade => trade.option_entry_price_source === 'observed').length;
+  const theoreticalFallbackWeeks = trades.filter(trade => trade.option_entry_price_source === 'theoretical').length;
+  const syntheticOptionWeeks = trades.filter(trade => trade.option_entry_is_synthetic).length;
+  const missingObservedInstrumentWeeks = trades.filter(trade => trade.option_entry_fallback_reason === 'missing_observed_option_instrument').length;
+  const missingObservedCandleWeeks = trades.filter(trade => trade.option_entry_fallback_reason === 'missing_observed_option_candle').length;
+  const invalidObservedOpenWeeks = trades.filter(trade => trade.option_entry_fallback_reason === 'invalid_observed_option_open').length;
+  const settlementFallbackWeeks = trades.filter(trade => trade.option_settlement_price_fallback_occurred).length;
 
   return {
     initialCapital,
@@ -172,15 +220,24 @@ function buildSummaryMetrics(trades, capitalUsd) {
     totalPnLCall: trades.reduce((sum, trade) => sum + trade.pnl_call, 0),
     totalPnLUnderlying: trades.reduce((sum, trade) => sum + trade.pnl_underlying, 0),
     totalPnL: trades.reduce((sum, trade) => sum + trade.pnl_total, 0),
-    callWeeks: trades.filter(trade => trade.has_call).length,
-    totalWeeks: trades.length,
-    observedOptionWeeks: trades.filter(trade => trade.option_entry_price_source === 'observed').length,
-    theoreticalFallbackWeeks: trades.filter(trade => trade.option_entry_price_source === 'theoretical').length,
-    syntheticOptionWeeks: trades.filter(trade => trade.option_entry_is_synthetic).length,
-    missingObservedInstrumentWeeks: trades.filter(trade => trade.option_entry_fallback_reason === 'missing_observed_option_instrument').length,
-    missingObservedCandleWeeks: trades.filter(trade => trade.option_entry_fallback_reason === 'missing_observed_option_candle').length,
-    invalidObservedOpenWeeks: trades.filter(trade => trade.option_entry_fallback_reason === 'invalid_observed_option_open').length,
-    settlementFallbackWeeks: trades.filter(trade => trade.option_settlement_price_fallback_occurred).length,
+    callWeeks,
+    totalWeeks,
+    observedOptionWeeks,
+    theoreticalFallbackWeeks,
+    syntheticOptionWeeks,
+    missingObservedInstrumentWeeks,
+    missingObservedCandleWeeks,
+    invalidObservedOpenWeeks,
+    settlementFallbackWeeks,
+    callCycles: callWeeks,
+    totalCycles: totalWeeks,
+    observedOptionCycles: observedOptionWeeks,
+    theoreticalFallbackCycles: theoreticalFallbackWeeks,
+    syntheticOptionCycles: syntheticOptionWeeks,
+    missingObservedInstrumentCycles: missingObservedInstrumentWeeks,
+    missingObservedCandleCycles: missingObservedCandleWeeks,
+    invalidObservedOpenCycles: invalidObservedOpenWeeks,
+    settlementFallbackCycles: settlementFallbackWeeks,
     initialBtcPrice,
     finalBtcPrice,
     runReturnPct,
@@ -815,14 +872,14 @@ async function runStrategy(config = {}, options = {}) {
       console.log(`Annualized Volatility of Weekly Returns: ${summaryMetrics.annualizedVolatilityOfWeeklyReturnsPct !== null ? summaryMetrics.annualizedVolatilityOfWeeklyReturnsPct.toFixed(2) : 'N/A'}%`);
       console.log(`\nBest Trade: ${bestTrade.toFixed(2)} USD`);
       console.log(`Worst Trade: ${worstTrade.toFixed(2)} USD`);
-      console.log(`\nCall Weeks: ${summaryMetrics.callWeeks} / ${summaryMetrics.totalWeeks}`);
-      console.log(`Observed Option Weeks: ${summaryMetrics.observedOptionWeeks}`);
-      console.log(`Theoretical Fallback Weeks: ${summaryMetrics.theoreticalFallbackWeeks}`);
-      console.log(`Synthetic Option Weeks: ${summaryMetrics.syntheticOptionWeeks}`);
-      console.log(`Missing Observed Instrument Weeks: ${summaryMetrics.missingObservedInstrumentWeeks}`);
-      console.log(`Missing Observed Candle Weeks: ${summaryMetrics.missingObservedCandleWeeks}`);
-      console.log(`Invalid Observed Open Weeks: ${summaryMetrics.invalidObservedOpenWeeks}`);
-      console.log(`Settlement Fallback Weeks: ${summaryMetrics.settlementFallbackWeeks}`);
+      console.log(`\nCall Cycles: ${summaryMetrics.callCycles} / ${summaryMetrics.totalCycles}`);
+      console.log(`Observed Option Cycles: ${summaryMetrics.observedOptionCycles}`);
+      console.log(`Theoretical Fallback Cycles: ${summaryMetrics.theoreticalFallbackCycles}`);
+      console.log(`Synthetic Option Cycles: ${summaryMetrics.syntheticOptionCycles}`);
+      console.log(`Missing Observed Instrument Cycles: ${summaryMetrics.missingObservedInstrumentCycles}`);
+      console.log(`Missing Observed Candle Cycles: ${summaryMetrics.missingObservedCandleCycles}`);
+      console.log(`Invalid Observed Open Cycles: ${summaryMetrics.invalidObservedOpenCycles}`);
+      console.log(`Settlement Fallback Cycles: ${summaryMetrics.settlementFallbackCycles}`);
       console.log(`\nTotal Call P&L: ${summaryMetrics.totalPnLCall.toFixed(2)} USD`);
       console.log(`Total Underlying P&L: ${summaryMetrics.totalPnLUnderlying.toFixed(2)} USD`);
       console.log(`Total P&L: ${summaryMetrics.totalPnL.toFixed(2)} USD`);
@@ -866,6 +923,15 @@ async function runStrategy(config = {}, options = {}) {
         missingObservedCandleWeeks: 0,
         invalidObservedOpenWeeks: 0,
         settlementFallbackWeeks: 0,
+        callCycles: 0,
+        totalCycles: 0,
+        observedOptionCycles: 0,
+        theoreticalFallbackCycles: 0,
+        syntheticOptionCycles: 0,
+        missingObservedInstrumentCycles: 0,
+        missingObservedCandleCycles: 0,
+        invalidObservedOpenCycles: 0,
+        settlementFallbackCycles: 0,
         initialBtcPrice: 0,
         finalBtcPrice: 0,
         runReturnPct: 0,

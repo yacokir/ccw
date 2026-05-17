@@ -99,6 +99,13 @@ function sumRows(rows, field) {
 }
 
 function buildYearRow(year, startDate, endDate, summary, tenor) {
+  const totalCycles = summary.totalCycles ?? summary.totalWeeks;
+  const callCycles = summary.callCycles ?? summary.callWeeks;
+  const observedOptionCycles = summary.observedOptionCycles ?? summary.observedOptionWeeks;
+  const theoreticalFallbackCycles = summary.theoreticalFallbackCycles ?? summary.theoreticalFallbackWeeks;
+  const syntheticOptionCycles = summary.syntheticOptionCycles ?? summary.syntheticOptionWeeks;
+  const settlementFallbackCycles = summary.settlementFallbackCycles ?? summary.settlementFallbackWeeks;
+
   const row = {
     year,
     startDate,
@@ -112,6 +119,12 @@ function buildYearRow(year, startDate, endDate, summary, tenor) {
     theoreticalFallbackWeeks: summary.theoreticalFallbackWeeks,
     syntheticOptionWeeks: summary.syntheticOptionWeeks,
     settlementFallbackWeeks: summary.settlementFallbackWeeks,
+    totalCycles,
+    callCycles,
+    observedOptionCycles,
+    theoreticalFallbackCycles,
+    syntheticOptionCycles,
+    settlementFallbackCycles,
     totalPnLCall: summary.totalPnLCall,
     totalPnLUnderlying: summary.totalPnLUnderlying,
     totalPnL: summary.totalPnL
@@ -131,6 +144,12 @@ function buildTotalRow(rows, tenor) {
   const theoreticalFallbackWeeks = sumRows(rows, 'theoreticalFallbackWeeks');
   const syntheticOptionWeeks = sumRows(rows, 'syntheticOptionWeeks');
   const settlementFallbackWeeks = sumRows(rows, 'settlementFallbackWeeks');
+  const totalCycles = sumRows(rows, 'totalCycles');
+  const callCycles = sumRows(rows, 'callCycles');
+  const observedOptionCycles = sumRows(rows, 'observedOptionCycles');
+  const theoreticalFallbackCycles = sumRows(rows, 'theoreticalFallbackCycles');
+  const syntheticOptionCycles = sumRows(rows, 'syntheticOptionCycles');
+  const settlementFallbackCycles = sumRows(rows, 'settlementFallbackCycles');
 
   const row = {
     year: 'TOTAL',
@@ -145,13 +164,19 @@ function buildTotalRow(rows, tenor) {
     theoreticalFallbackWeeks,
     syntheticOptionWeeks,
     settlementFallbackWeeks,
+    totalCycles,
+    callCycles,
+    observedOptionCycles,
+    theoreticalFallbackCycles,
+    syntheticOptionCycles,
+    settlementFallbackCycles,
     totalPnLCall: sumRows(rows, 'totalPnLCall'),
     totalPnLUnderlying: sumRows(rows, 'totalPnLUnderlying'),
     totalPnL: sumRows(rows, 'totalPnL'),
-    observedOptionCoveragePct: totalWeeks > 0 ? (observedOptionWeeks / totalWeeks) * 100 : null,
-    theoreticalFallbackCoveragePct: totalWeeks > 0 ? (theoreticalFallbackWeeks / totalWeeks) * 100 : null,
-    syntheticOptionCoveragePct: totalWeeks > 0 ? (syntheticOptionWeeks / totalWeeks) * 100 : null,
-    settlementFallbackCoveragePct: totalWeeks > 0 ? (settlementFallbackWeeks / totalWeeks) * 100 : null
+    observedOptionCoveragePct: totalCycles > 0 ? (observedOptionCycles / totalCycles) * 100 : null,
+    theoreticalFallbackCoveragePct: totalCycles > 0 ? (theoreticalFallbackCycles / totalCycles) * 100 : null,
+    syntheticOptionCoveragePct: totalCycles > 0 ? (syntheticOptionCycles / totalCycles) * 100 : null,
+    settlementFallbackCoveragePct: totalCycles > 0 ? (settlementFallbackCycles / totalCycles) * 100 : null
   };
 
   if (tenor !== 'weekly') {
@@ -171,12 +196,12 @@ function formatConsoleRows(rows) {
     annVolWeeklyRet: row.annualizedVolatilityOfWeeklyReturns !== null && row.annualizedVolatilityOfWeeklyReturns !== undefined
       ? Number(row.annualizedVolatilityOfWeeklyReturns).toFixed(4)
       : null,
-    totalWeeks: row.totalWeeks,
-    callWeeks: row.callWeeks,
-    observedOptionWeeks: row.observedOptionWeeks,
-    theoreticalFallbackWeeks: row.theoreticalFallbackWeeks,
-    syntheticOptionWeeks: row.syntheticOptionWeeks,
-    settlementFallbackWeeks: row.settlementFallbackWeeks,
+    totalCycles: row.totalCycles ?? row.totalWeeks,
+    callCycles: row.callCycles ?? row.callWeeks,
+    observedOptionCycles: row.observedOptionCycles ?? row.observedOptionWeeks,
+    theoreticalFallbackCycles: row.theoreticalFallbackCycles ?? row.theoreticalFallbackWeeks,
+    syntheticOptionCycles: row.syntheticOptionCycles ?? row.syntheticOptionWeeks,
+    settlementFallbackCycles: row.settlementFallbackCycles ?? row.settlementFallbackWeeks,
     totalPnLCall: row.totalPnLCall !== null && row.totalPnLCall !== undefined ? Number(row.totalPnLCall).toFixed(2) : null,
     totalPnLUnderlying: row.totalPnLUnderlying !== null && row.totalPnLUnderlying !== undefined ? Number(row.totalPnLUnderlying).toFixed(2) : null,
     totalPnL: row.totalPnL !== null && row.totalPnL !== undefined ? Number(row.totalPnL).toFixed(2) : null
@@ -217,6 +242,7 @@ async function runQuietly(config, onProgress) {
 }
 
 async function main() {
+  const batchStartedAt = new Date();
   const args = parseArgs(process.argv);
   const currentUtcDate = new Date();
   const currentYear = currentUtcDate.getUTCFullYear();
@@ -299,6 +325,14 @@ async function main() {
   console.log('\n=== BATCH SUMMARY ===\n');
   console.table(formatConsoleRows(allRows));
   console.log(`Saved batch outputs to ${batchDir}`);
+
+  const batchFinishedAt = new Date();
+  const elapsedSeconds = Math.round((batchFinishedAt.getTime() - batchStartedAt.getTime()) / 1000);
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  const remainingSeconds = elapsedSeconds % 60;
+  console.log(`Batch started: ${batchStartedAt.toISOString()}`);
+  console.log(`Batch finished: ${batchFinishedAt.toISOString()}`);
+  console.log(`Elapsed: ${elapsedMinutes}m ${remainingSeconds}s`);
 }
 
 if (require.main === module) {

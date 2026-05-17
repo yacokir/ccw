@@ -54,4 +54,10 @@ As tarefas podem ser ajustadas conforme o sistema evolui.
 
 - Priorizar funcionamento antes de otimização  
 - Evitar complexidade prematura  
-- Ajustes são esperados durante a execução  
+- Ajustes são esperados durante a execução
+
+---
+
+## 7. Future Cleanup
+
+- Normalize non-weekly run naming from compact `xNN` labels to explicit `atm`/`otm`/`itm` moneyness labels across tenors and future assets, while preserving existing indexed artifacts and avoiding breakage in `runs/index.csv`, batch summaries, and analysis scripts.

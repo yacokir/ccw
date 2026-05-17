@@ -93,3 +93,18 @@ Decisão de não ignorar problemas de dados (gaps, delays, fallback), mas tratá
 
 **Impacto:**  
 Aumenta realismo dos resultados e permite análise mais robusta.
+
+---
+
+### [2026-05-17] Naming temporario de runs por tenor
+
+**Descricao:**
+O projeto passou a suportar BTC weekly, 14d e monthly. Durante essa transicao, duas convencoes de naming coexistem nos artefatos:
+
+- Runs weekly legadas usam labels explicitos de moneyness, como `atm00`, `otm03`, `otm05`, `otm07`, `otm10` e `itm05`.
+- Runs 14d/monthly mais recentes usam labels compactos `xNN`, como `x00`, `x03`, `x05`, `x07` e `x10`, junto com o sufixo de tenor, por exemplo `_t14d_001` ou `_tmonthly_001`.
+
+Essa diferenca e aceita temporariamente para evitar renomear retroativamente artefatos ja indexados. Analises atuais devem depender de metadados estruturados, como `xOtm`, `tenor`, `run_name` e `path`, e nao apenas de parsing de nomes de pastas.
+
+**Impacto:**
+Nao ha bug funcional conhecido, mas existe risco de confusao em documentacao, consultas manuais e scripts futuros que inferirem parametros apenas pelo nome da pasta. Uma normalizacao futura pode padronizar o naming entre tenors e assets, preservando artefatos existentes e compatibilidade com indices e analises ja gerados.
