@@ -108,3 +108,20 @@ Distribution charts are generated from existing cycle-distribution, regime, and 
 - Histogram charts are approximate aggregations from per-strategy histogram bins.
 - Regime-conditioned distribution heatmap uses regime proxy metrics; true regime percentiles, skewness, and kurtosis require per-cycle regime-tagged rows.
 - Tail frequencies and concentration metrics are cycle-based and should not be interpreted as annualized risk.
+
+## Hedge Frontier Phase 1 Charts
+
+Hedge Frontier Phase 1 charts are generated from analysis-only fixed hedge post-processing outputs.
+
+- Dedicated index: [btc_hedge_frontier_index.md](./btc_hedge_frontier_index.md)
+- Hedge Return Vs Drawdown: [btc_hedge_return_vs_drawdown.png](./btc_hedge_return_vs_drawdown.png)
+- CAGR By Hedge Ratio: [btc_hedge_cagr_by_ratio.png](./btc_hedge_cagr_by_ratio.png)
+- Max Drawdown By Hedge Ratio: [btc_hedge_max_drawdown_by_ratio.png](./btc_hedge_max_drawdown_by_ratio.png)
+- Ulcer Index By Hedge Ratio: [btc_hedge_ulcer_by_ratio.png](./btc_hedge_ulcer_by_ratio.png)
+- Rolling Drawdown By Hedge Ratio: [btc_hedge_rolling_drawdown.png](./btc_hedge_rolling_drawdown.png)
+- Bear Regime Drawdown Heatmap: [btc_hedge_regime_heatmap.png](./btc_hedge_regime_heatmap.png)
+
+### Hedge Chart Caveats
+
+- These charts do not include funding, basis, liquidation, or margin mechanics.
+- Results are fixed-ratio, roll-rebalanced hedge simulations over existing CCW baseline cycles.
