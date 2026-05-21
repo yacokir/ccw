@@ -114,3 +114,18 @@ The BTC CCW project is transitioning from exploratory backtesting to a structure
 - Add intracycle mark-to-market risk when suitable price paths and option marks are available.
 - Distinguish end-of-cycle reconstructed drawdown from intracycle underwater risk.
 - Extend realism layers for fees, slippage, funding, custody, and execution constraints.
+
+---
+
+## 9. Risk & Hedging Roadmap
+
+The risk and hedging roadmap separates the implemented fixed hedge frontier from future adaptive and discretionary risk-management layers.
+
+- Validate fixed hedge frontier outputs.
+- Document fixed hedge findings.
+- Implement risk-budgeted cyclical EWMA/VaR hedge.
+- Compare EWMA/VaR hedge against fixed `h10`, `h20`, and `h40` benchmarks.
+- Add funding and basis realism.
+- Add intracycle diagnostic and alert layer.
+- Eventually test discretionary or dynamic crisis overlays.
+- Extend future Monte Carlo research with hedged and unhedged variants.
