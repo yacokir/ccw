@@ -2,9 +2,11 @@
 
 ## Purpose
 
-This document describes the planned EWMA/VaR methodology for a future risk-budgeted cyclical hedge. The model is intended to size a partial BTC hedge at each CCW roll using recent volatility and a maximum loss budget.
+This document describes the planned EWMA/VaR methodology for a future risk-budgeted cyclical hedge. The model is intended to size a partial BTC overlay hedge at each CCW roll using recent volatility and a maximum loss budget.
 
 This is a design document. It does not claim that the model has been implemented, validated, or found superior to the fixed hedge frontier.
+
+The purpose of the VaR layer is tail-risk mitigation and crisis-risk engineering. It is not intended to minimize ordinary volatility, create a market-neutral strategy, or eliminate BTC exposure. Any VaR-based hedge should be judged by whether it improves catastrophic downside behavior while preserving the baseline CCW return engine.
 
 ## EWMA Volatility
 
@@ -44,6 +46,8 @@ BTC volatility -> BTC exposure at risk -> BTC hedge ratio
 
 Strategy-return volatility can still be studied as a diagnostic or alternative model, especially if future overlays hedge total strategy equity risk rather than BTC price exposure alone.
 
+This return-series choice reinforces an important boundary: the current framework is a BTC overlay hedge, not a full option delta-aware hedge. It does not estimate the option book's dynamic delta or other greeks, and it does not model how implied volatility, skew, gamma, theta, or vega change the full covered-call portfolio value through time.
+
 ## VaR Logic
 
 The planned model uses a simple parametric VaR approximation:
@@ -65,6 +69,8 @@ z = 1.65
 ```
 
 This VaR estimate is a sizing tool, not a guarantee. BTC returns are not normally distributed, volatility is unstable, and realized losses can exceed model estimates.
+
+VaR should also be interpreted as a risk-sizing input, not as the strategy objective. A lower modeled VaR is not automatically better if it requires hedge ratios that materially suppress the CCW return engine.
 
 ## Max-Loss-Budget Logic
 
@@ -107,6 +113,10 @@ Candidate hedge caps:
 
 The cap is important because the model should reduce left-tail exposure without fully neutralizing the BTC/CCW return engine.
 
+Very low loss budgets can become economically incompatible with BTC yield-enhancement strategies. For example, a 5% max-loss budget may imply high hedge ratios during stress periods, particularly when EWMA volatility rises quickly. Such ratios can reduce tail exposure, but they may also remove much of the desired long-BTC exposure and damage the economic reason to run the CCW strategy.
+
+Risk budgets should therefore be treated as research assumptions that require economic validation. They should be evaluated together with realized hedge ratios, cap binding frequency, foregone upside, funding and basis costs, and crisis-period path behavior.
+
 ## Cycle Timing
 
 The hedge ratio is calculated at cycle entry, when the CCW position is rolled.
@@ -122,6 +132,8 @@ roll date
 ```
 
 The first version should not automatically adjust intracycle. Intracycle crisis response is separate future work and should be documented, implemented, and evaluated independently.
+
+Current research raises a hypothesis that hedge latency may be more important than hedge sizing alone. A cycle-entry hedge can be directionally reasonable at inception but stale during a fast selloff. This may be more relevant for 14d cycles than weekly structures because weekly variants rebalance risk more frequently. This remains a hypothesis and should be tested with intracycle data before being treated as a conclusion.
 
 ## Candidate Parameter Grid
 
@@ -146,9 +158,25 @@ The model has several important risks:
 - Distribution error: normal VaR can understate BTC tail risk.
 - Horizon mismatch: volatility estimated from one return frequency may not match the CCW cycle horizon.
 - Exposure mismatch: BTC price exposure, CCW equity exposure, and margin exposure may diverge.
+- Greek mismatch: BTC overlay hedges do not dynamically hedge the option book's delta, gamma, vega, theta, or skew exposure.
+- Economic mismatch: strict loss budgets may require hedge ratios that impair the baseline CCW edge.
 - Missing costs: funding, basis, slippage, and liquidity stress can materially change hedge outcomes.
 
 The cyclical hedge should therefore be compared against fixed `h10`, `h20`, and `h40` benchmarks, not judged only by its own historical performance.
+
+## Daily Approximate MTM Extension
+
+A future daily approximate mark-to-market layer may allow CCW returns and risk to be estimated at daily resolution using BTC spot or index prices plus option OHLC or trade-price proxies.
+
+Potential capabilities include:
+
+- Daily CCW returns and drawdowns.
+- Historical daily VaR.
+- Daily realized volatility.
+- Crisis path analysis.
+- Approximate intracycle hedge-frequency simulation.
+
+This layer should be handled conservatively. Option OHLC and trade-price proxies can be stale, sparse, liquidity-distorted, or influenced by wide spreads. They are not equivalent to official marks, executable mid prices, or full greek-aware valuations. Results from this layer should be labeled approximate MTM and used as research evidence rather than definitive portfolio accounting.
 
 ## Future Advanced VaR Extensions
 
@@ -157,10 +185,14 @@ Advanced VaR and tail-risk models are important future work, but they should be 
 Potential future extensions include:
 
 - Historical VaR.
+- Hybrid VaR using `max(EWMA VaR, Historical VaR)`.
 - Stressed VaR.
 - Cornish-Fisher VaR.
 - EVT / Extreme Value Theory approaches.
 - Non-normal BTC tail modeling.
+- Intracycle hedge-frequency simulation using daily approximate MTM.
+- Event-driven or crisis-trigger hedge escalation.
+- Full option mark and greek-aware hedging research using external historical providers such as Tardis.
 
 The current methodology intentionally starts simple. A normal parametric VaR model is useful for transparent first-pass hedge sizing, but BTC return tails are highly non-normal and may not be well represented by a normal approximation. Production-grade tail modeling would likely require methods that address skew, excess kurtosis, volatility clustering, regime shifts, and extreme downside observations more directly.
 

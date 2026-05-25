@@ -119,13 +119,28 @@ The BTC CCW project is transitioning from exploratory backtesting to a structure
 
 ## 9. Risk & Hedging Roadmap
 
-The risk and hedging roadmap separates the implemented fixed hedge frontier from future adaptive and discretionary risk-management layers.
+The risk and hedging roadmap separates the implemented fixed hedge frontier from future adaptive and discretionary risk-management layers. The strategic objective is to preserve the BTC CCW return engine while reducing tail-risk destruction and catastrophic crisis damage. It is not to minimize volatility, market-neutralize the strategy, or eliminate BTC exposure.
+
+Current hedge research should be treated as a BTC overlay hedge. It approximately hedges BTC downside exposure, but it is not a true option delta-aware hedge and does not dynamically model option greeks or full option portfolio sensitivity.
+
+Research interpretation should remain conservative:
+
+- Weekly BTC OTM10 appears structurally strong, with OTM05 remaining a candidate for further study.
+- Very low max-loss budgets, such as 5%, may require high stress-period hedge ratios and may be economically incompatible with the CCW edge.
+- Hedge latency may be a key unresolved issue, especially for 14d cycles, but this is a hypothesis rather than a confirmed conclusion.
 
 - Validate fixed hedge frontier outputs.
 - Document fixed hedge findings.
 - Implement risk-budgeted cyclical EWMA/VaR hedge.
 - Compare EWMA/VaR hedge against fixed `h10`, `h20`, and `h40` benchmarks.
+- Evaluate historical/empirical VaR.
+- Evaluate hybrid VaR using `max(EWMA VaR, Historical VaR)`.
+- Design a daily approximate MTM CCW layer using BTC spot/index price plus option OHLC or trade-price proxies.
+- Use daily approximate MTM, if feasible, for daily CCW returns, daily drawdowns, historical daily VaR, realized volatility, crisis path analysis, and approximate intracycle hedge simulations.
+- Caveat daily MTM outputs clearly because option proxies may be stale, sparse, spread-distorted, or liquidity-limited.
+- Simulate intracycle hedge-frequency alternatives to test whether hedge latency matters more than hedge sizing.
 - Add funding and basis realism.
 - Add intracycle diagnostic and alert layer.
-- Eventually test discretionary or dynamic crisis overlays.
+- Eventually test event-driven or crisis-trigger hedge escalation.
+- Evaluate full option mark and greek-aware hedging only if suitable external historical data providers, such as Tardis, are available.
 - Extend future Monte Carlo research with hedged and unhedged variants.

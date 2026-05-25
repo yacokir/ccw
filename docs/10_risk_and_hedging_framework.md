@@ -6,6 +6,14 @@ This document defines the risk and hedging framework for the BTC CCW research pr
 
 The framework is intended to make hedge design explicit before implementation. It describes objectives, hedge architecture, candidate instruments, methodological boundaries, and the roadmap for future risk controls.
 
+## Strategic Direction
+
+The baseline BTC CCW strategy is the core object of study and currently appears structurally strong in the weekly OTM10 configuration, with OTM05 also remaining a plausible candidate for further study. Risk management should therefore be evaluated as an overlay on an already viable return engine, not as a replacement for it.
+
+The project objective is not to minimize volatility, create a market-neutral system, or eliminate BTC exposure. The objective is to preserve the CCW return engine while reducing tail-risk destruction, improving risk-adjusted behavior, reducing catastrophic crisis damage, and testing whether risk management adds value after costs and implementation constraints.
+
+This distinction is central. A hedge that produces smoother returns by suppressing the original CCW edge may be unattractive even if it improves isolated risk metrics. Hedge research should therefore report both the risk benefit and the economic cost to the baseline strategy.
+
 ## Strategy And Hedge Layers
 
 ### Baseline CCW
@@ -50,6 +58,14 @@ Intracycle crisis management is a separate future layer. It may include diagnost
 
 This layer should not be conflated with the first VaR/EWMA cyclical hedge model. The cyclical hedge determines a hedge ratio at roll time; future intracycle diagnostics would monitor conditions between rolls and may support discretionary decisions or later dynamic overlays.
 
+### BTC Overlay Hedge Versus Option Delta Hedge
+
+The current hedge research should be interpreted as a BTC overlay hedge, not as a true option delta-aware hedge.
+
+The framework approximately hedges BTC downside exposure using BTC-linked instruments such as futures or perpetuals. It does not dynamically hedge option greeks, compute the full option portfolio delta, or model changes in gamma, vega, theta, skew, or implied volatility across the option book.
+
+This distinction matters because a covered-call portfolio is not identical to spot BTC. The option leg changes total strategy sensitivity through time and across price paths. Current overlay results can still be useful for crisis mitigation research, but they should not be described as full option portfolio hedging.
+
 ## Risk Objectives
 
 The primary risk objectives are:
@@ -59,6 +75,8 @@ The primary risk objectives are:
 - Preserve part of the BTC/CCW upside engine.
 - Avoid over-hedging that converts the strategy into a low-upside or structurally short-risk product.
 - Keep hedge logic interpretable and auditable.
+
+The hedge layer is best understood as tail-risk mitigation, crisis overlay, and risk engineering. It is not a continuous volatility suppression layer and is not intended to force market neutrality.
 
 The framework is not designed to eliminate all losses. A hedge can reduce left-tail exposure while still allowing material drawdowns, especially when assumptions about volatility, funding, basis, execution, or liquidity are incomplete.
 
@@ -74,6 +92,10 @@ The preferred hedge philosophy is partial risk control:
 - Hedge design should favor robust, explainable rules over optimized historical fit.
 
 A useful hedge should improve survivability and reduce severe path risk without erasing the reason for holding the strategy.
+
+Very low max-loss budgets may be economically incompatible with BTC yield-enhancement strategies. For example, a 5% VaR-style loss budget can require very high hedge ratios during stress periods, which may neutralize too much of the long BTC exposure and impair the premium-harvesting return engine.
+
+Risk budgets therefore cannot be chosen arbitrarily. They must remain economically compatible with the CCW return engine and should be interpreted alongside hedge ratios, capped exposure, foregone upside, funding costs, and stress-period behavior.
 
 ## Hedge Instruments
 
@@ -113,8 +135,35 @@ The current hedge research and planned cyclical model should be interpreted with
 - Exchange constraints and collateral management are not modeled.
 - Tax, custody, and operational risks are not modeled.
 - Current drawdown analytics are primarily end-of-cycle, not full intracycle underwater paths.
+- Current hedge logic approximates BTC exposure and does not model full option portfolio greek sensitivity.
 
 These limitations are material. A hedge that appears attractive in analysis-only reconstruction may behave differently once funding, basis, margin, and stressed execution are included.
+
+## Daily Approximate MTM CCW Layer
+
+A future daily approximate mark-to-market layer may make it possible to reconstruct daily CCW valuation and returns without official historical option greek or mark snapshots.
+
+The candidate inputs are:
+
+- BTC spot or index price.
+- Option OHLC or trade-price proxy for the relevant short call.
+
+If sufficient historical option trade or candle data is available, this layer may support:
+
+- Daily CCW returns.
+- Daily drawdowns.
+- Historical daily VaR.
+- Daily realized volatility.
+- Crisis path analysis.
+- Approximate intracycle hedge simulations.
+
+This should remain clearly labeled as approximate MTM. Option OHLC and trade-price proxies can be stale, sparse, wide-spread, or liquidity-distorted. They may not match executable marks, mid prices, exchange settlement marks, or greek-aware valuations. The layer is useful for research direction, but it should not be treated as an official historical valuation system without external validation.
+
+## Current Research Hypotheses
+
+Current evidence suggests a hypothesis that hedge latency may be a larger problem than hedge sizing alone. A hedge ratio chosen only at cycle entry can become stale during abrupt BTC selloffs, especially for longer cycles.
+
+This is not a confirmed conclusion. It should be tested by comparing weekly and 14d structures, evaluating intracycle paths where data allows, and separating the effect of hedge timing from hedge size. Weekly structures may naturally adapt risk faster because they rebalance more often, while 14d cycles may suffer from slower risk adaptation during crisis regimes.
 
 ## Roadmap
 
@@ -124,9 +173,13 @@ The near-term research path is:
 2. Document fixed hedge findings and benchmark behavior.
 3. Implement a risk-budgeted cyclical EWMA/VaR hedge.
 4. Compare the cyclical hedge against fixed `h10`, `h20`, and `h40` benchmarks.
-5. Add funding, basis, margin, and slippage realism.
-6. Add intracycle diagnostic and alert research.
-7. Test discretionary or dynamic crisis overlays only after the simpler cyclical hedge is understood.
-8. Extend future Monte Carlo work to include hedged and unhedged variants.
+5. Evaluate historical/empirical VaR.
+6. Evaluate hybrid VaR such as `max(EWMA VaR, Historical VaR)`.
+7. Add daily approximate MTM research and intracycle hedge-frequency simulation.
+8. Add funding, basis, margin, and slippage realism.
+9. Add intracycle diagnostic and alert research.
+10. Evaluate event-driven or crisis-trigger hedge escalation only after simpler hedge layers are understood.
+11. Study full option mark and greek-aware hedging if external historical providers, such as Tardis, can supply sufficient data.
+12. Extend future Monte Carlo work to include hedged and unhedged variants.
 
 Each stage should preserve traceability between baseline CCW results, fixed frontier outputs, and future adaptive hedge outputs.
