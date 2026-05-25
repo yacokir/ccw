@@ -1,0 +1,38 @@
+section,metric,value,unit,notes
+validation,inputRows,357,rows,
+validation,validDailyReturnRows,254,rows,
+daily_return,mean,-0.02762,%,
+daily_return,median,0.169219,%,
+daily_return,stdDev,2.01973,%,
+daily_return,skewness,-0.68256,,
+daily_return,excessKurtosis,2.595904,,
+daily_return_percentile,p1,-6.912764,%,
+daily_return_percentile,p5,-3.21774,%,
+daily_return_percentile,p10,-2.414855,%,
+daily_return_percentile,p90,2.094003,%,
+daily_return_percentile,p95,3.033942,%,
+daily_return_percentile,p99,4.385662,%,
+tail_loss_frequency,<= -2%,38,days,14.96063%
+tail_loss_frequency,<= -3%,14,days,5.511811%
+tail_loss_frequency,<= -5%,4,days,1.574803%
+tail_loss_frequency,<= -7%,3,days,1.181102%
+tail_gain_frequency,>= 2%,27,days,10.629921%
+tail_gain_frequency,>= 3%,14,days,5.511811%
+tail_gain_frequency,>= 5%,2,days,0.787402%
+ewma,min,1.100983,%,
+ewma,median,1.974398,%,
+ewma,max,2.834352,%,
+ewma_threshold_frequency,> 2%,126,days,47.54717%
+ewma_threshold_frequency,> 3%,0,days,0%
+ewma_threshold_frequency,> 4%,0,days,0%
+ewma_threshold_frequency,> 5%,0,days,0%
+historical_var,minLossMagnitude,1.539302,%,
+historical_var,medianLossMagnitude,2.791146,%,
+historical_var,maxLossMagnitude,5.765818,%,
+var_threshold_frequency,> 3%,90,days,38.461538%
+var_threshold_frequency,> 5%,28,days,11.965812%
+var_threshold_frequency,> 7%,0,days,0%
+var_threshold_frequency,> 10%,0,days,0%
+drawdown,maxDrawdown,-32.537703,%,
+drawdown,drawdownExpansionDays,126,days,47.368421%
+runtime,runtimeSeconds,0.028,seconds,

@@ -1,0 +1,1579 @@
+{
+  "generatedAt": "2026-05-25T13:32:28.754Z",
+  "runtimeMs": 28,
+  "runtimeSeconds": 0.028,
+  "scope": {
+    "asset": "BTC",
+    "tenor": "weekly",
+    "moneyness": "OTM10",
+    "year": 2025,
+    "source": "analysis\\generated\\poc_daily_mtm_ccw_2025.json",
+    "strictScope": "Existing Daily Approximate MTM prototype output only."
+  },
+  "methodology": {
+    "dailyReturnSource": "Uses daily_return_pct from poc_daily_mtm_ccw_2025; that prototype computes returns only across adjacent valid MTM observations and does not bridge missing MTM gaps.",
+    "ewmaSource": "Uses EWMA_vol_pct from poc_daily_mtm_ccw_2025, lambda = 0.94.",
+    "historicalVaRSource": "Uses historical_VaR_pct from poc_daily_mtm_ccw_2025; reported VaR frequencies use positive loss magnitude of the negative empirical 5th percentile.",
+    "caveats": [
+      "Approximate MTM only.",
+      "No official historical marks.",
+      "No Greeks and no delta-aware hedge.",
+      "OHLC/trade-price proxies may be stale, sparse, spread-distorted, or liquidity-distorted.",
+      "Missing synthetic cycles are excluded from daily return calculations.",
+      "This is a 2025 BTC weekly OTM10 daily MTM subset only."
+    ]
+  },
+  "validation": {
+    "inputRows": 357,
+    "completeMtmRows": 266,
+    "validDailyReturnRows": 254,
+    "ewmaRows": 265,
+    "historicalVaRRows": 234,
+    "drawdownRows": 266,
+    "missingMtmRows": 91
+  },
+  "dailyReturnDistribution": {
+    "histogram": [
+      {
+        "bin": "< -10%",
+        "lower": null,
+        "upper": -10,
+        "count": 0,
+        "frequencyPct": 0
+      },
+      {
+        "bin": "-10% to -7%",
+        "lower": -10,
+        "upper": -7,
+        "count": 3,
+        "frequencyPct": 1.181102
+      },
+      {
+        "bin": "-7% to -5%",
+        "lower": -7,
+        "upper": -5,
+        "count": 1,
+        "frequencyPct": 0.393701
+      },
+      {
+        "bin": "-5% to -3%",
+        "lower": -5,
+        "upper": -3,
+        "count": 10,
+        "frequencyPct": 3.937008
+      },
+      {
+        "bin": "-3% to -2%",
+        "lower": -3,
+        "upper": -2,
+        "count": 24,
+        "frequencyPct": 9.448819
+      },
+      {
+        "bin": "-2% to -1%",
+        "lower": -2,
+        "upper": -1,
+        "count": 24,
+        "frequencyPct": 9.448819
+      },
+      {
+        "bin": "-1% to 0%",
+        "lower": -1,
+        "upper": 0,
+        "count": 58,
+        "frequencyPct": 22.834646
+      },
+      {
+        "bin": "0% to 1%",
+        "lower": 0,
+        "upper": 1,
+        "count": 60,
+        "frequencyPct": 23.622047
+      },
+      {
+        "bin": "1% to 2%",
+        "lower": 1,
+        "upper": 2,
+        "count": 47,
+        "frequencyPct": 18.503937
+      },
+      {
+        "bin": "2% to 3%",
+        "lower": 2,
+        "upper": 3,
+        "count": 13,
+        "frequencyPct": 5.11811
+      },
+      {
+        "bin": "3% to 5%",
+        "lower": 3,
+        "upper": 5,
+        "count": 12,
+        "frequencyPct": 4.724409
+      },
+      {
+        "bin": "5% to 7%",
+        "lower": 5,
+        "upper": 7,
+        "count": 2,
+        "frequencyPct": 0.787402
+      },
+      {
+        "bin": "7% to 10%",
+        "lower": 7,
+        "upper": 10,
+        "count": 0,
+        "frequencyPct": 0
+      },
+      {
+        "bin": ">= 10%",
+        "lower": 10,
+        "upper": null,
+        "count": 0,
+        "frequencyPct": 0
+      }
+    ],
+    "meanPct": -0.02762,
+    "medianPct": 0.169219,
+    "stdDevPct": 2.01973,
+    "skewness": -0.68256,
+    "excessKurtosis": 2.595904,
+    "percentilesPct": {
+      "p1": -6.912764,
+      "p5": -3.21774,
+      "p10": -2.414855,
+      "p90": 2.094003,
+      "p95": 3.033942,
+      "p99": 4.385662
+    }
+  },
+  "tailEvents": {
+    "lossFrequency": [
+      {
+        "thresholdPct": -2,
+        "count": 38,
+        "frequencyPct": 14.96063
+      },
+      {
+        "thresholdPct": -3,
+        "count": 14,
+        "frequencyPct": 5.511811
+      },
+      {
+        "thresholdPct": -5,
+        "count": 4,
+        "frequencyPct": 1.574803
+      },
+      {
+        "thresholdPct": -7,
+        "count": 3,
+        "frequencyPct": 1.181102
+      }
+    ],
+    "gainFrequency": [
+      {
+        "thresholdPct": 2,
+        "count": 27,
+        "frequencyPct": 10.629921
+      },
+      {
+        "thresholdPct": 3,
+        "count": 14,
+        "frequencyPct": 5.511811
+      },
+      {
+        "thresholdPct": 5,
+        "count": 2,
+        "frequencyPct": 0.787402
+      }
+    ],
+    "largestLossDates": [
+      {
+        "date": "2025-02-25",
+        "cycle_id": 8,
+        "instrument_name": "BTC-28FEB25-108000-C",
+        "dailyReturnPct": -8.653824,
+        "ewmaVolPct": 2.631157,
+        "historicalVarLossPct": 2.618889,
+        "drawdownPct": -18.413613,
+        "BTC_price": 86446,
+        "approximate_CCW_value": 86437.3554
+      },
+      {
+        "date": "2025-10-11",
+        "cycle_id": 41,
+        "instrument_name": "BTC-17OCT25-132000-C",
+        "dailyReturnPct": -7.711738,
+        "ewmaVolPct": 2.169721,
+        "historicalVarLossPct": 1.722264,
+        "drawdownPct": -9.922663,
+        "BTC_price": 112433.5,
+        "approximate_CCW_value": 112309.82315
+      },
+      {
+        "date": "2025-11-21",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": -7.449814,
+        "ewmaVolPct": 2.834352,
+        "historicalVarLossPct": 4.731536,
+        "drawdownPct": -32.528274,
+        "BTC_price": 84760.5,
+        "approximate_CCW_value": 84124.79625
+      },
+      {
+        "date": "2025-11-14",
+        "cycle_id": 46,
+        "instrument_name": "BTC-21NOV25-107000-C",
+        "dailyReturnPct": -6.436512,
+        "ewmaVolPct": 2.479391,
+        "historicalVarLossPct": 4.731536,
+        "drawdownPct": -22.928353,
+        "BTC_price": 96306,
+        "approximate_CCW_value": 96094.1268
+      },
+      {
+        "date": "2025-10-17",
+        "cycle_id": 42,
+        "instrument_name": "BTC-24OCT25-116000-C",
+        "dailyReturnPct": -4.946082,
+        "ewmaVolPct": 2.48408,
+        "historicalVarLossPct": 3.059521,
+        "drawdownPct": -15.407487,
+        "BTC_price": 105725,
+        "approximate_CCW_value": 105471.26
+      },
+      {
+        "date": "2025-10-30",
+        "cycle_id": 43,
+        "instrument_name": "BTC-31OCT25-122000-C",
+        "dailyReturnPct": -4.469313,
+        "ewmaVolPct": 2.259681,
+        "historicalVarLossPct": 4.439262,
+        "drawdownPct": -13.539561,
+        "BTC_price": 107811,
+        "approximate_CCW_value": 107800.2189
+      },
+      {
+        "date": "2025-01-08",
+        "cycle_id": 1,
+        "instrument_name": "BTC-10JAN25-106000-C",
+        "dailyReturnPct": -4.423475,
+        "ewmaVolPct": 1.603508,
+        "historicalVarLossPct": null,
+        "drawdownPct": -4.761765,
+        "BTC_price": 95331.5,
+        "approximate_CCW_value": 95312.4337
+      },
+      {
+        "date": "2025-04-07",
+        "cycle_id": 14,
+        "instrument_name": "BTC-11APR25-92000-C",
+        "dailyReturnPct": -4.31748,
+        "ewmaVolPct": 2.193707,
+        "historicalVarLossPct": 3.569325,
+        "drawdownPct": -25.826051,
+        "BTC_price": 78623.5,
+        "approximate_CCW_value": 78584.18825
+      },
+      {
+        "date": "2025-10-14",
+        "cycle_id": 41,
+        "instrument_name": "BTC-17OCT25-132000-C",
+        "dailyReturnPct": -3.819816,
+        "ewmaVolPct": 2.370228,
+        "historicalVarLossPct": 1.961708,
+        "drawdownPct": -10.968322,
+        "BTC_price": 111050.5,
+        "approximate_CCW_value": 111006.0798
+      },
+      {
+        "date": "2025-03-08",
+        "cycle_id": 10,
+        "instrument_name": "BTC-14MAR25-97000-C",
+        "dailyReturnPct": -3.659138,
+        "ewmaVolPct": 2.711169,
+        "historicalVarLossPct": 3.184351,
+        "drawdownPct": -18.698643,
+        "BTC_price": 86247.5,
+        "approximate_CCW_value": 86135.37825
+      }
+    ],
+    "largestGainDates": [
+      {
+        "date": "2025-07-11",
+        "cycle_id": 28,
+        "instrument_name": "BTC-18JUL25-130000-C",
+        "dailyReturnPct": 6.491679,
+        "ewmaVolPct": 2.146201,
+        "historicalVarLossPct": 2.307473,
+        "drawdownPct": 0,
+        "BTC_price": 118064,
+        "approximate_CCW_value": 117934.1296
+      },
+      {
+        "date": "2025-01-17",
+        "cycle_id": 3,
+        "instrument_name": "BTC-24JAN25-112000-C",
+        "dailyReturnPct": 5.328125,
+        "ewmaVolPct": 2.423124,
+        "historicalVarLossPct": null,
+        "drawdownPct": 0,
+        "BTC_price": 103426.5,
+        "approximate_CCW_value": 102599.088
+      },
+      {
+        "date": "2025-01-14",
+        "cycle_id": 2,
+        "instrument_name": "BTC-17JAN25-104000-C",
+        "dailyReturnPct": 4.577357,
+        "ewmaVolPct": 1.974398,
+        "historicalVarLossPct": null,
+        "drawdownPct": -4.081167,
+        "BTC_price": 96224.5,
+        "approximate_CCW_value": 95993.5612
+      },
+      {
+        "date": "2025-11-27",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": 4.215668,
+        "ewmaVolPct": 2.620835,
+        "historicalVarLossPct": 5.551272,
+        "drawdownPct": -27.362947,
+        "BTC_price": 90746.5,
+        "approximate_CCW_value": 90565.007
+      },
+      {
+        "date": "2025-01-30",
+        "cycle_id": 4,
+        "instrument_name": "BTC-31JAN25-116000-C",
+        "dailyReturnPct": 3.893406,
+        "ewmaVolPct": 2.106506,
+        "historicalVarLossPct": null,
+        "drawdownPct": 0,
+        "BTC_price": 105967,
+        "approximate_CCW_value": 105945.8066
+      },
+      {
+        "date": "2025-10-13",
+        "cycle_id": 41,
+        "instrument_name": "BTC-17OCT25-132000-C",
+        "dailyReturnPct": 3.73345,
+        "ewmaVolPct": 2.24616,
+        "historicalVarLossPct": 1.961708,
+        "drawdownPct": -7.43241,
+        "BTC_price": 115484,
+        "approximate_CCW_value": 115414.7096
+      },
+      {
+        "date": "2025-04-10",
+        "cycle_id": 14,
+        "instrument_name": "BTC-11APR25-92000-C",
+        "dailyReturnPct": 3.611699,
+        "ewmaVolPct": 2.285319,
+        "historicalVarLossPct": 4.021226,
+        "drawdownPct": -23.770062,
+        "BTC_price": 80770.5,
+        "approximate_CCW_value": 80762.42295
+      },
+      {
+        "date": "2025-01-15",
+        "cycle_id": 2,
+        "instrument_name": "BTC-17JAN25-104000-C",
+        "dailyReturnPct": 3.609796,
+        "ewmaVolPct": 2.1086,
+        "historicalVarLossPct": null,
+        "drawdownPct": -0.618693,
+        "BTC_price": 99718,
+        "approximate_CCW_value": 99458.7332
+      },
+      {
+        "date": "2025-03-19",
+        "cycle_id": 11,
+        "instrument_name": "BTC-21MAR25-90000-C",
+        "dailyReturnPct": 3.578874,
+        "ewmaVolPct": 2.409804,
+        "historicalVarLossPct": 3.569325,
+        "drawdownPct": -20.601176,
+        "BTC_price": 84195.5,
+        "approximate_CCW_value": 84119.72405
+      },
+      {
+        "date": "2025-04-22",
+        "cycle_id": 16,
+        "instrument_name": "BTC-25APR25-94000-C",
+        "dailyReturnPct": 3.475732,
+        "ewmaVolPct": 2.112623,
+        "historicalVarLossPct": 2.344676,
+        "drawdownPct": -15.184515,
+        "BTC_price": 90310,
+        "approximate_CCW_value": 89858.45
+      }
+    ],
+    "longestNegativeReturnStreaks": [
+      {
+        "startDate": "2025-11-11",
+        "endDate": "2025-11-18",
+        "length": 8,
+        "cumulativeReturn": 0.8728563429764391,
+        "worstReturnPct": -6.436512,
+        "minDrawdownPct": -26.744616,
+        "cumulativeReturnPct": -12.714366
+      },
+      {
+        "startDate": "2025-09-19",
+        "endDate": "2025-09-25",
+        "length": 7,
+        "cumulativeReturn": 0.9441719071507814,
+        "worstReturnPct": -2.130271,
+        "minDrawdownPct": -8.942143,
+        "cumulativeReturnPct": -5.582809
+      },
+      {
+        "startDate": "2025-10-07",
+        "endDate": "2025-10-12",
+        "length": 6,
+        "cumulativeReturn": 0.8923600845937857,
+        "worstReturnPct": -7.711738,
+        "minDrawdownPct": -10.763992,
+        "cumulativeReturnPct": -10.763992
+      },
+      {
+        "startDate": "2025-02-22",
+        "endDate": "2025-02-25",
+        "length": 4,
+        "cumulativeReturn": 0.8768258914316149,
+        "worstReturnPct": -8.653824,
+        "minDrawdownPct": -18.413613,
+        "cumulativeReturnPct": -12.317411
+      },
+      {
+        "startDate": "2025-03-08",
+        "endDate": "2025-03-11",
+        "length": 4,
+        "cumulativeReturn": 0.9080285030635541,
+        "worstReturnPct": -3.659138,
+        "minDrawdownPct": -23.372131,
+        "cumulativeReturnPct": -9.19715
+      },
+      {
+        "startDate": "2025-12-13",
+        "endDate": "2025-12-16",
+        "length": 4,
+        "cumulativeReturn": 0.9474064700657597,
+        "worstReturnPct": -2.267487,
+        "minDrawdownPct": -29.97117,
+        "cumulativeReturnPct": -5.259353
+      },
+      {
+        "startDate": "2025-11-20",
+        "endDate": "2025-11-22",
+        "length": 3,
+        "cumulativeReturn": 0.9165353986129203,
+        "worstReturnPct": -7.449814,
+        "minDrawdownPct": -32.537703,
+        "cumulativeReturnPct": -8.34646
+      },
+      {
+        "startDate": "2025-01-07",
+        "endDate": "2025-01-09",
+        "length": 3,
+        "cumulativeReturn": 0.9269722434582865,
+        "worstReturnPct": -4.423475,
+        "minDrawdownPct": -7.302776,
+        "cumulativeReturnPct": -7.302776
+      },
+      {
+        "startDate": "2025-04-05",
+        "endDate": "2025-04-07",
+        "length": 3,
+        "cumulativeReturn": 0.9440588734814651,
+        "worstReturnPct": -4.31748,
+        "minDrawdownPct": -25.826051,
+        "cumulativeReturnPct": -5.594113
+      },
+      {
+        "startDate": "2025-08-24",
+        "endDate": "2025-08-26",
+        "length": 3,
+        "cumulativeReturn": 0.95997312869202,
+        "worstReturnPct": -2.735816,
+        "minDrawdownPct": -9.666189,
+        "cumulativeReturnPct": -4.002687
+      }
+    ],
+    "consecutiveTailEventStreaks": [
+      {
+        "startDate": "2025-03-08",
+        "endDate": "2025-03-09",
+        "length": 2,
+        "cumulativeReturn": 0.9336505944251126,
+        "worstReturnPct": -3.659138,
+        "minDrawdownPct": -21.209902,
+        "cumulativeReturnPct": -6.634941
+      },
+      {
+        "startDate": "2025-02-25",
+        "endDate": "2025-02-25",
+        "length": 1,
+        "cumulativeReturn": 0.91346176,
+        "worstReturnPct": -8.653824,
+        "minDrawdownPct": -18.413613,
+        "cumulativeReturnPct": -8.653824
+      },
+      {
+        "startDate": "2025-10-11",
+        "endDate": "2025-10-11",
+        "length": 1,
+        "cumulativeReturn": 0.92288262,
+        "worstReturnPct": -7.711738,
+        "minDrawdownPct": -9.922663,
+        "cumulativeReturnPct": -7.711738
+      },
+      {
+        "startDate": "2025-11-21",
+        "endDate": "2025-11-21",
+        "length": 1,
+        "cumulativeReturn": 0.92550186,
+        "worstReturnPct": -7.449814,
+        "minDrawdownPct": -32.528274,
+        "cumulativeReturnPct": -7.449814
+      },
+      {
+        "startDate": "2025-11-14",
+        "endDate": "2025-11-14",
+        "length": 1,
+        "cumulativeReturn": 0.9356348800000001,
+        "worstReturnPct": -6.436512,
+        "minDrawdownPct": -22.928353,
+        "cumulativeReturnPct": -6.436512
+      },
+      {
+        "startDate": "2025-10-17",
+        "endDate": "2025-10-17",
+        "length": 1,
+        "cumulativeReturn": 0.95053918,
+        "worstReturnPct": -4.946082,
+        "minDrawdownPct": -15.407487,
+        "cumulativeReturnPct": -4.946082
+      },
+      {
+        "startDate": "2025-10-30",
+        "endDate": "2025-10-30",
+        "length": 1,
+        "cumulativeReturn": 0.95530687,
+        "worstReturnPct": -4.469313,
+        "minDrawdownPct": -13.539561,
+        "cumulativeReturnPct": -4.469313
+      },
+      {
+        "startDate": "2025-01-08",
+        "endDate": "2025-01-08",
+        "length": 1,
+        "cumulativeReturn": 0.95576525,
+        "worstReturnPct": -4.423475,
+        "minDrawdownPct": -4.761765,
+        "cumulativeReturnPct": -4.423475
+      },
+      {
+        "startDate": "2025-04-07",
+        "endDate": "2025-04-07",
+        "length": 1,
+        "cumulativeReturn": 0.9568252,
+        "worstReturnPct": -4.31748,
+        "minDrawdownPct": -25.826051,
+        "cumulativeReturnPct": -4.31748
+      },
+      {
+        "startDate": "2025-10-14",
+        "endDate": "2025-10-14",
+        "length": 1,
+        "cumulativeReturn": 0.96180184,
+        "worstReturnPct": -3.819816,
+        "minDrawdownPct": -10.968322,
+        "cumulativeReturnPct": -3.819816
+      }
+    ],
+    "largestLossClusters": [
+      {
+        "startDate": "2025-11-11",
+        "endDate": "2025-11-18",
+        "length": 8,
+        "cumulativeReturn": 0.8728563429764391,
+        "worstReturnPct": -6.436512,
+        "minDrawdownPct": -26.744616,
+        "cumulativeReturnPct": -12.714366
+      },
+      {
+        "startDate": "2025-02-22",
+        "endDate": "2025-02-25",
+        "length": 4,
+        "cumulativeReturn": 0.8768258914316149,
+        "worstReturnPct": -8.653824,
+        "minDrawdownPct": -18.413613,
+        "cumulativeReturnPct": -12.317411
+      },
+      {
+        "startDate": "2025-10-07",
+        "endDate": "2025-10-12",
+        "length": 6,
+        "cumulativeReturn": 0.8923600845937857,
+        "worstReturnPct": -7.711738,
+        "minDrawdownPct": -10.763992,
+        "cumulativeReturnPct": -10.763992
+      },
+      {
+        "startDate": "2025-03-08",
+        "endDate": "2025-03-11",
+        "length": 4,
+        "cumulativeReturn": 0.9080285030635541,
+        "worstReturnPct": -3.659138,
+        "minDrawdownPct": -23.372131,
+        "cumulativeReturnPct": -9.19715
+      },
+      {
+        "startDate": "2025-11-20",
+        "endDate": "2025-11-22",
+        "length": 3,
+        "cumulativeReturn": 0.9165353986129203,
+        "worstReturnPct": -7.449814,
+        "minDrawdownPct": -32.537703,
+        "cumulativeReturnPct": -8.34646
+      },
+      {
+        "startDate": "2025-01-07",
+        "endDate": "2025-01-09",
+        "length": 3,
+        "cumulativeReturn": 0.9269722434582865,
+        "worstReturnPct": -4.423475,
+        "minDrawdownPct": -7.302776,
+        "cumulativeReturnPct": -7.302776
+      },
+      {
+        "startDate": "2025-10-29",
+        "endDate": "2025-10-30",
+        "length": 2,
+        "cumulativeReturn": 0.9337411135548798,
+        "worstReturnPct": -4.469313,
+        "minDrawdownPct": -13.539561,
+        "cumulativeReturnPct": -6.625889
+      },
+      {
+        "startDate": "2025-04-05",
+        "endDate": "2025-04-07",
+        "length": 3,
+        "cumulativeReturn": 0.9440588734814651,
+        "worstReturnPct": -4.31748,
+        "minDrawdownPct": -25.826051,
+        "cumulativeReturnPct": -5.594113
+      },
+      {
+        "startDate": "2025-09-19",
+        "endDate": "2025-09-25",
+        "length": 7,
+        "cumulativeReturn": 0.9441719071507814,
+        "worstReturnPct": -2.130271,
+        "minDrawdownPct": -8.942143,
+        "cumulativeReturnPct": -5.582809
+      },
+      {
+        "startDate": "2025-10-16",
+        "endDate": "2025-10-17",
+        "length": 2,
+        "cumulativeReturn": 0.9448642329659969,
+        "worstReturnPct": -4.946082,
+        "minDrawdownPct": -15.407487,
+        "cumulativeReturnPct": -5.513577
+      }
+    ]
+  },
+  "ewmaVolatility": {
+    "minPct": 1.100983,
+    "maxPct": 2.834352,
+    "medianPct": 1.974398,
+    "meanPct": 1.929655,
+    "percentilesPct": {
+      "p1": 1.130352,
+      "p5": 1.195877,
+      "p10": 1.403927,
+      "p90": 2.449361,
+      "p95": 2.590711,
+      "p99": 2.726819
+    },
+    "thresholdFrequency": [
+      {
+        "thresholdPct": 2,
+        "count": 126,
+        "frequencyPct": 47.54717
+      },
+      {
+        "thresholdPct": 3,
+        "count": 0,
+        "frequencyPct": 0
+      },
+      {
+        "thresholdPct": 4,
+        "count": 0,
+        "frequencyPct": 0
+      },
+      {
+        "thresholdPct": 5,
+        "count": 0,
+        "frequencyPct": 0
+      }
+    ],
+    "spikeEpisodes": [],
+    "largestSpikeDates": [
+      {
+        "date": "2025-11-21",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": -7.449814,
+        "ewmaVolPct": 2.834352,
+        "historicalVarLossPct": 4.731536,
+        "drawdownPct": -32.528274,
+        "BTC_price": 84760.5,
+        "approximate_CCW_value": 84124.79625
+      },
+      {
+        "date": "2025-11-22",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": -0.013975,
+        "ewmaVolPct": 2.748008,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -32.537703,
+        "BTC_price": 84400,
+        "approximate_CCW_value": 84113.04
+      },
+      {
+        "date": "2025-03-09",
+        "cycle_id": 10,
+        "instrument_name": "BTC-14MAR25-97000-C",
+        "dailyReturnPct": -3.088827,
+        "ewmaVolPct": 2.735299,
+        "historicalVarLossPct": 3.569325,
+        "drawdownPct": -21.209902,
+        "BTC_price": 83550,
+        "approximate_CCW_value": 83474.805
+      },
+      {
+        "date": "2025-03-10",
+        "cycle_id": 10,
+        "instrument_name": "BTC-14MAR25-97000-C",
+        "dailyReturnPct": -2.505323,
+        "ewmaVolPct": 2.722049,
+        "historicalVarLossPct": 3.569325,
+        "drawdownPct": -23.183848,
+        "BTC_price": 81440.5,
+        "approximate_CCW_value": 81383.49165
+      },
+      {
+        "date": "2025-11-23",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": 2.126234,
+        "ewmaVolPct": 2.714721,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -31.103297,
+        "BTC_price": 86420,
+        "approximate_CCW_value": 85901.48
+      },
+      {
+        "date": "2025-03-08",
+        "cycle_id": 10,
+        "instrument_name": "BTC-14MAR25-97000-C",
+        "dailyReturnPct": -3.659138,
+        "ewmaVolPct": 2.711169,
+        "historicalVarLossPct": 3.184351,
+        "drawdownPct": -18.698643,
+        "BTC_price": 86247.5,
+        "approximate_CCW_value": 86135.37825
+      },
+      {
+        "date": "2025-03-11",
+        "cycle_id": 10,
+        "instrument_name": "BTC-14MAR25-97000-C",
+        "dailyReturnPct": -0.245109,
+        "ewmaVolPct": 2.639807,
+        "historicalVarLossPct": 3.569325,
+        "drawdownPct": -23.372131,
+        "BTC_price": 81216.5,
+        "approximate_CCW_value": 81184.0134
+      },
+      {
+        "date": "2025-02-27",
+        "cycle_id": 8,
+        "instrument_name": "BTC-28FEB25-108000-C",
+        "dailyReturnPct": -3.459553,
+        "ewmaVolPct": 2.639125,
+        "historicalVarLossPct": 2.814516,
+        "drawdownPct": -20.041641,
+        "BTC_price": 84721,
+        "approximate_CCW_value": 84712.5279
+      },
+      {
+        "date": "2025-02-28",
+        "cycle_id": 9,
+        "instrument_name": null,
+        "dailyReturnPct": null,
+        "ewmaVolPct": 2.639125,
+        "historicalVarLossPct": 2.814516,
+        "drawdownPct": null,
+        "BTC_price": 82194,
+        "approximate_CCW_value": null
+      },
+      {
+        "date": "2025-03-01",
+        "cycle_id": 9,
+        "instrument_name": null,
+        "dailyReturnPct": null,
+        "ewmaVolPct": 2.639125,
+        "historicalVarLossPct": 2.814516,
+        "drawdownPct": null,
+        "BTC_price": 84610.5,
+        "approximate_CCW_value": null
+      }
+    ]
+  },
+  "historicalVaR": {
+    "minLossPct": 1.539302,
+    "maxLossPct": 5.765818,
+    "medianLossPct": 2.791146,
+    "meanLossPct": 3.141578,
+    "percentilesLossPct": {
+      "p1": 1.539302,
+      "p5": 1.715911,
+      "p10": 1.961708,
+      "p90": 5.107307,
+      "p95": 5.551272,
+      "p99": 5.765818
+    },
+    "thresholdFrequency": [
+      {
+        "thresholdPct": 3,
+        "count": 90,
+        "frequencyPct": 38.461538
+      },
+      {
+        "thresholdPct": 5,
+        "count": 28,
+        "frequencyPct": 11.965812
+      },
+      {
+        "thresholdPct": 7,
+        "count": 0,
+        "frequencyPct": 0
+      },
+      {
+        "thresholdPct": 10,
+        "count": 0,
+        "frequencyPct": 0
+      }
+    ],
+    "spikeEpisodes": [
+      {
+        "startDate": "2025-10-15",
+        "endDate": "2025-12-25",
+        "length": 72,
+        "cumulativeReturn": 0.8495991898801857,
+        "worstReturnPct": -7.449814,
+        "minDrawdownPct": -32.537703,
+        "cumulativeReturnPct": -15.040081
+      },
+      {
+        "startDate": "2025-03-08",
+        "endDate": "2025-04-15",
+        "length": 39,
+        "cumulativeReturn": 0.9920919522693787,
+        "worstReturnPct": -4.31748,
+        "minDrawdownPct": -26.427287,
+        "cumulativeReturnPct": -0.790805
+      }
+    ],
+    "highestVaRDates": [
+      {
+        "date": "2025-11-15",
+        "cycle_id": 46,
+        "instrument_name": "BTC-21NOV25-107000-C",
+        "dailyReturnPct": -0.088826,
+        "ewmaVolPct": 2.403958,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -22.996813,
+        "BTC_price": 96153,
+        "approximate_CCW_value": 96008.7705
+      },
+      {
+        "date": "2025-11-16",
+        "cycle_id": 46,
+        "instrument_name": "BTC-21NOV25-107000-C",
+        "dailyReturnPct": -0.880717,
+        "ewmaVolPct": 2.340686,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -23.674993,
+        "BTC_price": 95268,
+        "approximate_CCW_value": 95163.2052
+      },
+      {
+        "date": "2025-11-17",
+        "cycle_id": 46,
+        "instrument_name": "BTC-21NOV25-107000-C",
+        "dailyReturnPct": -0.558508,
+        "ewmaVolPct": 2.273499,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -24.101274,
+        "BTC_price": 94698,
+        "approximate_CCW_value": 94631.7114
+      },
+      {
+        "date": "2025-11-18",
+        "cycle_id": 46,
+        "instrument_name": "BTC-21NOV25-107000-C",
+        "dailyReturnPct": -3.482723,
+        "ewmaVolPct": 2.363563,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -26.744616,
+        "BTC_price": 91372.5,
+        "approximate_CCW_value": 91335.951
+      },
+      {
+        "date": "2025-11-22",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": -0.013975,
+        "ewmaVolPct": 2.748008,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -32.537703,
+        "BTC_price": 84400,
+        "approximate_CCW_value": 84113.04
+      },
+      {
+        "date": "2025-11-23",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": 2.126234,
+        "ewmaVolPct": 2.714721,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -31.103297,
+        "BTC_price": 86420,
+        "approximate_CCW_value": 85901.48
+      },
+      {
+        "date": "2025-11-24",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": -0.15359,
+        "ewmaVolPct": 2.632288,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -31.209115,
+        "BTC_price": 86114,
+        "approximate_CCW_value": 85769.544
+      },
+      {
+        "date": "2025-11-25",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": 0.709489,
+        "ewmaVolPct": 2.558008,
+        "historicalVarLossPct": 5.551272,
+        "drawdownPct": -30.721052,
+        "BTC_price": 86542.5,
+        "approximate_CCW_value": 86378.06925
+      },
+      {
+        "date": "2025-11-26",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": 0.606008,
+        "ewmaVolPct": 2.484519,
+        "historicalVarLossPct": 5.551272,
+        "drawdownPct": -30.301216,
+        "BTC_price": 86945,
+        "approximate_CCW_value": 86901.5275
+      },
+      {
+        "date": "2025-11-27",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": 4.215668,
+        "ewmaVolPct": 2.620835,
+        "historicalVarLossPct": 5.551272,
+        "drawdownPct": -27.362947,
+        "BTC_price": 90746.5,
+        "approximate_CCW_value": 90565.007
+      }
+    ]
+  },
+  "drawdownPath": {
+    "maxDrawdownPct": -32.537703,
+    "longestUnderwaterPeriods": [
+      {
+        "startDate": "2025-10-07",
+        "endDate": "2025-10-30",
+        "length": 24,
+        "cumulativeReturn": 0.8646043991554925,
+        "worstReturnPct": -7.711738,
+        "minDrawdownPct": -15.407487,
+        "cumulativeReturnPct": -13.53956,
+        "recovered": false
+      },
+      {
+        "startDate": "2025-11-07",
+        "endDate": "2025-11-27",
+        "length": 21,
+        "cumulativeReturn": 0.9011530845037499,
+        "worstReturnPct": -7.449814,
+        "minDrawdownPct": -32.537703,
+        "cumulativeReturnPct": -9.884692,
+        "recovered": false
+      },
+      {
+        "startDate": "2025-12-05",
+        "endDate": "2025-12-25",
+        "length": 21,
+        "cumulativeReturn": 0.9708287673325596,
+        "worstReturnPct": -3.457149,
+        "minDrawdownPct": -30.41235,
+        "cumulativeReturnPct": -2.917123,
+        "recovered": false
+      },
+      {
+        "startDate": "2025-04-04",
+        "endDate": "2025-04-24",
+        "length": 21,
+        "cumulativeReturn": 1.1128031394035103,
+        "worstReturnPct": -4.31748,
+        "minDrawdownPct": -26.427287,
+        "cumulativeReturnPct": 11.280314,
+        "recovered": true
+      },
+      {
+        "startDate": "2025-03-07",
+        "endDate": "2025-03-27",
+        "length": 21,
+        "cumulativeReturn": 0.9685419948877624,
+        "worstReturnPct": -3.659138,
+        "minDrawdownPct": -23.372131,
+        "cumulativeReturnPct": -3.145801,
+        "recovered": true
+      },
+      {
+        "startDate": "2025-02-07",
+        "endDate": "2025-02-27",
+        "length": 21,
+        "cumulativeReturn": 0.8578706182204755,
+        "worstReturnPct": -8.653824,
+        "minDrawdownPct": -20.041641,
+        "cumulativeReturnPct": -14.212938,
+        "recovered": true
+      },
+      {
+        "startDate": "2025-06-06",
+        "endDate": "2025-06-26",
+        "length": 21,
+        "cumulativeReturn": 1.0292454603072678,
+        "worstReturnPct": -2.63794,
+        "minDrawdownPct": -9.070552,
+        "cumulativeReturnPct": 2.924546,
+        "recovered": true
+      },
+      {
+        "startDate": "2025-09-05",
+        "endDate": "2025-09-25",
+        "length": 21,
+        "cumulativeReturn": 0.9833835146148485,
+        "worstReturnPct": -2.130271,
+        "minDrawdownPct": -9.029219,
+        "cumulativeReturnPct": -1.661649,
+        "recovered": true
+      },
+      {
+        "startDate": "2025-08-14",
+        "endDate": "2025-08-28",
+        "length": 15,
+        "cumulativeReturn": 0.9247449199853052,
+        "worstReturnPct": -2.984938,
+        "minDrawdownPct": -9.666189,
+        "cumulativeReturnPct": -7.525508,
+        "recovered": true
+      },
+      {
+        "startDate": "2025-05-09",
+        "endDate": "2025-05-20",
+        "length": 12,
+        "cumulativeReturn": 1.0099473816638718,
+        "worstReturnPct": -1.659437,
+        "minDrawdownPct": -3.515033,
+        "cumulativeReturnPct": 0.994738,
+        "recovered": true
+      }
+    ],
+    "largestDrawdownEpisodes": [
+      {
+        "startDate": "2025-11-07",
+        "endDate": "2025-11-27",
+        "length": 21,
+        "cumulativeReturn": 0.9011530845037499,
+        "worstReturnPct": -7.449814,
+        "minDrawdownPct": -32.537703,
+        "cumulativeReturnPct": -9.884692,
+        "recovered": false
+      },
+      {
+        "startDate": "2025-12-05",
+        "endDate": "2025-12-25",
+        "length": 21,
+        "cumulativeReturn": 0.9708287673325596,
+        "worstReturnPct": -3.457149,
+        "minDrawdownPct": -30.41235,
+        "cumulativeReturnPct": -2.917123,
+        "recovered": false
+      },
+      {
+        "startDate": "2025-04-04",
+        "endDate": "2025-04-24",
+        "length": 21,
+        "cumulativeReturn": 1.1128031394035103,
+        "worstReturnPct": -4.31748,
+        "minDrawdownPct": -26.427287,
+        "cumulativeReturnPct": 11.280314,
+        "recovered": true
+      },
+      {
+        "startDate": "2025-03-07",
+        "endDate": "2025-03-27",
+        "length": 21,
+        "cumulativeReturn": 0.9685419948877624,
+        "worstReturnPct": -3.659138,
+        "minDrawdownPct": -23.372131,
+        "cumulativeReturnPct": -3.145801,
+        "recovered": true
+      },
+      {
+        "startDate": "2025-02-07",
+        "endDate": "2025-02-27",
+        "length": 21,
+        "cumulativeReturn": 0.8578706182204755,
+        "worstReturnPct": -8.653824,
+        "minDrawdownPct": -20.041641,
+        "cumulativeReturnPct": -14.212938,
+        "recovered": true
+      },
+      {
+        "startDate": "2025-10-07",
+        "endDate": "2025-10-30",
+        "length": 24,
+        "cumulativeReturn": 0.8646043991554925,
+        "worstReturnPct": -7.711738,
+        "minDrawdownPct": -15.407487,
+        "cumulativeReturnPct": -13.53956,
+        "recovered": false
+      },
+      {
+        "startDate": "2025-08-14",
+        "endDate": "2025-08-28",
+        "length": 15,
+        "cumulativeReturn": 0.9247449199853052,
+        "worstReturnPct": -2.984938,
+        "minDrawdownPct": -9.666189,
+        "cumulativeReturnPct": -7.525508,
+        "recovered": true
+      },
+      {
+        "startDate": "2025-06-06",
+        "endDate": "2025-06-26",
+        "length": 21,
+        "cumulativeReturn": 1.0292454603072678,
+        "worstReturnPct": -2.63794,
+        "minDrawdownPct": -9.070552,
+        "cumulativeReturnPct": 2.924546,
+        "recovered": true
+      },
+      {
+        "startDate": "2025-09-05",
+        "endDate": "2025-09-25",
+        "length": 21,
+        "cumulativeReturn": 0.9833835146148485,
+        "worstReturnPct": -2.130271,
+        "minDrawdownPct": -9.029219,
+        "cumulativeReturnPct": -1.661649,
+        "recovered": true
+      },
+      {
+        "startDate": "2025-01-07",
+        "endDate": "2025-01-16",
+        "length": 10,
+        "cumulativeReturn": 0.9733318384965777,
+        "worstReturnPct": -4.423475,
+        "minDrawdownPct": -8.27954,
+        "cumulativeReturnPct": -2.666816,
+        "recovered": true
+      }
+    ],
+    "drawdownExpansionDays": 126,
+    "drawdownExpansionFrequencyPct": 47.368421,
+    "elevatedDrawdownDays": 102,
+    "elevatedDrawdownFrequencyPct": 38.345865
+  },
+  "crisisIdentification": {
+    "largestDailyLossDates": [
+      {
+        "date": "2025-02-25",
+        "cycle_id": 8,
+        "instrument_name": "BTC-28FEB25-108000-C",
+        "dailyReturnPct": -8.653824,
+        "ewmaVolPct": 2.631157,
+        "historicalVarLossPct": 2.618889,
+        "drawdownPct": -18.413613,
+        "BTC_price": 86446,
+        "approximate_CCW_value": 86437.3554
+      },
+      {
+        "date": "2025-10-11",
+        "cycle_id": 41,
+        "instrument_name": "BTC-17OCT25-132000-C",
+        "dailyReturnPct": -7.711738,
+        "ewmaVolPct": 2.169721,
+        "historicalVarLossPct": 1.722264,
+        "drawdownPct": -9.922663,
+        "BTC_price": 112433.5,
+        "approximate_CCW_value": 112309.82315
+      },
+      {
+        "date": "2025-11-21",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": -7.449814,
+        "ewmaVolPct": 2.834352,
+        "historicalVarLossPct": 4.731536,
+        "drawdownPct": -32.528274,
+        "BTC_price": 84760.5,
+        "approximate_CCW_value": 84124.79625
+      },
+      {
+        "date": "2025-11-14",
+        "cycle_id": 46,
+        "instrument_name": "BTC-21NOV25-107000-C",
+        "dailyReturnPct": -6.436512,
+        "ewmaVolPct": 2.479391,
+        "historicalVarLossPct": 4.731536,
+        "drawdownPct": -22.928353,
+        "BTC_price": 96306,
+        "approximate_CCW_value": 96094.1268
+      },
+      {
+        "date": "2025-10-17",
+        "cycle_id": 42,
+        "instrument_name": "BTC-24OCT25-116000-C",
+        "dailyReturnPct": -4.946082,
+        "ewmaVolPct": 2.48408,
+        "historicalVarLossPct": 3.059521,
+        "drawdownPct": -15.407487,
+        "BTC_price": 105725,
+        "approximate_CCW_value": 105471.26
+      },
+      {
+        "date": "2025-10-30",
+        "cycle_id": 43,
+        "instrument_name": "BTC-31OCT25-122000-C",
+        "dailyReturnPct": -4.469313,
+        "ewmaVolPct": 2.259681,
+        "historicalVarLossPct": 4.439262,
+        "drawdownPct": -13.539561,
+        "BTC_price": 107811,
+        "approximate_CCW_value": 107800.2189
+      },
+      {
+        "date": "2025-01-08",
+        "cycle_id": 1,
+        "instrument_name": "BTC-10JAN25-106000-C",
+        "dailyReturnPct": -4.423475,
+        "ewmaVolPct": 1.603508,
+        "historicalVarLossPct": null,
+        "drawdownPct": -4.761765,
+        "BTC_price": 95331.5,
+        "approximate_CCW_value": 95312.4337
+      },
+      {
+        "date": "2025-04-07",
+        "cycle_id": 14,
+        "instrument_name": "BTC-11APR25-92000-C",
+        "dailyReturnPct": -4.31748,
+        "ewmaVolPct": 2.193707,
+        "historicalVarLossPct": 3.569325,
+        "drawdownPct": -25.826051,
+        "BTC_price": 78623.5,
+        "approximate_CCW_value": 78584.18825
+      },
+      {
+        "date": "2025-10-14",
+        "cycle_id": 41,
+        "instrument_name": "BTC-17OCT25-132000-C",
+        "dailyReturnPct": -3.819816,
+        "ewmaVolPct": 2.370228,
+        "historicalVarLossPct": 1.961708,
+        "drawdownPct": -10.968322,
+        "BTC_price": 111050.5,
+        "approximate_CCW_value": 111006.0798
+      },
+      {
+        "date": "2025-03-08",
+        "cycle_id": 10,
+        "instrument_name": "BTC-14MAR25-97000-C",
+        "dailyReturnPct": -3.659138,
+        "ewmaVolPct": 2.711169,
+        "historicalVarLossPct": 3.184351,
+        "drawdownPct": -18.698643,
+        "BTC_price": 86247.5,
+        "approximate_CCW_value": 86135.37825
+      }
+    ],
+    "largestVolatilitySpikeDates": [
+      {
+        "date": "2025-11-21",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": -7.449814,
+        "ewmaVolPct": 2.834352,
+        "historicalVarLossPct": 4.731536,
+        "drawdownPct": -32.528274,
+        "BTC_price": 84760.5,
+        "approximate_CCW_value": 84124.79625
+      },
+      {
+        "date": "2025-11-22",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": -0.013975,
+        "ewmaVolPct": 2.748008,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -32.537703,
+        "BTC_price": 84400,
+        "approximate_CCW_value": 84113.04
+      },
+      {
+        "date": "2025-03-09",
+        "cycle_id": 10,
+        "instrument_name": "BTC-14MAR25-97000-C",
+        "dailyReturnPct": -3.088827,
+        "ewmaVolPct": 2.735299,
+        "historicalVarLossPct": 3.569325,
+        "drawdownPct": -21.209902,
+        "BTC_price": 83550,
+        "approximate_CCW_value": 83474.805
+      },
+      {
+        "date": "2025-03-10",
+        "cycle_id": 10,
+        "instrument_name": "BTC-14MAR25-97000-C",
+        "dailyReturnPct": -2.505323,
+        "ewmaVolPct": 2.722049,
+        "historicalVarLossPct": 3.569325,
+        "drawdownPct": -23.183848,
+        "BTC_price": 81440.5,
+        "approximate_CCW_value": 81383.49165
+      },
+      {
+        "date": "2025-11-23",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": 2.126234,
+        "ewmaVolPct": 2.714721,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -31.103297,
+        "BTC_price": 86420,
+        "approximate_CCW_value": 85901.48
+      },
+      {
+        "date": "2025-03-08",
+        "cycle_id": 10,
+        "instrument_name": "BTC-14MAR25-97000-C",
+        "dailyReturnPct": -3.659138,
+        "ewmaVolPct": 2.711169,
+        "historicalVarLossPct": 3.184351,
+        "drawdownPct": -18.698643,
+        "BTC_price": 86247.5,
+        "approximate_CCW_value": 86135.37825
+      },
+      {
+        "date": "2025-03-11",
+        "cycle_id": 10,
+        "instrument_name": "BTC-14MAR25-97000-C",
+        "dailyReturnPct": -0.245109,
+        "ewmaVolPct": 2.639807,
+        "historicalVarLossPct": 3.569325,
+        "drawdownPct": -23.372131,
+        "BTC_price": 81216.5,
+        "approximate_CCW_value": 81184.0134
+      },
+      {
+        "date": "2025-02-27",
+        "cycle_id": 8,
+        "instrument_name": "BTC-28FEB25-108000-C",
+        "dailyReturnPct": -3.459553,
+        "ewmaVolPct": 2.639125,
+        "historicalVarLossPct": 2.814516,
+        "drawdownPct": -20.041641,
+        "BTC_price": 84721,
+        "approximate_CCW_value": 84712.5279
+      },
+      {
+        "date": "2025-02-28",
+        "cycle_id": 9,
+        "instrument_name": null,
+        "dailyReturnPct": null,
+        "ewmaVolPct": 2.639125,
+        "historicalVarLossPct": 2.814516,
+        "drawdownPct": null,
+        "BTC_price": 82194,
+        "approximate_CCW_value": null
+      },
+      {
+        "date": "2025-03-01",
+        "cycle_id": 9,
+        "instrument_name": null,
+        "dailyReturnPct": null,
+        "ewmaVolPct": 2.639125,
+        "historicalVarLossPct": 2.814516,
+        "drawdownPct": null,
+        "BTC_price": 84610.5,
+        "approximate_CCW_value": null
+      }
+    ],
+    "largestVaRSpikeDates": [
+      {
+        "date": "2025-11-15",
+        "cycle_id": 46,
+        "instrument_name": "BTC-21NOV25-107000-C",
+        "dailyReturnPct": -0.088826,
+        "ewmaVolPct": 2.403958,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -22.996813,
+        "BTC_price": 96153,
+        "approximate_CCW_value": 96008.7705
+      },
+      {
+        "date": "2025-11-16",
+        "cycle_id": 46,
+        "instrument_name": "BTC-21NOV25-107000-C",
+        "dailyReturnPct": -0.880717,
+        "ewmaVolPct": 2.340686,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -23.674993,
+        "BTC_price": 95268,
+        "approximate_CCW_value": 95163.2052
+      },
+      {
+        "date": "2025-11-17",
+        "cycle_id": 46,
+        "instrument_name": "BTC-21NOV25-107000-C",
+        "dailyReturnPct": -0.558508,
+        "ewmaVolPct": 2.273499,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -24.101274,
+        "BTC_price": 94698,
+        "approximate_CCW_value": 94631.7114
+      },
+      {
+        "date": "2025-11-18",
+        "cycle_id": 46,
+        "instrument_name": "BTC-21NOV25-107000-C",
+        "dailyReturnPct": -3.482723,
+        "ewmaVolPct": 2.363563,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -26.744616,
+        "BTC_price": 91372.5,
+        "approximate_CCW_value": 91335.951
+      },
+      {
+        "date": "2025-11-22",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": -0.013975,
+        "ewmaVolPct": 2.748008,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -32.537703,
+        "BTC_price": 84400,
+        "approximate_CCW_value": 84113.04
+      },
+      {
+        "date": "2025-11-23",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": 2.126234,
+        "ewmaVolPct": 2.714721,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -31.103297,
+        "BTC_price": 86420,
+        "approximate_CCW_value": 85901.48
+      },
+      {
+        "date": "2025-11-24",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": -0.15359,
+        "ewmaVolPct": 2.632288,
+        "historicalVarLossPct": 5.765818,
+        "drawdownPct": -31.209115,
+        "BTC_price": 86114,
+        "approximate_CCW_value": 85769.544
+      },
+      {
+        "date": "2025-11-25",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": 0.709489,
+        "ewmaVolPct": 2.558008,
+        "historicalVarLossPct": 5.551272,
+        "drawdownPct": -30.721052,
+        "BTC_price": 86542.5,
+        "approximate_CCW_value": 86378.06925
+      },
+      {
+        "date": "2025-11-26",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": 0.606008,
+        "ewmaVolPct": 2.484519,
+        "historicalVarLossPct": 5.551272,
+        "drawdownPct": -30.301216,
+        "BTC_price": 86945,
+        "approximate_CCW_value": 86901.5275
+      },
+      {
+        "date": "2025-11-27",
+        "cycle_id": 47,
+        "instrument_name": "BTC-28NOV25-92000-C",
+        "dailyReturnPct": 4.215668,
+        "ewmaVolPct": 2.620835,
+        "historicalVarLossPct": 5.551272,
+        "drawdownPct": -27.362947,
+        "BTC_price": 90746.5,
+        "approximate_CCW_value": 90565.007
+      }
+    ],
+    "datasetVisibleStressWindows": [
+      "Early March to early April 2025: repeated large daily losses, elevated drawdown, and rising EWMA/VaR within the MTM subset.",
+      "Early November 2025: deepest drawdown region in the daily MTM path, partly adjacent to a missing synthetic-cycle gap."
+    ]
+  },
+  "findings": {
+    "observations": [
+      "The daily MTM subset contains 254 adjacent valid daily returns from 357 daily rows.",
+      "Worst adjacent daily return is -8.653824% and best adjacent daily return is 6.491679%.",
+      "Daily return standard deviation is 2.01973%, with max drawdown -32.537703%.",
+      "On complete MTM rows, EWMA volatility exceeds 3% on 0 rows and historical VaR loss magnitude exceeds 3% on 90 rows."
+    ],
+    "interpretations": [
+      "The daily layer appears economically meaningful because it exposes intracycle drawdown, volatility clustering, and tail observations that cycle-level reporting compresses.",
+      "The risk layer is usable for monitoring-style research, but the missing synthetic-cycle gaps reduce continuity and should remain visible in any future simulation.",
+      "Historical VaR and EWMA react to realized daily stress, but this study does not test whether a hedge would have improved outcomes."
+    ],
+    "hypotheses": [
+      "Future intracycle hedge research may be more sensitive to timing and missing-data continuity than to summary distribution metrics alone.",
+      "Daily MTM stress windows may help identify when crisis-trigger or higher-frequency risk controls should be simulated, after costs and liquidity are modeled.",
+      "A fuller option data source could reduce synthetic-cycle gaps and improve continuity of daily risk estimates."
+    ]
+  }
+}

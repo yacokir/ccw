@@ -1,0 +1,4 @@
+quality_rank,snapshot_time_utc,total_requests,successful_snapshots,availability_pct,mark_price_availability_pct,underlying_price_availability_pct,greek_completeness_pct,option_trade_candle_availability_pct,recent_trade_availability_pct,marks_without_recent_trade_24h,avg_abs_timestamp_diff_ms
+1,08:00,266,0,0,0,100,0,100,0,0,0
+2,14:00,266,0,0,0,100,0,100,0,0,0
+3,16:00,266,0,0,0,100,0,100,0,0,0

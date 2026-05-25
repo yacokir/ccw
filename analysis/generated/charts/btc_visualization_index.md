@@ -125,3 +125,22 @@ Hedge Frontier Phase 1 charts are generated from analysis-only fixed hedge post-
 
 - These charts do not include funding, basis, liquidation, or margin mechanics.
 - Results are fixed-ratio, roll-rebalanced hedge simulations over existing CCW baseline cycles.
+
+## Daily Approximate MTM Risk Charts
+
+Daily risk charts are archived from the BTC weekly OTM10 2025 Daily Approximate MTM prototype only. The POC artifact set is stored under `analysis/generated/poc/daily_mtm_ccw_2025/` to keep it separate from future generalized daily-risk outputs.
+
+- Daily MTM POC summary: [poc_daily_mtm_ccw_2025.md](../poc/daily_mtm_ccw_2025/poc_daily_mtm_ccw_2025.md)
+- Daily Risk Distribution Study: [btc_daily_risk_distribution_2025.md](../poc/daily_mtm_ccw_2025/btc_daily_risk_distribution_2025.md)
+- Daily Return Histogram: [btc_daily_return_histogram_2025.png](../poc/daily_mtm_ccw_2025/charts/btc_daily_return_histogram_2025.png)
+- EWMA Volatility Through Time: [btc_daily_ewma_timeseries_2025.png](../poc/daily_mtm_ccw_2025/charts/btc_daily_ewma_timeseries_2025.png)
+- Historical VaR Through Time: [btc_daily_var_timeseries_2025.png](../poc/daily_mtm_ccw_2025/charts/btc_daily_var_timeseries_2025.png)
+- Daily Drawdown Curve: [btc_daily_drawdown_curve_2025.png](../poc/daily_mtm_ccw_2025/charts/btc_daily_drawdown_curve_2025.png)
+- Tail Event Frequency: [btc_daily_tail_frequency_2025.png](../poc/daily_mtm_ccw_2025/charts/btc_daily_tail_frequency_2025.png)
+
+### Daily MTM Risk Caveats
+
+- Approximate MTM only; option OHLC/trade-price proxies may be imperfect.
+- No official historical marks, Greeks, delta-aware hedge, funding, slippage, or margin mechanics are included.
+- Scope is BTC weekly OTM10 2025 only; missing synthetic cycles remain excluded from adjacent daily-return calculations.
+- The archived POC should remain traceable as a validation slice and should not be overwritten by future generalized daily-risk runs.

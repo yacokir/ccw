@@ -111,8 +111,11 @@ The BTC CCW project is transitioning from exploratory backtesting to a structure
 
 ### 8.8 Intracycle Risk Modeling
 
-- Add intracycle mark-to-market risk when suitable price paths and option marks are available.
+- Preserve the validated Daily Approximate MTM POC for BTC weekly OTM10 2025 under `analysis/generated/poc/daily_mtm_ccw_2025/`.
+- Treat the Daily Approximate MTM layer as research-grade only: useful for daily risk, tail-event, VaR, volatility-clustering, and future intracycle hedge simulation research, but not official mark accounting.
+- Add generalized intracycle mark-to-market risk when suitable price paths and option OHLC proxies are available.
 - Distinguish end-of-cycle reconstructed drawdown from intracycle underwater risk.
+- Keep synthetic-cycle MTM gaps visible and avoid bridging missing observations into adjacent daily returns.
 - Extend realism layers for fees, slippage, funding, custody, and execution constraints.
 
 ---
@@ -128,6 +131,8 @@ Research interpretation should remain conservative:
 - Weekly BTC OTM10 appears structurally strong, with OTM05 remaining a candidate for further study.
 - Very low max-loss budgets, such as 5%, may require high stress-period hedge ratios and may be economically incompatible with the CCW edge.
 - Hedge latency may be a key unresolved issue, especially for 14d cycles, but this is a hypothesis rather than a confirmed conclusion.
+- The Daily Approximate MTM POC validated BTC weekly OTM10 2025 daily valuation reconstruction for research purposes, but it is not production-grade accounting and does not include greeks, official marks, funding, slippage, liquidation, or margin.
+- Daily MTM exposed deeper intracycle drawdowns, visible volatility clustering, left-tail behavior, and historical VaR persistence beyond cycle-level outputs.
 
 - Validate fixed hedge frontier outputs.
 - Document fixed hedge findings.
@@ -135,9 +140,12 @@ Research interpretation should remain conservative:
 - Compare EWMA/VaR hedge against fixed `h10`, `h20`, and `h40` benchmarks.
 - Evaluate historical/empirical VaR.
 - Evaluate hybrid VaR using `max(EWMA VaR, Historical VaR)`.
-- Design a daily approximate MTM CCW layer using BTC spot/index price plus option OHLC or trade-price proxies.
-- Use daily approximate MTM, if feasible, for daily CCW returns, daily drawdowns, historical daily VaR, realized volatility, crisis path analysis, and approximate intracycle hedge simulations.
+- Design the generalized daily approximate MTM CCW layer using BTC spot/index/perp price plus option OHLC or trade-price proxies.
+- Use the validated POC as the reference slice for daily CCW returns, daily drawdowns, historical daily VaR, EWMA volatility, crisis path analysis, and approximate intracycle hedge simulations.
 - Caveat daily MTM outputs clearly because option proxies may be stale, sparse, spread-distorted, or liquidity-limited.
+- Generalize daily MTM only after preserving POC output structure and methodology traceability.
+- Add OTM05 comparison after the generalized daily layer exists.
+- Add 14d comparison after weekly daily-MTM behavior is understood.
 - Simulate intracycle hedge-frequency alternatives to test whether hedge latency matters more than hedge sizing.
 - Add funding and basis realism.
 - Add intracycle diagnostic and alert layer.

@@ -141,23 +141,63 @@ These limitations are material. A hedge that appears attractive in analysis-only
 
 ## Daily Approximate MTM CCW Layer
 
-A future daily approximate mark-to-market layer may make it possible to reconstruct daily CCW valuation and returns without official historical option greek or mark snapshots.
+The Daily Approximate MTM CCW Layer is now validated for research purposes on the BTC weekly OTM10 2025 slice. It remains approximate, exploratory, and not production-grade portfolio accounting.
+
+The purpose of this layer is to support:
+
+- Daily risk analysis.
+- Tail-event analysis.
+- Daily VaR research.
+- Volatility clustering research.
+- Future intracycle hedge simulation research.
+
+It does not provide official mark accounting, greek-aware hedging, true option portfolio risk modeling, or production-quality risk controls.
 
 The candidate inputs are:
 
-- BTC spot or index price.
-- Option OHLC or trade-price proxy for the relevant short call.
+- BTC spot, index, or perpetual proxy price at a consistent daily snapshot.
+- Option OHLC or trade-price proxy for the exact short call.
 
-If sufficient historical option trade or candle data is available, this layer may support:
+The validated POC used BTC weekly OTM10 for 2025, a 10:00 New York daily snapshot, Deribit `BTC-PERPETUAL` 1-minute candle close as the BTC proxy, and the exact traded option instrument's 1-minute OHLC close as the option proxy. Because BTC option candles are BTC-denominated, the option close was converted to USD using the same snapshot BTC price.
+
+The core approximation is:
+
+```text
+approximate_CCW_value = BTC_price - option_price_proxy_usd
+```
+
+Daily returns are computed only across adjacent valid MTM observations. Missing MTM gaps, especially synthetic-cycle gaps with no exact observed option instrument, remain visible and are not bridged into a single daily return.
+
+The validated layer currently supports:
 
 - Daily CCW returns.
 - Daily drawdowns.
 - Historical daily VaR.
 - Daily realized volatility.
+- Daily EWMA volatility.
+- Tail-event clustering analysis.
 - Crisis path analysis.
 - Approximate intracycle hedge simulations.
 
-This should remain clearly labeled as approximate MTM. Option OHLC and trade-price proxies can be stale, sparse, wide-spread, or liquidity-distorted. They may not match executable marks, mid prices, exchange settlement marks, or greek-aware valuations. The layer is useful for research direction, but it should not be treated as an official historical valuation system without external validation.
+Current findings from the BTC weekly OTM10 2025 POC:
+
+- Approximate daily MTM reconstruction appears viable for exact observed option cycles.
+- Daily MTM exposes deeper intracycle drawdowns than cycle-level outputs alone.
+- Volatility clustering and left-tail behavior are visible in the daily layer.
+- Historical daily VaR appears more informative than EWMA alone for BTC stress persistence in this slice.
+- Missing synthetic-cycle gaps remain important and visible.
+
+This should remain clearly labeled as approximate MTM. Option OHLC and trade-price proxies can be stale, sparse, wide-spread, or liquidity-distorted. They may not match executable marks, mid prices, exchange settlement marks, or greek-aware valuations. No official historical marks, historical greeks, delta-aware option hedge, funding, slippage, liquidation, or margin mechanics are included.
+
+Current POC outputs are archived under:
+
+```text
+analysis/generated/poc/daily_mtm_ccw_2025/
+```
+
+The dedicated reference document is `docs/14_daily_approx_mtm_research_layer.md`.
+
+Future generalized daily-risk outputs should use separate names or folders so this validated one-year POC remains traceable.
 
 ## Current Research Hypotheses
 
@@ -175,11 +215,14 @@ The near-term research path is:
 4. Compare the cyclical hedge against fixed `h10`, `h20`, and `h40` benchmarks.
 5. Evaluate historical/empirical VaR.
 6. Evaluate hybrid VaR such as `max(EWMA VaR, Historical VaR)`.
-7. Add daily approximate MTM research and intracycle hedge-frequency simulation.
-8. Add funding, basis, margin, and slippage realism.
-9. Add intracycle diagnostic and alert research.
-10. Evaluate event-driven or crisis-trigger hedge escalation only after simpler hedge layers are understood.
-11. Study full option mark and greek-aware hedging if external historical providers, such as Tardis, can supply sufficient data.
-12. Extend future Monte Carlo work to include hedged and unhedged variants.
+7. Generalize the daily approximate MTM framework beyond the validated BTC weekly OTM10 2025 POC.
+8. Compare OTM05 and 14d daily-risk behavior after the generalized layer is designed.
+9. Evaluate hybrid VaR using daily approximate MTM, including `max(EWMA VaR, Historical VaR)`.
+10. Simulate intracycle hedge-frequency alternatives using daily MTM paths.
+11. Add funding, basis, margin, and slippage realism.
+12. Add intracycle diagnostic and alert research.
+13. Evaluate event-driven or crisis-trigger hedge escalation only after simpler hedge layers are understood.
+14. Study full option mark and greek-aware hedging if external historical providers, such as Tardis, can supply sufficient data.
+15. Extend future Monte Carlo work to include hedged and unhedged variants.
 
 Each stage should preserve traceability between baseline CCW results, fixed frontier outputs, and future adaptive hedge outputs.

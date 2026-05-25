@@ -166,7 +166,18 @@ The cyclical hedge should therefore be compared against fixed `h10`, `h20`, and 
 
 ## Daily Approximate MTM Extension
 
-A future daily approximate mark-to-market layer may allow CCW returns and risk to be estimated at daily resolution using BTC spot or index prices plus option OHLC or trade-price proxies.
+The Daily Approximate MTM extension has been validated for research purposes on BTC weekly OTM10 in 2025. It allows CCW returns and risk to be estimated at daily resolution using a consistent BTC price snapshot plus option OHLC or trade-price proxies.
+
+The validated POC methodology is:
+
+- Snapshot time: 10:00 New York time, converted consistently to UTC by date.
+- BTC proxy: Deribit `BTC-PERPETUAL` 1-minute candle close at the snapshot.
+- Option proxy: exact traded short-call option 1-minute OHLC close at the snapshot.
+- Option conversion: BTC-denominated option close converted to USD using the snapshot BTC price.
+- Valuation: `approximate_CCW_value = BTC_price - option_price_proxy_usd`.
+- Daily returns: computed only across adjacent valid MTM observations; missing MTM gaps are not bridged.
+- EWMA volatility: daily approximate CCW returns with `lambda = 0.94`.
+- Historical VaR: empirical 5th percentile over a rolling 30 valid daily-return window.
 
 Potential capabilities include:
 
@@ -176,7 +187,16 @@ Potential capabilities include:
 - Crisis path analysis.
 - Approximate intracycle hedge-frequency simulation.
 
+Current POC findings:
+
+- Daily MTM exposes intracycle drawdown that cycle-level outputs compress.
+- Daily returns show visible left-tail behavior and volatility clustering.
+- Historical daily VaR appears more informative than EWMA alone for persistence of BTC stress in the validated slice.
+- Missing synthetic-cycle gaps remain visible and materially affect continuity.
+
 This layer should be handled conservatively. Option OHLC and trade-price proxies can be stale, sparse, liquidity-distorted, or influenced by wide spreads. They are not equivalent to official marks, executable mid prices, or full greek-aware valuations. Results from this layer should be labeled approximate MTM and used as research evidence rather than definitive portfolio accounting.
+
+This extension does not include official historical marks, historical greeks, delta-aware hedging, funding, slippage, liquidation, margin, or production-quality risk accounting. Current POC outputs are archived under `analysis/generated/poc/daily_mtm_ccw_2025/` to keep them separate from future generalized daily-risk outputs. The dedicated reference document is `docs/14_daily_approx_mtm_research_layer.md`.
 
 ## Future Advanced VaR Extensions
 
@@ -186,6 +206,8 @@ Potential future extensions include:
 
 - Historical VaR.
 - Hybrid VaR using `max(EWMA VaR, Historical VaR)`.
+- Generalized multi-year daily approximate MTM.
+- OTM05 and 14d daily-risk comparison.
 - Stressed VaR.
 - Cornish-Fisher VaR.
 - EVT / Extreme Value Theory approaches.
