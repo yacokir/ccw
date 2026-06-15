@@ -1,0 +1,6 @@
+strategy,cycles,underwaterCycles,pctTimeUnderwater,underwaterEventCount,longestUnderwaterCycles,averageUnderwaterDurationCycles,averageRecoveryDurationCycles,currentUnderwater,currentUnderwaterStartDate,currentUnderwaterDurationCycles,currentDrawdownPct,averageDrawdownWhenUnderwaterPct
+Weekly OTM03,325,252,77.538462,27,103,10.296296,6.346154,true,2025-09-26T08:00:00.000Z,32,-20.421168,-16.185531
+Weekly OTM05,325,263,80.923077,28,115,10.357143,6.592593,true,2025-09-26T08:00:00.000Z,32,-21.401165,-20.04827
+Weekly OTM10,325,268,82.461538,24,117,12.125,6.652174,true,2025-10-17T08:00:00.000Z,29,-29.604461,-24.198816
+BTC Buy & Hold,325,283,87.076923,23,117,13.26087,7.409091,true,2025-10-17T08:00:00.000Z,29,-34.369944,-29.397384
+14d OTM10,158,118,74.683544,15,35,8.8,4.785714,true,2025-10-24T08:00:00.000Z,14,-27.268908,-16.511084

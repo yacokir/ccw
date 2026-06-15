@@ -1,0 +1,6 @@
+strategy,comparison_grid,betaVsBtc,correlationVsBtc,upsideCapturePct,downsideCapturePct,upsideSacrificedPct,downsideAvoidedPct,upCycles,downCycles
+Weekly OTM03,weekly cycle BTC moves,0.572268,0.838362,70.734556,63.742282,29.265444,36.257718,184,141
+Weekly OTM05,weekly cycle BTC moves,0.663375,0.889494,79.301114,73.78487,20.698886,26.21513,184,141
+Weekly OTM10,weekly cycle BTC moves,0.804334,0.946346,91.185854,87.947969,8.814146,12.052031,184,141
+BTC Buy & Hold,weekly cycle BTC moves,1,1,100,100,0,0,184,141
+14d OTM10,14d cycle BTC moves,0.678461,0.918462,79.031817,78.863217,20.968183,21.136783,90,68
