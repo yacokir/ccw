@@ -92,9 +92,9 @@ This coexistence is intentional for now to avoid retroactive renaming of indexed
 
 The BTC weekly, 14d, and monthly tenor comparison is complete. Weekly remains the preferred tenor; monthly is no longer an active BTC candidate at this stage, and 14d OTM10 is retained only as a secondary benchmark.
 
-The BTC risk-analysis baseline is Weekly OTM05. Weekly OTM10 remains the aggressive return-maximizing variant, and Weekly OTM03 remains a defensive validation/reference configuration.
+The validated BTC baseline is Weekly OTM05. Weekly OTM10 remains the aggressive return-maximizing variant, and Weekly OTM03 remains a defensive validation/reference configuration.
 
-Future Analysis Layer work should preserve these distinctions and avoid treating tenor exploration, monthly expansion, or BTC baseline risk selection as open questions unless new evidence is explicitly generated and documented.
+Future Analysis Layer work should preserve these distinctions and avoid treating tenor exploration, monthly expansion, or BTC baseline risk selection as open questions unless new evidence is explicitly generated and documented. Future cross-asset comparisons should use BTC Weekly OTM05 as the default reference framework.
 
 ---
 

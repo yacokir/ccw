@@ -72,15 +72,21 @@ The following BTC research phases are complete and preserved under `analysis/gen
 - BTC tenor comparison across weekly, 14d, and monthly.
 - BTC multi-tenor consolidation and ranking.
 - BTC risk analysis phase for Weekly OTM03, Weekly OTM05, Weekly OTM10, BTC buy-and-hold, and 14d OTM10.
+- BTC robustness validation.
+- BTC friction analysis.
+- BTC yearly stability analysis.
+- BTC regime transition analysis.
+- BTC implementation review.
 
-Current BTC interpretation:
+BTC research conclusion:
 
 - Weekly remains the preferred tenor.
-- Weekly OTM05 is the BTC risk-analysis baseline.
-- Weekly OTM10 is retained as the aggressive return-maximizing variant.
+- Weekly OTM05 is the validated BTC baseline and default reference framework.
+- Weekly OTM10 is retained as the aggressive return-maximizing alternative.
 - Weekly OTM03 is retained as a defensive validation/reference configuration.
 - 14d OTM10 remains useful as a secondary benchmark, but 14d does not justify replacing weekly.
 - Monthly does not justify further BTC research at this stage.
+- The BTC baseline research phase is substantially complete.
 
 ---
 

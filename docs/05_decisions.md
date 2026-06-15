@@ -135,3 +135,27 @@ Racional:
 
 **Impacto:**
 Pesquisas BTC futuras devem usar Weekly OTM05 como referencia padrao. OTM10 deve ser interpretado como uma escolha agressiva e explicita, nao como baseline. OTM03 deve ser usado para comparacao defensiva. Expansao para ETH ou outros ativos so deve ocorrer depois que o pacote de conclusoes BTC estiver estavel e documentado.
+
+---
+
+### [2026-06-15] Validacao do baseline BTC concluida
+
+**Descricao:**
+A validacao de robustez do baseline BTC foi concluida apos analises de friccao, estabilidade anual, transicoes de regime e realidade operacional.
+
+Decisao:
+
+- Weekly OTM05 e o baseline BTC validado.
+- Weekly OTM10 permanece como configuracao agressiva de maximizacao de retorno.
+- Weekly OTM03 permanece como configuracao defensiva e referencia de validacao.
+
+Racional:
+
+- OTM05 sobreviveu a todas as fases de validacao.
+- OTM05 permaneceu preferivel apos premissas realistas de friccao.
+- OTM05 manteve o perfil ajustado a risco mais adequado para baseline.
+- OTM10 continuou sendo a configuracao com maior potencial de retorno, mas com mais risco.
+- OTM03 continuou util como referencia defensiva, mas nao substitui OTM05 como baseline.
+
+**Impacto:**
+A selecao do baseline BTC nao e mais uma pergunta de pesquisa em aberto. Pesquisas futuras, incluindo expansao para novos ativos, devem usar Weekly OTM05 como estrutura padrao de comparacao, mantendo OTM10 e OTM03 apenas como variantes interpretativas quando forem relevantes.
