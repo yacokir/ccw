@@ -4,10 +4,29 @@ const { getCandleAt, getCandleAtOrAfter } = require('../data/ohlc');
 const { computeGarmanKlassVolatility } = require('../models/volatility/garman_klass');
 const { black76CallPrice } = require('../models/options/black76');
 
+const ASSET_METADATA = {
+  BTC: {
+    optionSymbolAsset: 'BTC',
+    underlyingPriceSource: 'BTC-PERPETUAL',
+    optionSettlementPriceSource: 'DERIBIT_BTC_USD_DELIVERY_PRICE',
+    theoreticalVolSource: 'BTC-PERPETUAL'
+  },
+  ETH: {
+    optionSymbolAsset: 'ETH',
+    underlyingPriceSource: 'ETH-PERPETUAL',
+    optionSettlementPriceSource: 'DERIBIT_ETH_USD_DELIVERY_PRICE',
+    theoreticalVolSource: 'ETH-PERPETUAL'
+  }
+};
+
 const OPTION_SETTLEMENT_PRICE_SOURCE_MAP = {
   DERIBIT_BTC_USD_DELIVERY_PRICE: {
     type: 'deribit_delivery_price',
     indexName: 'btc_usd'
+  },
+  DERIBIT_ETH_USD_DELIVERY_PRICE: {
+    type: 'deribit_delivery_price',
+    indexName: 'eth_usd'
   },
   // Backward-compatible alias for old run configs. Settlement now resolves
   // through official Deribit delivery prices, not index chart point matching.
@@ -20,11 +39,19 @@ const OPTION_SETTLEMENT_PRICE_SOURCE_MAP = {
 
 const CURRENT_EXIT_HOUR_UTC = 8;
 const CURRENT_EXIT_MINUTE_UTC = 0;
-const THEORETICAL_VOL_SOURCE = 'BTC-PERPETUAL';
 const THEORETICAL_VOL_LOOKBACK_DAYS = 14;
 const THEORETICAL_VOL_PERIODS_PER_YEAR = 24 * 365;
 const MILLISECONDS_PER_YEAR_365D = 365 * 24 * 60 * 60 * 1000;
 const THEORETICAL_RISK_FREE_RATE = 0;
+
+function normalizeAsset(asset) {
+  const normalized = String(asset || 'BTC').trim().toUpperCase();
+  return ASSET_METADATA[normalized] ? normalized : 'BTC';
+}
+
+function getAssetMetadata(asset) {
+  return ASSET_METADATA[normalizeAsset(asset)];
+}
 
 // Generate expiry code from date (e.g., "10OCT25" for 2025-10-10)
 function getExpiryCode(date) {
@@ -249,14 +276,14 @@ function buildSummaryMetrics(trades, capitalUsd) {
   };
 }
 
-async function getTheoreticalCallEntryPrice({ entryTime, exitTime, S_entry, strike }) {
+async function getTheoreticalCallEntryPrice({ entryTime, exitTime, S_entry, strike, theoreticalVolSource }) {
   const lookbackMs = THEORETICAL_VOL_LOOKBACK_DAYS * 24 * 60 * 60 * 1000;
   const volStartTime = entryTime - lookbackMs;
   const volEndTime = entryTime - 1;
   const timeToExpiryYears = (exitTime - entryTime) / MILLISECONDS_PER_YEAR_365D;
 
   try {
-    const volData = await getOHLCData(THEORETICAL_VOL_SOURCE, volStartTime, volEndTime, 60);
+    const volData = await getOHLCData(theoreticalVolSource, volStartTime, volEndTime, 60);
     const volCandles = chartDataToCandles(volData);
     const volResult = computeGarmanKlassVolatility(volCandles, {
       periodsPerYear: THEORETICAL_VOL_PERIODS_PER_YEAR
@@ -310,7 +337,7 @@ async function getTheoreticalCallEntryPrice({ entryTime, exitTime, S_entry, stri
   }
 }
 
-async function getOptionSettlementPrice(source, exitTime, window, fallbackPrice) {
+async function getOptionSettlementPrice(source, exitTime, window, fallbackPrice, fallbackSource) {
   const mappedSource = OPTION_SETTLEMENT_PRICE_SOURCE_MAP[source] || {
     type: 'instrument_ohlc',
     instrumentName: source
@@ -395,13 +422,13 @@ async function getOptionSettlementPrice(source, exitTime, window, fallbackPrice)
   return {
     price: fallbackPrice,
     source,
-    resolvedSource: 'BTC-PERPETUAL',
+    resolvedSource: fallbackSource,
     resolvedSourceType: 'instrument_ohlc_fallback',
     fallbackOccurred: true,
     fallbackReason,
     deliveryDate: deliveryLookup ? deliveryLookup.date : new Date(exitTime).toISOString().slice(0, 10),
     isProxy: true,
-    note: 'Official delivery settlement unavailable; using BTC exposure exit price as explicit compatibility fallback'
+    note: 'Official delivery settlement unavailable; using configured exposure exit price as explicit compatibility fallback'
   };
 }
 
@@ -417,8 +444,12 @@ function emitProgress(onProgress, progress) {
 
 async function runStrategy(config = {}, options = {}) {
   const { onProgress } = options;
-  const underlyingPriceSource = config.underlyingPriceSource || config.underlying || 'BTC-PERPETUAL';
-  const optionSettlementPriceSource = config.optionSettlementPriceSource || 'DERIBIT_BTC_USD_DELIVERY_PRICE';
+  const asset = normalizeAsset(config.asset);
+  const assetMetadata = getAssetMetadata(asset);
+  const underlyingPriceSource = config.underlyingPriceSource || config.underlying || assetMetadata.underlyingPriceSource;
+  const optionSettlementPriceSource = config.optionSettlementPriceSource || assetMetadata.optionSettlementPriceSource;
+  const optionSymbolAsset = config.optionSymbolAsset || assetMetadata.optionSymbolAsset;
+  const theoreticalVolSource = config.theoreticalVolSource || assetMetadata.theoreticalVolSource;
   const {
     startDate = '2025-10-03',
     endDate = '2025-12-26',
@@ -435,12 +466,15 @@ async function runStrategy(config = {}, options = {}) {
   } = config;
 
   const normalizedConfig = {
+    asset,
     startDate,
     endDate,
     xOtm,
     underlying,
     underlyingPriceSource,
     optionSettlementPriceSource,
+    optionSymbolAsset,
+    theoreticalVolSource,
     strikeStep,
     strikeRange,
     fallbackMode,
@@ -510,7 +544,7 @@ async function runStrategy(config = {}, options = {}) {
           continue;
         }
 
-        const settlementPrice = await getOptionSettlementPrice(optionSettlementPriceSource, exitTime, window, S_exit);
+        const settlementPrice = await getOptionSettlementPrice(optionSettlementPriceSource, exitTime, window, S_exit, underlyingPriceSource);
         const S_settlement = settlementPrice.price;
 
         console.log(`S_entry: ${S_entry}, S_exit: ${S_exit}, S_settlement: ${S_settlement}`);
@@ -538,7 +572,7 @@ async function runStrategy(config = {}, options = {}) {
         const validInstruments = [];
 
         for (const strike of strikes) {
-          const instrumentName = `BTC-${expiry}-${strike}-C`;
+          const instrumentName = `${optionSymbolAsset}-${expiry}-${strike}-C`;
 
           try {
             const data = await getOHLCData(instrumentName, entryTime, entryTime + window, 60);
@@ -626,7 +660,8 @@ async function runStrategy(config = {}, options = {}) {
               entryTime,
               exitTime,
               S_entry,
-              strike: selectedStrike
+              strike: selectedStrike,
+              theoreticalVolSource
             });
 
             if (theoreticalEntry.ok) {
@@ -642,7 +677,7 @@ async function runStrategy(config = {}, options = {}) {
               optionEntryDiagnostics = JSON.stringify({
                 volatility: theoreticalEntry.volatilityDiagnostics,
                 pricing: theoreticalEntry.pricingDiagnostics,
-                volatilitySource: THEORETICAL_VOL_SOURCE,
+                volatilitySource: theoreticalVolSource,
                 volatilityLookbackDays: THEORETICAL_VOL_LOOKBACK_DAYS,
                 volatilityWindowStart: new Date(theoreticalEntry.volStartTime).toISOString(),
                 volatilityWindowEnd: new Date(theoreticalEntry.volEndTime).toISOString(),
@@ -689,7 +724,8 @@ async function runStrategy(config = {}, options = {}) {
               entryTime,
               exitTime,
               S_entry,
-              strike: selectedStrike
+              strike: selectedStrike,
+              theoreticalVolSource
             });
 
             if (theoreticalEntry.ok) {
@@ -706,7 +742,7 @@ async function runStrategy(config = {}, options = {}) {
               optionEntryDiagnostics = JSON.stringify({
                 volatility: theoreticalEntry.volatilityDiagnostics,
                 pricing: theoreticalEntry.pricingDiagnostics,
-                volatilitySource: THEORETICAL_VOL_SOURCE,
+                volatilitySource: theoreticalVolSource,
                 volatilityLookbackDays: THEORETICAL_VOL_LOOKBACK_DAYS,
                 volatilityWindowStart: new Date(theoreticalEntry.volStartTime).toISOString(),
                 volatilityWindowEnd: new Date(theoreticalEntry.volEndTime).toISOString(),

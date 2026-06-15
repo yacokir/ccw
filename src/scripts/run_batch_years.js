@@ -6,6 +6,26 @@ const { saveBacktestRun } = require('./run_backtest');
 const BASELINE_EXIT_HOUR_UTC = 8;
 const BASELINE_EXIT_MINUTE_UTC = 0;
 
+const ASSET_DEFAULTS = {
+  BTC: {
+    underlyingPriceSource: 'BTC-PERPETUAL',
+    optionSettlementPriceSource: 'DERIBIT_BTC_USD_DELIVERY_PRICE',
+    strikeStep: 1000,
+    strikeRange: 3000
+  },
+  ETH: {
+    underlyingPriceSource: 'ETH-PERPETUAL',
+    optionSettlementPriceSource: 'DERIBIT_ETH_USD_DELIVERY_PRICE',
+    strikeStep: 50,
+    strikeRange: 300
+  }
+};
+
+function normalizeAsset(asset) {
+  const normalized = String(asset || 'BTC').trim().toUpperCase();
+  return ASSET_DEFAULTS[normalized] ? normalized : 'BTC';
+}
+
 function parseArgs(argv) {
   const args = {};
   for (let i = 2; i < argv.length; i++) {
@@ -57,8 +77,11 @@ function xOtmLabel(xOtm) {
   return 'atm00';
 }
 
-function batchNameForTenor(tenor, xOtm, startYear, endYear) {
+function batchNameForTenor(asset, tenor, xOtm, startYear, endYear) {
   const moneyness = xOtmLabel(xOtm);
+  if (asset === 'ETH') {
+    return `batch_years_eth_${tenor}_${moneyness}_${startYear}_${endYear}`;
+  }
   if (tenor === 'weekly') {
     return `batch_years_${moneyness}_${startYear}_${endYear}`;
   }
@@ -246,14 +269,26 @@ async function main() {
   const args = parseArgs(process.argv);
   const currentUtcDate = new Date();
   const currentYear = currentUtcDate.getUTCFullYear();
+  const asset = normalizeAsset(args.asset);
+  const assetDefaults = ASSET_DEFAULTS[asset];
   const xOtm = args.xOtm !== undefined ? Number(args.xOtm) : 0.05;
   const startYear = args.startYear !== undefined ? Number(args.startYear) : 2020;
   const requestedEndYear = args.endYear !== undefined ? Number(args.endYear) : currentYear;
   const endYear = Math.min(requestedEndYear, currentYear);
   const tenor = args.tenor || 'weekly';
+  const underlyingPriceSource = args.underlyingPriceSource || args.underlying || assetDefaults.underlyingPriceSource;
+  const optionSettlementPriceSource = args.optionSettlementPriceSource || assetDefaults.optionSettlementPriceSource;
+  const strikeStep = args.strikeStep !== undefined ? Number(args.strikeStep) : assetDefaults.strikeStep;
+  const strikeRange = args.strikeRange !== undefined ? Number(args.strikeRange) : assetDefaults.strikeRange;
 
   if (!Number.isFinite(xOtm) || xOtm <= -1) {
     throw new Error('Invalid --xOtm. Use a finite value greater than -1. Examples: --xOtm=0.05, --xOtm=0, --xOtm=-0.05');
+  }
+  if (!Number.isFinite(strikeStep) || strikeStep <= 0) {
+    throw new Error('Invalid --strikeStep. Use a positive finite number.');
+  }
+  if (!Number.isFinite(strikeRange) || strikeRange <= 0) {
+    throw new Error('Invalid --strikeRange. Use a positive finite number.');
   }
   if (!Number.isInteger(startYear) || !Number.isInteger(endYear) || startYear > endYear) {
     throw new Error('Invalid year range. Example: --startYear=2020 --endYear=2026');
@@ -266,7 +301,18 @@ async function main() {
     const startDate = firstFridayOfYear(year);
     const endDate = endDateForYear(year, currentUtcDate);
     // Deeper ITM/OTM studies may need wider strikeRange; keep baseline defaults here.
-    const config = { startDate, endDate, xOtm, tenor };
+    const config = {
+      asset,
+      startDate,
+      endDate,
+      xOtm,
+      tenor,
+      underlying: underlyingPriceSource,
+      underlyingPriceSource,
+      optionSettlementPriceSource,
+      strikeStep,
+      strikeRange
+    };
     const progressWriter = createProgressWriter(year, startDate, endDate, xOtm, tenor);
 
     const result = await runQuietly(config, progressWriter.update);
@@ -306,15 +352,20 @@ async function main() {
 
   const totalRow = buildTotalRow(rows, tenor);
   const allRows = [...rows, totalRow];
-  const batchName = batchNameForTenor(tenor, xOtm, startYear, endYear);
+  const batchName = batchNameForTenor(asset, tenor, xOtm, startYear, endYear);
   const batchDir = path.resolve(__dirname, '..', '..', 'runs', 'batches', batchName);
 
   fs.mkdirSync(batchDir, { recursive: true });
   fs.writeFileSync(path.join(batchDir, 'summary.csv'), objectsToCsv(allRows), 'utf8');
   fs.writeFileSync(path.join(batchDir, 'summary.json'), JSON.stringify({
     batchName,
+    asset,
     xOtm,
     ...(tenor !== 'weekly' ? { tenor } : {}),
+    underlyingPriceSource,
+    optionSettlementPriceSource,
+    strikeStep,
+    strikeRange,
     startYear,
     endYear,
     generatedAt: new Date().toISOString(),

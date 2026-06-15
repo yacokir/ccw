@@ -38,6 +38,26 @@ function getConfigTenor(config) {
   return config.tenor || 'weekly';
 }
 
+const ASSET_DEFAULTS = {
+  BTC: {
+    underlyingPriceSource: 'BTC-PERPETUAL',
+    optionSettlementPriceSource: 'DERIBIT_BTC_USD_DELIVERY_PRICE',
+    strikeStep: 1000,
+    strikeRange: 3000
+  },
+  ETH: {
+    underlyingPriceSource: 'ETH-PERPETUAL',
+    optionSettlementPriceSource: 'DERIBIT_ETH_USD_DELIVERY_PRICE',
+    strikeStep: 50,
+    strikeRange: 300
+  }
+};
+
+function normalizeAsset(asset) {
+  const normalized = String(asset || 'BTC').trim().toUpperCase();
+  return ASSET_DEFAULTS[normalized] ? normalized : 'BTC';
+}
+
 function tenorRunNameSuffix(tenor) {
   if (tenor === 'weekly') return '';
   return `_t${safeRunNamePart(tenor).toLowerCase()}`;
@@ -45,7 +65,9 @@ function tenorRunNameSuffix(tenor) {
 
 function buildRunName(config, suffix) {
   const underlyingPriceSource = config.underlyingPriceSource || config.underlying;
-  const asset = underlyingPriceSource && underlyingPriceSource.toUpperCase().includes('BTC') ? 'btc' : String(underlyingPriceSource).toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const asset = config.asset
+    ? String(config.asset).toLowerCase().replace(/[^a-z0-9]+/g, '')
+    : underlyingPriceSource && underlyingPriceSource.toUpperCase().includes('BTC') ? 'btc' : String(underlyingPriceSource).toLowerCase().replace(/[^a-z0-9]+/g, '');
   const xOtm = Number(config.xOtm);
   const xOtmLabel = `x${String(Math.round(xOtm * 100)).padStart(2, '0')}`;
   const stepLabel = `step${config.strikeStep}`;
@@ -222,17 +244,20 @@ function hasSameRunIdentityFields(row, config) {
 }
 
 function buildConfigFromArgs(argv) {
-  const underlyingPriceSource = normalizeArgValue(argv.underlyingPriceSource, normalizeArgValue(argv.underlying, 'BTC-PERPETUAL'));
-  const optionSettlementPriceSource = normalizeArgValue(argv.optionSettlementPriceSource, 'DERIBIT_BTC_USD_DELIVERY_PRICE');
+  const asset = normalizeAsset(argv.asset);
+  const assetDefaults = ASSET_DEFAULTS[asset];
+  const underlyingPriceSource = normalizeArgValue(argv.underlyingPriceSource, normalizeArgValue(argv.underlying, assetDefaults.underlyingPriceSource));
+  const optionSettlementPriceSource = normalizeArgValue(argv.optionSettlementPriceSource, assetDefaults.optionSettlementPriceSource);
   return {
+    asset,
     startDate: normalizeArgValue(argv.startDate, '2025-10-03'),
     endDate: normalizeArgValue(argv.endDate, '2025-12-26'),
     xOtm: argv.xOtm !== undefined ? parseFloat(argv.xOtm) : 0.05,
     underlying: underlyingPriceSource,
     underlyingPriceSource,
     optionSettlementPriceSource,
-    strikeStep: argv.strikeStep !== undefined ? parseInt(argv.strikeStep, 10) : 1000,
-    strikeRange: argv.strikeRange !== undefined ? parseInt(argv.strikeRange, 10) : 3000,
+    strikeStep: argv.strikeStep !== undefined ? parseInt(argv.strikeStep, 10) : assetDefaults.strikeStep,
+    strikeRange: argv.strikeRange !== undefined ? parseInt(argv.strikeRange, 10) : assetDefaults.strikeRange,
     fallbackMode: normalizeArgValue(argv.fallbackMode, 'long_btc'),
     sizingMode: normalizeArgValue(argv.sizingMode, 'dynamic'),
     maxEntryDelayMinutes: argv.maxEntryDelayMinutes !== undefined ? parseInt(argv.maxEntryDelayMinutes, 10) : 60,
