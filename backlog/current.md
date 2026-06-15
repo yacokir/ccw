@@ -64,52 +64,82 @@ As tarefas podem ser ajustadas conforme o sistema evolui.
 
 ---
 
-## 8. Research Framework Roadmap
+## 8. Completed BTC Research
+
+The following BTC research phases are complete and preserved under `analysis/generated/`:
+
+- BTC weekly baseline consolidation.
+- BTC tenor comparison across weekly, 14d, and monthly.
+- BTC multi-tenor consolidation and ranking.
+- BTC risk analysis phase for Weekly OTM03, Weekly OTM05, Weekly OTM10, BTC buy-and-hold, and 14d OTM10.
+
+Current BTC interpretation:
+
+- Weekly remains the preferred tenor.
+- Weekly OTM05 is the BTC risk-analysis baseline.
+- Weekly OTM10 is retained as the aggressive return-maximizing variant.
+- Weekly OTM03 is retained as a defensive validation/reference configuration.
+- 14d OTM10 remains useful as a secondary benchmark, but 14d does not justify replacing weekly.
+- Monthly does not justify further BTC research at this stage.
+
+---
+
+## 9. Remaining BTC Research
+
+- Document BTC conclusions in a stable final research memo before expanding to new assets.
+- Preserve simple, auditable comparison tables for OTM03, OTM05, OTM10, BTC buy-and-hold, and 14d OTM10.
+- Add annualized risk metric normalization only where it clarifies existing BTC conclusions.
+- Keep OTM05 as the default BTC baseline for any future risk, hedge, fee, slippage, or MTM work.
+- Use OTM10 only when explicitly studying aggressive upside capture or return maximization.
+
+---
+
+## 10. Research Framework Roadmap
 
 The BTC CCW project is transitioning from exploratory backtesting to a structured quantitative research framework. The roadmap below preserves existing generated outputs and historical conclusions while prioritizing methodology stability.
 
-### 8.1 Methodology Normalization
+### 10.1 Methodology Normalization
 
 - Formalize which metrics are summary-level, reconstructed-equity, rolling-window, regime, and visualization-only.
 - Keep full-period and partial-period rows clearly separated in rankings and conclusions.
 - Prefer structured metadata fields such as `asset`, `tenor`, `moneyness_label`, `xOtm`, and `comparison_scope` over folder-name parsing.
 
-### 8.2 Annualization Layer
+### 10.2 Annualization Layer
 
 - Add annualized volatility, Sharpe, Sortino, and related risk-adjusted metrics.
 - Preserve current cycle-based metrics for traceability.
 - Add tenor-normalized comparisons so weekly, 14d, and monthly outputs can be compared more directly.
 
-### 8.3 ETH Replication
+### 10.3 ETH Replication
 
 - Replicate the stabilized BTC methodology on ETH.
 - Reuse the same analysis layers, glossary conventions, and caveat structure.
 - Compare ETH results against BTC only after methodology parity exists.
 
-### 8.4 Cross-Asset Comparison
+### 10.4 Cross-Asset Comparison
 
 - Build BTC/ETH comparison views after ETH replication.
 - Separate asset effects from tenor and moneyness effects.
 - Avoid expanding to additional assets before BTC/ETH methodology is stable.
 
-### 8.5 Visualization Improvements
+### 10.5 Visualization Improvements
 
 - Improve rolling charts, date ticks, legends, and distribution views.
 - Add explicit outlier annotation where extreme observations dominate axes.
 - Keep visual aggregation documented and separate from source analysis datasets.
 
-### 8.6 Monte Carlo Layer
+### 10.6 Monte Carlo Layer
 
 - Add future Monte Carlo analysis based on realized cycle-return distributions.
 - Use it to study path dependency, tail outcomes, drawdown persistence, and strategy robustness.
 - Treat Monte Carlo results as scenario analysis, not historical fact.
 
-### 8.7 CSP, Collars, And Hedging Overlays
+### 10.7 CSP, Collars, And Hedging Overlays
 
 - Study cash-secured puts, collars, futures hedges, and regime-based hedging overlays after the baseline CCW methodology is stable.
 - Keep overlay research separate from baseline results so historical BTC CCW conclusions remain traceable.
 
-### 8.8 Intracycle Risk Modeling
+### 10.8 Intracycle Risk Modeling
 
 - Preserve the validated Daily Approximate MTM POC for BTC weekly OTM10 2025 under `analysis/generated/poc/daily_mtm_ccw_2025/`.
 - Treat the Daily Approximate MTM layer as research-grade only: useful for daily risk, tail-event, VaR, volatility-clustering, and future intracycle hedge simulation research, but not official mark accounting.
@@ -120,7 +150,7 @@ The BTC CCW project is transitioning from exploratory backtesting to a structure
 
 ---
 
-## 9. Risk & Hedging Roadmap
+## 11. Risk & Hedging Roadmap
 
 The risk and hedging roadmap separates the implemented fixed hedge frontier from future adaptive and discretionary risk-management layers. The strategic objective is to preserve the BTC CCW return engine while reducing tail-risk destruction and catastrophic crisis damage. It is not to minimize volatility, market-neutralize the strategy, or eliminate BTC exposure.
 
@@ -128,7 +158,9 @@ Current hedge research should be treated as a BTC overlay hedge. It approximatel
 
 Research interpretation should remain conservative:
 
-- Weekly BTC OTM10 appears structurally strong, with OTM05 remaining a candidate for further study.
+- Weekly BTC OTM05 is the primary BTC risk-analysis baseline.
+- Weekly BTC OTM10 remains structurally strong as an aggressive return-maximizing variant, but its additional return comes with deeper drawdowns, higher volatility, worse VaR/Expected Shortfall, and more time underwater.
+- Weekly BTC OTM03 remains a defensive validation/reference configuration.
 - Very low max-loss budgets, such as 5%, may require high stress-period hedge ratios and may be economically incompatible with the CCW edge.
 - Hedge latency may be a key unresolved issue, especially for 14d cycles, but this is a hypothesis rather than a confirmed conclusion.
 - The Daily Approximate MTM POC validated BTC weekly OTM10 2025 daily valuation reconstruction for research purposes, but it is not production-grade accounting and does not include greeks, official marks, funding, slippage, liquidation, or margin.
@@ -144,7 +176,7 @@ Research interpretation should remain conservative:
 - Use the validated POC as the reference slice for daily CCW returns, daily drawdowns, historical daily VaR, EWMA volatility, crisis path analysis, and approximate intracycle hedge simulations.
 - Caveat daily MTM outputs clearly because option proxies may be stale, sparse, spread-distorted, or liquidity-limited.
 - Generalize daily MTM only after preserving POC output structure and methodology traceability.
-- Add OTM05 comparison after the generalized daily layer exists.
+- Use OTM05 as the default comparison target when generalizing the daily layer.
 - Add 14d comparison after weekly daily-MTM behavior is understood.
 - Simulate intracycle hedge-frequency alternatives to test whether hedge latency matters more than hedge sizing.
 - Add funding and basis realism.

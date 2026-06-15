@@ -108,3 +108,30 @@ Essa diferenca e aceita temporariamente para evitar renomear retroativamente art
 
 **Impacto:**
 Nao ha bug funcional conhecido, mas existe risco de confusao em documentacao, consultas manuais e scripts futuros que inferirem parametros apenas pelo nome da pasta. Uma normalizacao futura pode padronizar o naming entre tenors e assets, preservando artefatos existentes e compatibilidade com indices e analises ja gerados.
+
+---
+
+### [2026-06-15] Baseline BTC apos comparacao de tenor e risco
+
+**Descricao:**
+As fases de consolidacao multi-tenor e analise de risco BTC foram concluidas usando artefatos existentes em `analysis/generated/` e resultados de backtest em `runs/`.
+
+Decisoes atuais:
+
+- Weekly OTM05 passa a ser o baseline primario de risco para BTC.
+- Weekly OTM10 fica retido como variante agressiva, voltada a maximizacao de retorno.
+- Weekly OTM03 fica retido apenas como referencia defensiva e validacao de sensibilidade.
+- 14d OTM10 fica como benchmark secundario, mas nao substitui weekly.
+- Monthly nao sera perseguido nesta etapa, pois nao demonstrou melhora suficiente de retorno, risco ou simplicidade.
+- Novos ativos nao devem ser adicionados antes de documentar completamente as conclusoes BTC.
+
+Racional:
+
+- Weekly permaneceu superior a 14d e monthly na comparacao consolidada.
+- Weekly OTM10 teve maior retorno absoluto e maior excesso contra BTC, mas tambem apresentou maior drawdown, volatilidade, VaR, Expected Shortfall e tempo underwater.
+- Weekly OTM05 preservou forte excesso de retorno com melhor perfil ajustado a risco do que OTM10.
+- OTM10 manteve exposicao mais proxima de BTC, enquanto OTM05 remodelou melhor o risco sem abandonar a tese de retorno.
+- OTM03 ajuda a validar o comportamento defensivo da selecao de strike, mas sacrifica retorno demais para ser o candidato principal.
+
+**Impacto:**
+Pesquisas BTC futuras devem usar Weekly OTM05 como referencia padrao. OTM10 deve ser interpretado como uma escolha agressiva e explicita, nao como baseline. OTM03 deve ser usado para comparacao defensiva. Expansao para ETH ou outros ativos so deve ocorrer depois que o pacote de conclusoes BTC estiver estavel e documentado.

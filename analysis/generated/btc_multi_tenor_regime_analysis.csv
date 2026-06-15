@@ -1,0 +1,113 @@
+source,regime,regime_label,Tenor,Moneyness,cycleCount,returnPct,btcReturnPct,excessReturnVsBtcPct,volatilityPct,drawdownPct,hitRatePct,averageCycleReturnPct,includedYears
+annual_btc_return_classifier,bear,bear_2022,14d,ATM00,25,2.866514,-59.609667,62.476181,,,100,,2022
+annual_btc_return_classifier,bear,bear_2022,14d,OTM03,25,-13.276541,-59.609667,46.333126,,,0,,2022
+annual_btc_return_classifier,bear,bear_2022,14d,OTM05,25,-20.529138,-59.609667,39.080529,,,0,,2022
+annual_btc_return_classifier,bear,bear_2022,14d,OTM07,25,-26.59747,-59.609667,33.012197,,,0,,2022
+annual_btc_return_classifier,bear,bear_2022,14d,OTM10,23,-21.797036,-59.609667,37.812631,,,0,,2022
+annual_btc_return_classifier,bear,bear_2022,Monthly,ATM00,12,-36.208078,-65.099398,28.89132,,,0,,2022
+annual_btc_return_classifier,bear,bear_2022,Monthly,OTM03,12,-38.756621,-65.099398,26.342777,,,0,,2022
+annual_btc_return_classifier,bear,bear_2022,Monthly,OTM05,12,-42.953388,-65.099398,22.14601,,,0,,2022
+annual_btc_return_classifier,bear,bear_2022,Monthly,OTM07,12,-45.623812,-65.099398,19.475586,,,0,,2022
+annual_btc_return_classifier,bear,bear_2022,Monthly,OTM10,12,-49.138545,-65.099398,15.960853,,,0,,2022
+annual_btc_return_classifier,bear,bear_2022,Weekly,ITM05,51,10.702935,-60.517167,71.220102,,,100,,2022
+annual_btc_return_classifier,bear,bear_2022,Weekly,ATM00,51,-10.538997,-60.517167,49.97817,,,0,,2022
+annual_btc_return_classifier,bear,bear_2022,Weekly,OTM03,51,-18.677614,-60.517167,41.839553,,,0,,2022
+annual_btc_return_classifier,bear,bear_2022,Weekly,OTM05,51,-33.72111,-60.517167,26.796057,,,0,,2022
+annual_btc_return_classifier,bear,bear_2022,Weekly,OTM07,51,-39.264115,-60.517167,21.253052,,,0,,2022
+annual_btc_return_classifier,bear,bear_2022,Weekly,OTM10,51,-46.557643,-60.517167,13.959524,,,0,,2022
+annual_btc_return_classifier,bull,bull_2020_2021_2023_2024,14d,ATM00,101,438.020887,2906.799869,-2468.778982,15.15193,,100,,2020;2021;2023;2024
+annual_btc_return_classifier,bull,bull_2020_2021_2023_2024,14d,OTM03,101,581.313234,2906.799869,-2325.486635,10.957819,,100,,2020;2021;2023;2024
+annual_btc_return_classifier,bull,bull_2020_2021_2023_2024,14d,OTM05,99,770.434818,2906.799869,-2136.365051,27.305858,,100,,2020;2021;2023;2024
+annual_btc_return_classifier,bull,bull_2020_2021_2023_2024,14d,OTM07,99,1070.951906,2906.799869,-1835.847963,30.905775,,100,,2020;2021;2023;2024
+annual_btc_return_classifier,bull,bull_2020_2021_2023_2024,14d,OTM10,101,1211.249917,2906.799869,-1695.549952,24.514666,,100,,2020;2021;2023;2024
+annual_btc_return_classifier,bull,bull_2020_2021_2023_2024,Monthly,ATM00,48,510.994275,3702.655441,-3191.661166,12.384133,,100,,2020;2021;2023;2024
+annual_btc_return_classifier,bull,bull_2020_2021_2023_2024,Monthly,OTM03,48,610.496563,3702.655441,-3092.158878,4.313662,,100,,2020;2021;2023;2024
+annual_btc_return_classifier,bull,bull_2020_2021_2023_2024,Monthly,OTM05,48,797.840629,3702.655441,-2904.814812,9.542008,,100,,2020;2021;2023;2024
+annual_btc_return_classifier,bull,bull_2020_2021_2023_2024,Monthly,OTM07,48,888.618161,3702.655441,-2814.03728,7.963898,,100,,2020;2021;2023;2024
+annual_btc_return_classifier,bull,bull_2020_2021_2023_2024,Monthly,OTM10,48,1120.659768,3702.655441,-2581.995674,14.343333,,100,,2020;2021;2023;2024
+annual_btc_return_classifier,bull,bull_2020_2021_2023_2024,Weekly,ITM05,205,355.150514,2810.952448,-2455.801934,41.372548,,100,,2020;2021;2023;2024
+annual_btc_return_classifier,bull,bull_2020_2021_2023_2024,Weekly,ATM00,205,651.451039,2810.952448,-2159.501408,22.214581,,100,,2020;2021;2023;2024
+annual_btc_return_classifier,bull,bull_2020_2021_2023_2024,Weekly,OTM03,205,1164.757586,2810.952448,-1646.194862,23.015016,,100,,2020;2021;2023;2024
+annual_btc_return_classifier,bull,bull_2020_2021_2023_2024,Weekly,OTM05,205,1620.174234,2810.952448,-1190.778214,34.15709,,100,,2020;2021;2023;2024
+annual_btc_return_classifier,bull,bull_2020_2021_2023_2024,Weekly,OTM07,205,1435.889767,2810.952448,-1375.062681,27.01892,,100,,2020;2021;2023;2024
+annual_btc_return_classifier,bull,bull_2020_2021_2023_2024,Weekly,OTM10,205,2286.219378,2810.952448,-524.733069,45.012375,,100,,2020;2021;2023;2024
+annual_btc_return_classifier,sideways,sideways_2025,14d,ATM00,25,-6.848775,-8.685312,1.836537,,,0,,2025
+annual_btc_return_classifier,sideways,sideways_2025,14d,OTM03,25,-0.435894,-8.685312,8.249418,,,0,,2025
+annual_btc_return_classifier,sideways,sideways_2025,14d,OTM05,25,0.505383,-8.685312,9.190695,,,100,,2025
+annual_btc_return_classifier,sideways,sideways_2025,14d,OTM07,25,0.333388,-8.685312,9.0187,,,100,,2025
+annual_btc_return_classifier,sideways,sideways_2025,14d,OTM10,25,2.728857,-8.685312,11.414169,,,100,,2025
+annual_btc_return_classifier,sideways,sideways_2025,Monthly,ATM00,12,14.451337,-6.961726,21.413063,,,100,,2025
+annual_btc_return_classifier,sideways,sideways_2025,Monthly,OTM03,12,14.29858,-6.961726,21.260306,,,100,,2025
+annual_btc_return_classifier,sideways,sideways_2025,Monthly,OTM05,12,15.059033,-6.961726,22.020758,,,100,,2025
+annual_btc_return_classifier,sideways,sideways_2025,Monthly,OTM07,12,15.396082,-6.961726,22.357808,,,100,,2025
+annual_btc_return_classifier,sideways,sideways_2025,Monthly,OTM10,12,17.329122,-6.961726,24.290848,,,100,,2025
+annual_btc_return_classifier,sideways,sideways_2025,Weekly,ITM05,51,-8.267618,-8.132809,-0.13481,,,0,,2025
+annual_btc_return_classifier,sideways,sideways_2025,Weekly,ATM00,51,7.058382,-8.132809,15.19119,,,100,,2025
+annual_btc_return_classifier,sideways,sideways_2025,Weekly,OTM03,51,4.647752,-8.132809,12.78056,,,100,,2025
+annual_btc_return_classifier,sideways,sideways_2025,Weekly,OTM05,51,1.160582,-8.132809,9.293391,,,100,,2025
+annual_btc_return_classifier,sideways,sideways_2025,Weekly,OTM07,51,0.579977,-8.132809,8.712786,,,100,,2025
+annual_btc_return_classifier,sideways,sideways_2025,Weekly,OTM10,51,1.622753,-8.132809,9.755562,,,100,,2025
+existing_regime_file,Bear,bear_2022,14d,ATM00,25,2.866514,,,8.194248,-37.97471,76,0.474472,
+existing_regime_file,Bear,bear_2022,14d,OTM03,25,-13.276541,,,8.901259,-41.318838,64,-0.143516,
+existing_regime_file,Bear,bear_2022,14d,OTM05,25,-20.529138,,,9.293399,-44.798068,56,-0.45141,
+existing_regime_file,Bear,bear_2022,14d,OTM07,25,-26.59747,,,9.295282,-45.935641,48,-0.766767,
+existing_regime_file,Bear,bear_2022,14d,OTM10,23,-21.797036,,,7.677745,-36.957041,43.478261,-0.761507,
+existing_regime_file,Bear,bear_2022,Monthly,ATM00,12,-21.20356,,,10.873301,-38.703711,58.333333,-1.377451,
+existing_regime_file,Bear,bear_2022,Monthly,OTM03,12,-22.257784,,,12.323164,-42.414308,50,-1.324829,
+existing_regime_file,Bear,bear_2022,Monthly,OTM05,12,-26.371714,,,12.417071,-45.461603,50,-1.753829,
+existing_regime_file,Bear,bear_2022,Monthly,OTM07,12,-26.987188,,,13.230615,-48.337015,50,-1.725057,
+existing_regime_file,Bear,bear_2022,Monthly,OTM10,12,-30.762562,,,13.9887,-51.008424,50,-2.05179,
+existing_regime_file,Bear,bear_2022,Weekly,ITM05,51,10.702935,,,4.60944,-29.246676,84.313725,0.317527,
+existing_regime_file,Bear,bear_2022,Weekly,ATM00,51,-10.538997,,,5.652589,-35.510661,60.784314,-0.043595,
+existing_regime_file,Bear,bear_2022,Weekly,OTM03,51,-18.677614,,,6.347813,-41.194954,52.941176,-0.186216,
+existing_regime_file,Bear,bear_2022,Weekly,OTM05,51,-33.72111,,,6.765126,-46.333983,47.058824,-0.555761,
+existing_regime_file,Bear,bear_2022,Weekly,OTM07,51,-39.264115,,,6.918812,-48.88798,47.058824,-0.715618,
+existing_regime_file,Bear,bear_2022,Weekly,OTM10,51,-46.557643,,,7.285447,-53.391193,45.098039,-0.938444,
+existing_regime_file,Bull,bull_2020_2021,14d,ATM00,51,127.208755,,,8.323964,-40.75701,78.431373,2.017572,
+existing_regime_file,Bull,bull_2020_2021,14d,OTM03,51,145.077106,,,8.958914,-40.75701,76.470588,2.22514,
+existing_regime_file,Bull,bull_2020_2021,14d,OTM05,51,236.634155,,,10.023304,-43.135899,72.54902,2.95742,
+existing_regime_file,Bull,bull_2020_2021,14d,OTM07,51,242.635321,,,10.434758,-43.135899,70.588235,3.033735,
+existing_regime_file,Bull,bull_2020_2021,14d,OTM10,51,236.596914,,,11.201606,-45.877646,68.627451,3.093203,
+existing_regime_file,Bull,bull_2020_2021,Monthly,ATM00,24,119.905969,,,9.881455,-23.085676,83.333333,3.838907,
+existing_regime_file,Bull,bull_2020_2021,Monthly,OTM03,24,114.925583,,,11.0584,-24.782195,70.833333,3.857648,
+existing_regime_file,Bull,bull_2020_2021,Monthly,OTM05,24,130.473195,,,11.564279,-24.782195,70.833333,4.213116,
+existing_regime_file,Bull,bull_2020_2021,Monthly,OTM07,24,133.833906,,,12.125636,-27.580464,70.833333,4.348974,
+existing_regime_file,Bull,bull_2020_2021,Monthly,OTM10,24,163.29788,,,13.663229,-27.837451,70.833333,5.052322,
+existing_regime_file,Bull,bull_2020_2021,Weekly,ITM05,103,167.350741,,,5.479298,-39.836452,85.436893,1.137979,
+existing_regime_file,Bull,bull_2020_2021,Weekly,ATM00,103,216.267492,,,6.472703,-41.168513,75.728155,1.365692,
+existing_regime_file,Bull,bull_2020_2021,Weekly,OTM03,103,337.332736,,,7.210598,-41.168513,71.84466,1.736215,
+existing_regime_file,Bull,bull_2020_2021,Weekly,OTM05,103,427.067972,,,7.847098,-45.726071,68.932039,1.974831,
+existing_regime_file,Bull,bull_2020_2021,Weekly,OTM07,103,349.194289,,,8.130677,-45.726071,67.961165,1.839694,
+existing_regime_file,Bull,bull_2020_2021,Weekly,OTM10,103,450.655861,,,8.826374,-46.933694,66.019417,2.096187,
+existing_regime_file,ETF/bull regime,etf_bull_2024_2025,14d,ATM00,50,37.538894,,,4.958777,-22.803965,66,0.766116,
+existing_regime_file,ETF/bull regime,etf_bull_2024_2025,14d,OTM03,50,56.370044,,,6.05022,-25.61919,66,1.085493,
+existing_regime_file,ETF/bull regime,etf_bull_2024_2025,14d,OTM05,50,67.029849,,,6.674407,-26.186164,62,1.258053,
+existing_regime_file,ETF/bull regime,etf_bull_2024_2025,14d,OTM07,48,83.449813,,,7.240815,-27.109969,64.583333,1.53792,
+existing_regime_file,ETF/bull regime,etf_bull_2024_2025,14d,OTM10,50,94.895523,,,8.051886,-28.452703,62,1.667434,
+existing_regime_file,ETF/bull regime,etf_bull_2024_2025,Monthly,ATM00,24,67.428997,,,6.347712,-17.968538,79.166667,2.376608,
+existing_regime_file,ETF/bull regime,etf_bull_2024_2025,Monthly,OTM03,24,73.59621,,,7.369681,-19.368538,70.833333,2.599955,
+existing_regime_file,ETF/bull regime,etf_bull_2024_2025,Monthly,OTM05,24,81.805262,,,8.179657,-20.368538,70.833333,2.859042,
+existing_regime_file,ETF/bull regime,etf_bull_2024_2025,Monthly,OTM07,24,86.206614,,,8.864677,-20.918538,66.666667,3.017484,
+existing_regime_file,ETF/bull regime,etf_bull_2024_2025,Monthly,OTM10,24,93.387245,,,9.761382,-21.668538,66.666667,3.258024,
+existing_regime_file,ETF/bull regime,etf_bull_2024_2025,Weekly,ITM05,102,27.951463,,,2.054995,-17.96564,77.45098,0.264262,
+existing_regime_file,ETF/bull regime,etf_bull_2024_2025,Weekly,ATM00,102,61.333613,,,3.560043,-24.60562,71.568627,0.536154,
+existing_regime_file,ETF/bull regime,etf_bull_2024_2025,Weekly,OTM03,102,80.920039,,,4.488556,-27.452519,63.72549,0.686952,
+existing_regime_file,ETF/bull regime,etf_bull_2024_2025,Weekly,OTM05,102,93.285548,,,5.035211,-27.70594,61.764706,0.77788,
+existing_regime_file,ETF/bull regime,etf_bull_2024_2025,Weekly,OTM07,102,100.894188,,,5.499902,-28.864992,60.784314,0.839749,
+existing_regime_file,ETF/bull regime,etf_bull_2024_2025,Weekly,OTM10,102,116.249245,,,6.012672,-29.759533,58.823529,0.94034,
+existing_regime_file,Recovery/transition,recovery_transition_2023,14d,ATM00,25,60.375165,,,3.281526,-8.268147,84,1.960367,
+existing_regime_file,Recovery/transition,recovery_transition_2023,14d,OTM03,25,77.008174,,,4.123558,-9.371915,80,2.393008,
+existing_regime_file,Recovery/transition,recovery_transition_2023,14d,OTM05,23,55.587002,,,4.743932,-10.258681,73.913043,2.04918,
+existing_regime_file,Recovery/transition,recovery_transition_2023,14d,OTM07,25,86.911116,,,5.27668,-11.716623,76,2.66716,
+existing_regime_file,Recovery/transition,recovery_transition_2023,14d,OTM10,25,105.336397,,,6.349729,-12.304097,68,3.109626,
+existing_regime_file,Recovery/transition,recovery_transition_2023,Monthly,ATM00,12,40.779296,,,4.895787,-7.959789,75,3.001703,
+existing_regime_file,Recovery/transition,recovery_transition_2023,Monthly,OTM03,12,53.569776,,,6.146254,-10.352516,75,3.812524,
+existing_regime_file,Recovery/transition,recovery_transition_2023,Monthly,OTM05,12,59.779358,,,6.870405,-11.281158,75,4.199618,
+existing_regime_file,Recovery/transition,recovery_transition_2023,Monthly,OTM07,12,61.295245,,,7.42671,-12.097992,66.666667,4.316365,
+existing_regime_file,Recovery/transition,recovery_transition_2023,Monthly,OTM10,12,69.489705,,,8.312414,-13.268184,66.666667,4.808792,
+existing_regime_file,Recovery/transition,recovery_transition_2023,Weekly,ITM05,51,22.053731,,,1.746479,-8.516146,86.27451,0.406925,
+existing_regime_file,Recovery/transition,recovery_transition_2023,Weekly,ATM00,51,57.667415,,,2.808352,-10.712292,74.509804,0.936268,
+existing_regime_file,Recovery/transition,recovery_transition_2023,Weekly,OTM03,51,67.277888,,,3.889981,-14.101092,70.588235,1.089582,
+existing_regime_file,Recovery/transition,recovery_transition_2023,Weekly,OTM05,51,70.811753,,,4.325214,-14.383725,66.666667,1.148354,
+existing_regime_file,Recovery/transition,recovery_transition_2023,Weekly,OTM07,51,71.186684,,,4.713664,-17.058159,64.705882,1.169494,
+existing_regime_file,Recovery/transition,recovery_transition_2023,Weekly,OTM10,51,103.641581,,,5.597382,-17.642609,64.705882,1.556364,
