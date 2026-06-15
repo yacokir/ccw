@@ -1,0 +1,13 @@
+strategy,role,scenario,scenario_description,cycles,revisedReturnPct,btcReturnPct,revisedExcessReturnPct,revisedSharpe,revisedDrawdownPct,totalAssignedCycles,syntheticCycles
+Weekly OTM03,reference,idealized,"No option fees, delivery fees, or slippage.",325,993.852091,847.483816,146.368275,1.147626,-43.065651,108,91
+Weekly OTM03,reference,realistic,"Deribit-style option opening fee, delivery fee on assigned calls, and 5% short-premium execution haircut.",325,601.790416,847.483816,-245.693399,0.978644,-45.580881,108,91
+Weekly OTM03,reference,stress,"2x fee rates, 10% short-premium execution haircut, and additional 2.5 bp underlying slippage on assigned calls.",325,337.391298,847.483816,-510.092517,0.798263,-48.068631,108,91
+Weekly OTM05,baseline,idealized,"No option fees, delivery fees, or slippage.",325,1063.935479,847.483816,216.451663,1.112185,-51.150992,78,91
+Weekly OTM05,baseline,realistic,"Deribit-style option opening fee, delivery fee on assigned calls, and 5% short-premium execution haircut.",325,725.432847,847.483816,-122.050969,0.992699,-52.807922,78,91
+Weekly OTM05,baseline,stress,"2x fee rates, 10% short-premium execution haircut, and additional 2.5 bp underlying slippage on assigned calls.",325,473.261468,847.483816,-374.222348,0.865732,-54.468951,78,91
+Weekly OTM10,aggressive,idealized,"No option fees, delivery fees, or slippage.",325,1109.021386,847.483816,261.53757,1.045427,-58.703496,34,91
+Weekly OTM10,aggressive,realistic,"Deribit-style option opening fee, delivery fee on assigned calls, and 5% short-premium execution haircut.",325,891.807211,847.483816,44.323395,0.985014,-60.148921,34,91
+Weekly OTM10,aggressive,stress,"2x fee rates, 10% short-premium execution haircut, and additional 2.5 bp underlying slippage on assigned calls.",325,706.198797,847.483816,-141.285018,0.921878,-61.564377,34,91
+BTC Buy & Hold,benchmark,idealized,"No option fees, delivery fees, or slippage.",325,847.483816,847.483816,0,0.899854,-71.178211,0,0
+BTC Buy & Hold,benchmark,realistic,"Deribit-style option opening fee, delivery fee on assigned calls, and 5% short-premium execution haircut.",325,847.483816,847.483816,0,0.899854,-71.178211,0,0
+BTC Buy & Hold,benchmark,stress,"2x fee rates, 10% short-premium execution haircut, and additional 2.5 bp underlying slippage on assigned calls.",325,847.483816,847.483816,0,0.899854,-71.178211,0,0

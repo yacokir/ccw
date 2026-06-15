@@ -1,0 +1,9 @@
+strategy,transition,windowStart,windowEnd,cycles,returnPct,btcReturnPct,returnPreservationVsBtcPct,maxDrawdownPct,recoveryCycles,assignedCycles
+Weekly OTM03,bull_to_bear,2021-07-01,2022-06-30,51,14.087011,-33.744657,47.831668,-43.065651,,14
+Weekly OTM03,bear_to_bull,2022-07-01,2023-06-30,52,43.359163,50.654449,-7.295286,-15.376367,9,14
+Weekly OTM05,bull_to_bear,2021-07-01,2022-06-30,51,-1.523992,-33.744657,32.220665,-51.150992,,10
+Weekly OTM05,bear_to_bull,2022-07-01,2023-06-30,52,39.234667,50.654449,-11.419783,-17.957192,8,11
+Weekly OTM10,bull_to_bear,2021-07-01,2022-06-30,51,-16.919569,-33.744657,16.825088,-56.877685,,4
+Weekly OTM10,bear_to_bull,2022-07-01,2023-06-30,52,43.083001,50.654449,-7.571448,-25.897903,9,5
+BTC Buy & Hold,bull_to_bear,2021-07-01,2022-06-30,51,-33.744657,-33.744657,0,-65.758362,,0
+BTC Buy & Hold,bear_to_bull,2022-07-01,2023-06-30,52,50.654449,50.654449,0,-31.429048,15,0

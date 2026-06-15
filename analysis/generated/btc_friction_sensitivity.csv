@@ -1,0 +1,9 @@
+strategy,scenario,returnDegradationPctPoints,excessDegradationPctPoints,sharpeChange,drawdownChangePctPoints,remainsAboveBtc
+Weekly OTM03,realistic,-392.061675,-392.061674,-0.168982,-2.51523,false
+Weekly OTM03,stress,-656.460793,-656.460792,-0.349363,-5.00298,false
+Weekly OTM05,realistic,-338.502632,-338.502632,-0.119486,-1.65693,false
+Weekly OTM05,stress,-590.674011,-590.674011,-0.246453,-3.317959,false
+Weekly OTM10,realistic,-217.214175,-217.214175,-0.060413,-1.445425,true
+Weekly OTM10,stress,-402.822589,-402.822588,-0.123549,-2.860881,false
+BTC Buy & Hold,realistic,0,0,0,0,false
+BTC Buy & Hold,stress,0,0,0,0,false

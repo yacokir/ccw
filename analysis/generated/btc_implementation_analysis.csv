@@ -1,0 +1,5 @@
+strategy,role,cycles,estimatedYears,optionOpeningTrades,assignmentCycles,assignmentFrequencyPct,syntheticOptionCycles,syntheticOptionPct,estimatedTradingActions,estimatedActionsPerYear,operationalComplexity
+Weekly OTM03,reference,325,6.344,325,108,33.230769,91,28,433,68.257769,high
+Weekly OTM05,baseline,325,6.344,325,78,24,91,28,403,63.528593,high
+Weekly OTM10,aggressive,325,6.344,325,34,10.461538,91,28,359,56.592469,high
+BTC Buy & Hold,benchmark,325,6.344,0,0,0,0,0,1,0.157639,low
