@@ -1,0 +1,4 @@
+"strategy","role","cycles","estimatedYears","optionOpeningTrades","assignmentCycles","assignmentFrequencyPct","syntheticOptionCycles","syntheticOptionPct","estimatedTradingActions","estimatedActionsPerYear","operationalComplexity"
+"Weekly OTM03","baseline_candidate","330","6,439","330","128","38,787879","92","27,878788","458","71,124362","high"
+"Weekly OTM05","reference","330","6,439","330","101","30,606061","92","27,878788","431","66,931441","high"
+"ETH Buy & Hold","benchmark","330","6,439","0","0","0","0","0","1","0,155293","low"

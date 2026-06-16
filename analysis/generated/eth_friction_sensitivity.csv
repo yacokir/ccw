@@ -1,0 +1,7 @@
+"strategy","scenario","returnDegradationPctPoints","excessDegradationPctPoints","sharpeChange","drawdownChangePctPoints","remainsAboveEth"
+"Weekly OTM03","realistic","-623,60641","-623,60641","-0,176474","-1,970117","False"
+"Weekly OTM03","stress","-982,213347","-982,213347","-0,364034","-6,588532","False"
+"Weekly OTM05","realistic","-503,277432","-503,277432","-0,136855","-1,43687","False"
+"Weekly OTM05","stress","-825,182349","-825,18235","-0,281919","-2,859591","False"
+"ETH Buy & Hold","realistic","0","0","0","0","False"
+"ETH Buy & Hold","stress","0","0","0","0","False"
