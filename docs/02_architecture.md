@@ -98,6 +98,20 @@ Future Analysis Layer work should preserve these distinctions and avoid treating
 
 ---
 
+### 4.3 Current ETH research state
+
+The ETH infrastructure, coverage validation, weekly moneyness research, weekly robustness validation, and 14d/monthly tenor exploration are complete.
+
+Weekly clearly dominates 14d and monthly by return in the current ETH artifacts. Neither 14d nor monthly is a primary ETH candidate at this stage.
+
+The provisional ETH baseline is Weekly OTM05. Weekly OTM03 remains the primary comparative variant. OTM03 had the highest historical gross return, but its annualized advantage over OTM05 is small. OTM05 performed better under realistic and stress friction assumptions, has lower operational burden, won more individual years, and preserves methodological compatibility with the validated BTC Weekly OTM05 baseline.
+
+Although ETH Weekly OTM03 had the highest historical gross return, its advantage over OTM05 is relatively small when annualized. Considering OTM05's better performance under friction and stress, its greater operational simplicity, its victory in more individual years, and its compatibility with the BTC baseline, the project adopts ETH Weekly OTM05 as the provisional baseline.
+
+This choice does not mean OTM03 is inferior. It means the current evidence is not strong enough to justify a methodological divergence between BTC and ETH.
+
+---
+
 ## 5. Design Principles
 
 ### 5.1 Separação de responsabilidades

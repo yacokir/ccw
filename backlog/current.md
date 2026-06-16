@@ -90,6 +90,36 @@ BTC research conclusion:
 
 ---
 
+## 8.5 Completed ETH Research
+
+The following ETH research phases are complete and preserved under `runs/batches/` and `analysis/generated/`:
+
+- ETH infrastructure validation.
+- ETH observed/synthetic coverage validation.
+- ETH Weekly moneyness research across ATM00, OTM03, OTM05, OTM07, and OTM10.
+- ETH Weekly robustness validation for OTM03 vs OTM05.
+- ETH 14d and Monthly tenor exploration across ATM00, OTM03, OTM05, and OTM10.
+
+ETH research conclusion:
+
+- Weekly clearly dominates 14d and monthly by return.
+- 14d is not a primary ETH candidate at this stage.
+- Monthly is not a primary ETH candidate at this stage.
+- Weekly OTM03 produced the highest historical gross return.
+- Weekly OTM05 produced a very close return profile, with only a small annualized gap versus OTM03.
+- Weekly OTM05 performed better under realistic and stress friction assumptions.
+- Weekly OTM05 has lower operational burden, won more individual years, and is methodologically aligned with the validated BTC baseline.
+- ETH Weekly OTM05 is the provisional ETH baseline.
+- ETH Weekly OTM03 remains the primary comparative variant.
+
+Baseline rationale:
+
+Although ETH Weekly OTM03 had the highest historical gross return, its advantage over OTM05 is relatively small when annualized. Considering OTM05's better performance under friction and stress, its greater operational simplicity, its victory in more individual years, and its compatibility with the BTC baseline, the project adopts ETH Weekly OTM05 as the provisional baseline.
+
+This does not mean OTM03 is inferior. It means the current evidence is not strong enough to justify a methodological divergence between BTC and ETH.
+
+---
+
 ## 9. Remaining BTC Research
 
 - Document BTC conclusions in a stable final research memo before expanding to new assets.
@@ -121,6 +151,66 @@ The BTC CCW project is transitioning from exploratory backtesting to a structure
 - Replicate the stabilized BTC methodology on ETH.
 - Reuse the same analysis layers, glossary conventions, and caveat structure.
 - Compare ETH results against BTC only after methodology parity exists.
+- Keep ETH staking/carry excluded from baseline replication and evaluate it separately in the Carry, Staking, And Reinvestment Layer.
+
+### 10.35 Carry, Staking, And Reinvestment Layer
+
+After BTC and ETH baseline methodology is stabilized, evaluate additional return sources that may coexist with the covered-call strategy.
+
+#### Carry On Underlying Holdings
+
+Study the impact of passive yield earned on the underlying asset while serving as the CCW position.
+
+BTC sensitivity examples:
+
+- +1% annual carry
+- +2% annual carry
+- +3% annual carry
+
+ETH sensitivity examples:
+
+- +3% annual carry
+- +4% annual carry
+- +5% annual carry
+
+Model carry as an independent return component applied to the underlying holdings.
+
+#### Premium Reinvestment
+
+Study the impact of reinvesting option premiums into additional units of the underlying asset.
+
+Research goals:
+
+- Position growth over time.
+- Compounding effects.
+- Impact on CAGR, drawdowns, and long-term wealth accumulation.
+- Interaction between reinvestment and different tenors/moneyness levels.
+
+#### Cash Yield
+
+Study yield earned on accumulated cash or premium balances before reinvestment.
+
+Examples:
+
+- Stablecoin yield.
+- Treasury-like yield assumptions.
+- Conservative money-market assumptions.
+
+Expected to be materially less important than premium reinvestment.
+
+#### Research Principles
+
+- Keep baseline CCW results unchanged and fully comparable.
+- Treat carry and reinvestment as implementation-layer enhancements rather than core strategy logic.
+- Preserve separation between:
+  - Strategy alpha (covered call premiums).
+  - Underlying asset appreciation.
+  - Carry/staking yield.
+  - Premium reinvestment effects.
+- Prioritize analysis in the following order:
+  1. Underlying carry/staking.
+  2. Premium reinvestment.
+  3. Cash yield.
 
 ### 10.4 Cross-Asset Comparison
 

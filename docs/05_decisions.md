@@ -159,3 +159,36 @@ Racional:
 
 **Impacto:**
 A selecao do baseline BTC nao e mais uma pergunta de pesquisa em aberto. Pesquisas futuras, incluindo expansao para novos ativos, devem usar Weekly OTM05 como estrutura padrao de comparacao, mantendo OTM10 e OTM03 apenas como variantes interpretativas quando forem relevantes.
+
+---
+
+### [2026-06-16] Baseline provisorio ETH apos pesquisa weekly, robustez e tenors
+
+**Descricao:**
+A fase ETH concluiu infraestrutura, validacao de cobertura, pesquisa Weekly, validacao de robustez Weekly OTM03 vs OTM05, e exploracao dos tenors 14d e monthly usando o periodo 2020-2026.
+
+Decisao:
+
+- Weekly domina claramente 14d e monthly por retorno em ETH.
+- 14d nao e candidato principal neste momento.
+- Monthly nao e candidato principal neste momento.
+- ETH Weekly OTM05 passa a ser o baseline principal provisorio.
+- ETH Weekly OTM03 permanece como principal variante comparativa.
+- OTM03 venceu em retorno bruto historico.
+- OTM05 foi escolhido como baseline por robustez, consistencia operacional e alinhamento metodologico com BTC.
+
+Racional:
+
+- Embora ETH Weekly OTM03 tenha apresentado o maior retorno bruto historico, a vantagem sobre OTM05 e relativamente pequena quando anualizada.
+- A diferenca anualizada entre OTM03 e OTM05 e pequena, aproximadamente 1,5 p.p./ano.
+- OTM05 teve melhor desempenho sob friccoes realistas e stress.
+- OTM05 apresentou menor carga operacional.
+- OTM05 venceu mais anos individuais.
+- OTM05 oferece maior compatibilidade metodologica com o baseline BTC, que tambem e Weekly OTM05.
+
+Racional consolidado:
+
+Embora ETH Weekly OTM03 tenha apresentado o maior retorno bruto historico, a vantagem sobre OTM05 e relativamente pequena quando anualizada. Considerando a melhor performance de OTM05 sob friccao e stress, sua maior simplicidade operacional, sua vitoria em mais anos individuais e sua compatibilidade com o baseline BTC, o projeto adota ETH Weekly OTM05 como baseline provisorio.
+
+**Impacto:**
+A escolha nao significa que OTM03 seja inferior; significa apenas que a evidencia atual nao e suficientemente forte para justificar uma divergencia metodologica entre BTC e ETH. Pesquisas ETH futuras devem usar Weekly OTM05 como referencia padrao, mantendo Weekly OTM03 como a principal variante comparativa.
