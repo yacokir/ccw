@@ -1,0 +1,45 @@
+{
+  "thresholds": {
+    "drawdownPct": {
+      "watch": -20,
+      "stress": -40,
+      "crisis": -60
+    },
+    "ewmaVolPct": {
+      "watch": 4.25,
+      "stress": 6,
+      "crisis": 8
+    },
+    "historicalVaRLossPct": {
+      "watch": 6,
+      "stress": 10,
+      "crisis": 12
+    },
+    "dailyReturnPct": {
+      "watch": -2,
+      "stress": -5,
+      "crisis": -10
+    },
+    "underwaterDurationDays": {
+      "watch": 14,
+      "stress": 21
+    }
+  },
+  "configs": [
+    {
+      "id": "v03a_drawdown_crisis_plus_var_stress",
+      "label": "v0.3a: crisis = drawdown crisis + VaR stress",
+      "crisisRule": "drawdown_crisis_plus_var_stress"
+    },
+    {
+      "id": "v03b_drawdown_stress_plus_var_stress_plus_tail",
+      "label": "v0.3b: crisis = drawdown stress + VaR stress + recent tail",
+      "crisisRule": "drawdown_stress_plus_var_stress_plus_tail"
+    },
+    {
+      "id": "v03c_var_or_ewma_crisis_with_drawdown_watch",
+      "label": "v0.3c: crisis = VaR crisis or EWMA crisis with drawdown watch",
+      "crisisRule": "acute_crisis_plus_drawdown_watch"
+    }
+  ]
+}

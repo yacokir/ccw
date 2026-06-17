@@ -1,0 +1,134 @@
+[
+  {
+    "id": "current_v0_1",
+    "label": "Current thresholds",
+    "description": "Original passive monitor thresholds.",
+    "thresholds": {
+      "drawdownPct": {
+        "watch": -20,
+        "stress": -35,
+        "crisis": -50
+      },
+      "ewmaVolPct": {
+        "watch": 4.25,
+        "stress": 6,
+        "crisis": 7.5
+      },
+      "historicalVaRLossPct": {
+        "watch": 6,
+        "stress": 10,
+        "crisis": 11.5
+      },
+      "dailyReturnPct": {
+        "watch": -2,
+        "stress": -5,
+        "crisis": -10
+      },
+      "underwaterDurationDays": {
+        "watch": 14,
+        "stress": 21,
+        "crisis": 28
+      }
+    },
+    "tailFrequency": {
+      "window": 7,
+      "thresholdPct": -2,
+      "upgradeCount": 2
+    },
+    "hysteresis": {
+      "stressOrCrisisDowngradeValidDays": 3,
+      "watchDowngradeValidDays": 2
+    },
+    "durationCanTriggerCrisisAlone": true,
+    "ewmaCanTriggerCrisisAlone": true,
+    "varCanTriggerCrisisAlone": true
+  },
+  {
+    "id": "less_aggressive_crisis_v0_2_candidate",
+    "label": "Less aggressive crisis thresholds",
+    "description": "Raises crisis thresholds while keeping duration as an independent signal.",
+    "thresholds": {
+      "drawdownPct": {
+        "watch": -20,
+        "stress": -40,
+        "crisis": -60
+      },
+      "ewmaVolPct": {
+        "watch": 4.25,
+        "stress": 6,
+        "crisis": 8
+      },
+      "historicalVaRLossPct": {
+        "watch": 6,
+        "stress": 10,
+        "crisis": 12
+      },
+      "dailyReturnPct": {
+        "watch": -2,
+        "stress": -5,
+        "crisis": -10
+      },
+      "underwaterDurationDays": {
+        "watch": 14,
+        "stress": 21,
+        "crisis": 35
+      }
+    },
+    "tailFrequency": {
+      "window": 7,
+      "thresholdPct": -2,
+      "upgradeCount": 2
+    },
+    "hysteresis": {
+      "stressOrCrisisDowngradeValidDays": 3,
+      "watchDowngradeValidDays": 2
+    },
+    "durationCanTriggerCrisisAlone": true,
+    "ewmaCanTriggerCrisisAlone": true,
+    "varCanTriggerCrisisAlone": true
+  },
+  {
+    "id": "confirmation_based_v0_2_recommended",
+    "label": "Confirmation-based thresholds",
+    "description": "Drawdown remains primary; duration/EWMA confirm but do not dominate crisis alone.",
+    "thresholds": {
+      "drawdownPct": {
+        "watch": -20,
+        "stress": -40,
+        "crisis": -60
+      },
+      "ewmaVolPct": {
+        "watch": 4.25,
+        "stress": 6,
+        "crisis": 8
+      },
+      "historicalVaRLossPct": {
+        "watch": 6,
+        "stress": 10,
+        "crisis": 12
+      },
+      "dailyReturnPct": {
+        "watch": -2,
+        "stress": -5,
+        "crisis": -10
+      },
+      "underwaterDurationDays": {
+        "watch": 14,
+        "stress": 21,
+        "crisis": 35
+      }
+    },
+    "tailFrequency": {
+      "window": 7,
+      "thresholdPct": -2,
+      "upgradeCount": 2
+    },
+    "hysteresis": {
+      "stressOrCrisisDowngradeValidDays": 3,
+      "watchDowngradeValidDays": 2
+    },
+    "durationCanTriggerCrisisAlone": false,
+    "ewmaCanTriggerCrisisAlone": false,
+    "varCanTriggerCrisisAlone": true
+  }
+]

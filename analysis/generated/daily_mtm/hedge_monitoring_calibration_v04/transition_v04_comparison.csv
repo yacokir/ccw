@@ -1,0 +1,311 @@
+configId,state,year,regime,startDate,endDate,durationDays,maxDamageState,maxDrawdownPct,maxVarLossPct,maxEwmaPct,minDailyReturnPct
+v04a_confirmation_stress,normal,2020,Bull market,2020-01-03,2020-03-06,64,normal,-12.889792,3.411774,2.327292,-5.280805
+v04a_confirmation_stress,watch,2020,Bull market,2020-03-07,2020-03-08,2,watch,-14.870798,3.411774,2.449928,-4.94263
+v04a_confirmation_stress,stress,2020,Bull market,2020-03-09,2020-03-26,18,stress,-54.036507,9.999168,7.009549,-24.329604
+v04a_confirmation_stress,watch,2020,Bull market,2020-03-27,2020-04-02,7,stress,,9.999168,6.058869,
+v04a_confirmation_stress,stress,2020,Bull market,2020-04-03,2020-04-20,18,stress,-35.332356,9.999168,6.058869,-4.087856
+v04a_confirmation_stress,watch,2020,Bull market,2020-04-21,2020-08-06,108,stress,-33.469335,4.090816,4.006706,-8.565766
+v04a_confirmation_stress,normal,2020,Bull market,2020-08-07,2020-09-07,32,normal,-15.064681,2.100538,1.46398,-2.173168
+v04a_confirmation_stress,watch,2020,Bull market,2020-09-08,2020-10-20,43,stress,-15.849957,2.292753,1.578244,-2.747254
+v04a_confirmation_stress,normal,2020,Bull market,2020-10-21,2020-12-24,65,normal,-10.44802,2.182275,4.122659,-10.44802
+v04a_confirmation_stress,normal,2021,Bull market,2021-01-01,2021-01-21,21,normal,-19.548703,,5.17907,-10.9957
+v04a_confirmation_stress,stress,2021,Bull market,2021-01-22,2021-01-24,3,watch,-22.580897,,5.058263,-2.492053
+v04a_confirmation_stress,normal,2021,Bull market,2021-01-25,2021-01-25,1,normal,-18.86114,,4.705025,3.389524
+v04a_confirmation_stress,stress,2021,Bull market,2021-01-26,2021-01-27,2,watch,-24.436585,,4.630017,-3.757765
+v04a_confirmation_stress,watch,2021,Bull market,2021-01-28,2021-02-07,11,watch,-19.333777,,4.740716,-2.384594
+v04a_confirmation_stress,normal,2021,Bull market,2021-02-08,2021-04-22,74,normal,-12.400307,10.545595,5.247104,-10.00261
+v04a_confirmation_stress,stress,2021,Bull market,2021-04-23,2021-04-25,3,watch,-23.076369,8.761143,4.619568,-12.737565
+v04a_confirmation_stress,normal,2021,Bull market,2021-04-26,2021-04-28,3,normal,-19.688754,8.761143,4.276275,0.130596
+v04a_confirmation_stress,watch,2021,Bull market,2021-04-29,2021-05-14,16,stress,-19.258143,9.491668,4.127495,-10.088635
+v04a_confirmation_stress,stress,2021,Bull market,2021-05-15,2021-05-21,7,stress,-42.305372,11.545546,7.169009,-18.002004
+v04a_confirmation_stress,crisis,2021,Bull market,2021-05-22,2021-05-23,2,stress,-46.401867,11.545546,7.307657,-10.610411
+v04a_confirmation_stress,stress,2021,Bull market,2021-05-24,2021-05-27,4,stress,-39.735961,11.780346,7.712212,0.318859
+v04a_confirmation_stress,watch,2021,Bull market,2021-05-28,2021-06-03,7,stress,,11.780346,7.120811,
+v04a_confirmation_stress,crisis,2021,Bull market,2021-06-04,2021-06-06,3,stress,-43.580154,11.780346,7.120811,-2.025917
+v04a_confirmation_stress,stress,2021,Bull market,2021-06-07,2021-06-07,1,stress,-42.268449,11.780346,6.526945,2.102331
+v04a_confirmation_stress,crisis,2021,Bull market,2021-06-08,2021-06-09,2,stress,-47.562128,11.780346,6.78844,-9.169472
+v04a_confirmation_stress,stress,2021,Bull market,2021-06-10,2021-06-10,1,stress,-39.337865,10.375612,6.817801,7.262309
+v04a_confirmation_stress,crisis,2021,Bull market,2021-06-11,2021-06-13,3,stress,-42.526575,10.375612,6.639586,-2.775762
+v04a_confirmation_stress,stress,2021,Bull market,2021-06-14,2021-06-17,4,stress,-38.840949,10.375612,6.26877,0.100048
+v04a_confirmation_stress,crisis,2021,Bull market,2021-06-18,2021-06-20,3,stress,-45.391416,10.375612,5.649392,-5.079369
+v04a_confirmation_stress,stress,2021,Bull market,2021-06-21,2021-06-22,2,stress,-52.446788,9.961989,5.856859,-11.086798
+v04a_confirmation_stress,crisis,2021,Bull market,2021-06-23,2021-06-24,2,stress,-45.174287,10.872424,6.802787,0.687744
+v04a_confirmation_stress,watch,2021,Bull market,2021-06-25,2021-07-08,14,stress,,10.872424,6.597697,
+v04a_confirmation_stress,crisis,2021,Bull market,2021-07-09,2021-07-11,3,stress,-47.01208,10.872424,6.597697,0.850526
+v04a_confirmation_stress,stress,2021,Bull market,2021-07-12,2021-07-27,16,stress,-52.350186,9.961989,6.02373,-3.382819
+v04a_confirmation_stress,watch,2021,Bull market,2021-07-28,2021-09-07,42,stress,-45.430602,4.792694,4.14572,-1.327378
+v04a_confirmation_stress,stress,2021,Bull market,2021-09-08,2021-09-08,1,stress,-25.073089,1.152842,2.899985,-6.971788
+v04a_confirmation_stress,watch,2021,Bull market,2021-09-09,2021-09-09,1,stress,-23.821629,1.3089,2.84125,1.670241
+v04a_confirmation_stress,stress,2021,Bull market,2021-09-10,2021-09-14,5,stress,-27.409269,3.187559,2.986489,-4.709526
+v04a_confirmation_stress,watch,2021,Bull market,2021-09-15,2021-09-19,5,stress,-24.801416,3.223369,2.667872,-1.407278
+v04a_confirmation_stress,stress,2021,Bull market,2021-09-20,2021-09-20,1,stress,-28.98099,3.223515,2.863978,-6.416786
+v04a_confirmation_stress,watch,2021,Bull market,2021-09-21,2021-10-19,29,stress,-31.331181,5.648519,2.820793,-2.658096
+v04a_confirmation_stress,normal,2021,Bull market,2021-10-20,2021-11-23,35,normal,-13.162302,5.648519,2.612328,-5.106337
+v04a_confirmation_stress,watch,2021,Bull market,2021-11-24,2021-12-03,10,watch,-14.452604,4.491557,2.439198,-1.779659
+v04a_confirmation_stress,stress,2021,Bull market,2021-12-04,2021-12-04,1,watch,-26.24721,4.491557,4.122857,-13.787219
+v04a_confirmation_stress,watch,2021,Bull market,2021-12-05,2021-12-08,4,stress,-25.4818,4.887002,4.160341,-1.52053
+v04a_confirmation_stress,stress,2021,Bull market,2021-12-09,2021-12-19,11,stress,-30.26582,5.903036,4.064363,-6.554881
+v04a_confirmation_stress,watch,2021,Bull market,2021-12-20,2021-12-27,8,stress,-29.250948,5.903036,3.482019,-0.954881
+v04a_confirmation_stress,stress,2021,Bull market,2021-12-28,2021-12-30,3,stress,-26.81069,5.528352,3.128277,-3.916806
+v04a_confirmation_stress,normal,2022,Bear market,2022-01-07,2022-01-23,17,normal,-19.664794,,3.629198,-11.519976
+v04a_confirmation_stress,stress,2022,Bear market,2022-01-24,2022-01-24,1,watch,-22.868191,,3.589704,-4.527624
+v04a_confirmation_stress,normal,2022,Bear market,2022-01-25,2022-01-26,2,normal,-16.878394,,4.052046,5.215027
+v04a_confirmation_stress,watch,2022,Bear market,2022-01-27,2022-02-14,19,stress,-15.75674,,4.069811,-3.674014
+v04a_confirmation_stress,normal,2022,Bear market,2022-02-15,2022-03-07,21,normal,-19.088904,7.912703,3.694476,-7.922967
+v04a_confirmation_stress,watch,2022,Bear market,2022-03-08,2022-05-07,61,stress,-19.43039,7.912703,4.077771,-6.539224
+v04a_confirmation_stress,stress,2022,Bear market,2022-05-08,2022-05-26,19,stress,-36.480977,4.65018,4.096002,-10.931748
+v04a_confirmation_stress,watch,2022,Bear market,2022-05-27,2022-06-02,7,stress,,4.65018,3.385891,
+v04a_confirmation_stress,stress,2022,Bear market,2022-06-03,2022-06-23,21,stress,-56.749462,8.593602,4.693772,-13.322949
+v04a_confirmation_stress,watch,2022,Bear market,2022-06-24,2022-07-07,14,stress,,5.529357,4.327759,
+v04a_confirmation_stress,stress,2022,Bear market,2022-07-08,2022-07-18,11,stress,-56.282302,5.529357,4.327759,-3.061263
+v04a_confirmation_stress,watch,2022,Bear market,2022-07-19,2022-07-22,4,stress,-50.801994,5.529357,3.565617,-1.123108
+v04a_confirmation_stress,stress,2022,Bear market,2022-07-23,2022-07-23,1,stress,-49.943328,5.529357,3.403746,-2.968755
+v04a_confirmation_stress,watch,2022,Bear market,2022-07-24,2022-07-25,2,stress,-50.468526,5.529357,3.30516,-1.785567
+v04a_confirmation_stress,stress,2022,Bear market,2022-07-26,2022-07-28,3,stress,-52.538672,5.529357,3.540733,-4.179455
+v04a_confirmation_stress,watch,2022,Bear market,2022-07-29,2022-08-04,7,stress,,5.529357,3.540733,
+v04a_confirmation_stress,stress,2022,Bear market,2022-08-05,2022-08-06,2,stress,-48.691863,5.529357,3.540733,0.937175
+v04a_confirmation_stress,watch,2022,Bear market,2022-08-07,2022-08-08,2,stress,-48.095775,4.01415,3.336168,0.22252
+v04a_confirmation_stress,stress,2022,Bear market,2022-08-09,2022-08-09,1,stress,-48.108904,3.978237,3.276993,-2.761602
+v04a_confirmation_stress,watch,2022,Bear market,2022-08-10,2022-08-11,2,stress,-46.435022,3.676269,3.273942,2.191071
+v04a_confirmation_stress,stress,2022,Bear market,2022-08-12,2022-08-15,4,stress,-46.760659,3.019635,3.19248,-2.738985
+v04a_confirmation_stress,watch,2022,Bear market,2022-08-16,2022-08-18,3,stress,-46.86207,3.019635,2.875516,-1.489709
+v04a_confirmation_stress,stress,2022,Bear market,2022-08-19,2022-08-19,1,stress,-51.980278,2.945312,3.556105,-9.712549
+v04a_confirmation_stress,watch,2022,Bear market,2022-08-20,2022-09-12,24,stress,-53.012356,3.63464,3.448,-0.237561
+v04a_confirmation_stress,stress,2022,Bear market,2022-09-13,2022-09-25,13,stress,-58.048237,4.034826,2.851108,-3.858058
+v04a_confirmation_stress,watch,2022,Bear market,2022-09-26,2022-09-27,2,stress,-56.901991,3.814857,2.496143,1.132159
+v04a_confirmation_stress,stress,2022,Bear market,2022-09-28,2022-09-29,2,stress,-56.967487,3.814857,2.493295,-2.448246
+v04a_confirmation_stress,watch,2022,Bear market,2022-09-30,2022-10-06,7,stress,,3.814857,2.425679,
+v04a_confirmation_stress,stress,2022,Bear market,2022-10-07,2022-10-07,1,stress,-55.774566,3.814857,2.425679,
+v04a_confirmation_stress,watch,2022,Bear market,2022-10-08,2022-10-12,5,stress,-57.098047,3.814857,2.353485,-1.976601
+v04a_confirmation_stress,stress,2022,Bear market,2022-10-13,2022-10-13,1,stress,-58.190384,3.49808,2.279099,-3.703397
+v04a_confirmation_stress,watch,2022,Bear market,2022-10-14,2022-10-18,5,stress,-56.594148,3.735659,2.629271,-1.669457
+v04a_confirmation_stress,stress,2022,Bear market,2022-10-19,2022-10-19,1,stress,-56.563002,3.735659,2.405913,-2.166157
+v04a_confirmation_stress,watch,2022,Bear market,2022-10-20,2022-11-06,18,stress,-56.836628,3.735659,2.334573,-1.015805
+v04a_confirmation_stress,stress,2022,Bear market,2022-11-07,2022-11-17,11,crisis,-62.625836,5.451927,3.290223,-9.138438
+v04a_confirmation_stress,watch,2022,Bear market,2022-11-18,2022-11-20,3,crisis,-62.566529,5.451927,2.751017,-0.518583
+v04a_confirmation_stress,stress,2022,Bear market,2022-11-21,2022-11-22,2,crisis,-63.424948,5.451927,2.566485,-2.178795
+v04a_confirmation_stress,watch,2022,Bear market,2022-11-23,2022-12-15,23,crisis,-62.664547,5.451927,2.465815,-1.739023
+v04a_confirmation_stress,stress,2022,Bear market,2022-12-16,2022-12-16,1,crisis,-61.49862,5.451927,2.267547,-2.800323
+v04a_confirmation_stress,watch,2022,Bear market,2022-12-17,2022-12-29,13,crisis,-62.214517,5.451927,2.243263,-1.821014
+v04a_confirmation_stress,normal,2023,Recovery,2023-01-06,2023-03-12,66,normal,-18.902711,3.403368,2.649188,-8.948255
+v04a_confirmation_stress,watch,2023,Recovery,2023-03-13,2023-03-16,4,watch,-17.59483,4.233107,2.987976,-3.764706
+v04a_confirmation_stress,normal,2023,Recovery,2023-03-17,2023-05-04,49,normal,-10.360898,4.233107,5.720382,-3.209425
+v04a_confirmation_stress,watch,2023,Recovery,2023-05-05,2023-06-28,55,stress,-17.579313,3.529521,3.389421,-3.747493
+v04a_confirmation_stress,normal,2023,Recovery,2023-06-29,2023-08-03,36,normal,-6.132515,3.023049,2.610465,-2.360764
+v04a_confirmation_stress,watch,2023,Recovery,2023-08-04,2023-11-02,91,stress,-17.521855,2.461015,2.365425,-8.027079
+v04a_confirmation_stress,normal,2023,Recovery,2023-11-03,2023-12-28,56,normal,-4.658308,2.42041,1.700475,-3.626304
+v04a_confirmation_stress,normal,2024,ETF/Bull,2024-01-05,2024-01-24,20,normal,-15.374203,,2.1947,-4.982989
+v04a_confirmation_stress,watch,2024,ETF/Bull,2024-01-25,2024-02-08,15,watch,-12.67505,,2.129503,0.343406
+v04a_confirmation_stress,normal,2024,ETF/Bull,2024-02-09,2024-03-27,48,normal,-10.843526,4.959088,2.695495,-5.614032
+v04a_confirmation_stress,watch,2024,ETF/Bull,2024-03-28,2024-06-06,71,stress,-14.640039,4.959088,2.577754,-4.59054
+v04a_confirmation_stress,normal,2024,ETF/Bull,2024-06-07,2024-06-20,14,normal,-8.503374,2.442482,1.995059,-3.403293
+v04a_confirmation_stress,watch,2024,ETF/Bull,2024-06-21,2024-07-04,14,watch,-13.585606,3.193074,1.909134,-3.767477
+v04a_confirmation_stress,stress,2024,ETF/Bull,2024-07-05,2024-07-05,1,stress,-22.322262,3.193074,1.76467,
+v04a_confirmation_stress,watch,2024,ETF/Bull,2024-07-06,2024-11-07,125,stress,-23.419236,3.439946,2.289569,-4.222651
+v04a_confirmation_stress,normal,2024,ETF/Bull,2024-11-08,2024-12-26,49,normal,-10.212435,3.391634,3.355019,-6.247014
+v04a_confirmation_stress,normal,2025,Mixed,2025-01-03,2025-02-19,48,normal,-9.963264,2.554838,2.101418,-3.621218
+v04a_confirmation_stress,watch,2025,Mixed,2025-02-20,2025-03-08,17,stress,-19.993622,3.013732,2.545783,-8.626384
+v04a_confirmation_stress,stress,2025,Mixed,2025-03-09,2025-03-15,7,stress,-23.341457,3.227019,2.571334,-2.942812
+v04a_confirmation_stress,watch,2025,Mixed,2025-03-16,2025-03-20,5,stress,-23.467478,3.227019,2.24026,-1.485455
+v04a_confirmation_stress,stress,2025,Mixed,2025-03-21,2025-03-21,1,stress,-21.403685,3.227019,2.183717,-2.133043
+v04a_confirmation_stress,watch,2025,Mixed,2025-03-22,2025-04-06,16,stress,-22.797783,3.227019,2.120206,-0.656533
+v04a_confirmation_stress,stress,2025,Mixed,2025-04-07,2025-04-07,1,stress,-25.878051,3.227019,2.000616,-3.98987
+v04a_confirmation_stress,watch,2025,Mixed,2025-04-08,2025-04-08,1,stress,-24.672281,3.751227,1.980175,1.626739
+v04a_confirmation_stress,stress,2025,Mixed,2025-04-09,2025-04-13,5,stress,-26.397829,3.751227,2.134673,-2.290722
+v04a_confirmation_stress,watch,2025,Mixed,2025-04-14,2025-05-20,37,stress,-22.21878,3.227019,1.936357,-1.521524
+v04a_confirmation_stress,normal,2025,Mixed,2025-05-21,2025-06-16,27,normal,-5.614361,1.944583,1.475161,-2.248862
+v04a_confirmation_stress,watch,2025,Mixed,2025-06-17,2025-07-09,23,stress,-8.121291,2.000503,1.554418,-2.559908
+v04a_confirmation_stress,normal,2025,Mixed,2025-07-10,2025-08-10,32,normal,-3.192282,2.228056,1.973332,-2.202626
+v04a_confirmation_stress,watch,2025,Mixed,2025-08-11,2025-08-12,2,watch,-1.65094,1.975073,1.415144,-0.803335
+v04a_confirmation_stress,normal,2025,Mixed,2025-08-13,2025-08-26,14,normal,-9.138825,2.45656,1.539109,-2.946075
+v04a_confirmation_stress,watch,2025,Mixed,2025-08-27,2025-10-03,38,stress,-8.580512,2.45656,1.452171,-2.091057
+v04a_confirmation_stress,normal,2025,Mixed,2025-10-04,2025-10-19,16,normal,-15.226599,4.741608,2.494115,-7.368192
+v04a_confirmation_stress,watch,2025,Mixed,2025-10-20,2025-11-13,25,stress,-18.962159,4.973641,2.367455,-4.29694
+v04a_confirmation_stress,stress,2025,Mixed,2025-11-14,2025-11-17,4,stress,-23.593558,6.233757,2.462715,-6.811762
+v04a_confirmation_stress,watch,2025,Mixed,2025-11-18,2025-11-18,1,stress,,6.233757,2.255154,
+v04a_confirmation_stress,stress,2025,Mixed,2025-11-19,2025-11-26,8,stress,-32.756283,6.233757,2.983408,-8.522184
+v04a_confirmation_stress,watch,2025,Mixed,2025-11-27,2025-12-10,14,stress,-28.898934,5.680092,2.556861,-1.893342
+v04a_confirmation_stress,stress,2025,Mixed,2025-12-11,2025-12-11,1,stress,-27.676409,5.680092,2.361177,-2.349357
+v04a_confirmation_stress,watch,2025,Mixed,2025-12-12,2025-12-12,1,stress,-25.723797,5.680092,2.382854,2.699827
+v04a_confirmation_stress,stress,2025,Mixed,2025-12-13,2025-12-17,5,stress,-29.410852,5.680092,2.364265,-2.051156
+v04a_confirmation_stress,watch,2025,Mixed,2025-12-18,2025-12-22,5,stress,-29.304047,4.80368,2.186846,-1.377267
+v04a_confirmation_stress,stress,2025,Mixed,2025-12-23,2025-12-23,1,stress,-29.897676,4.80368,2.079856,-2.911726
+v04a_confirmation_stress,watch,2025,Mixed,2025-12-24,2025-12-25,2,stress,-29.601842,5.056746,2.019143,0.422003
+v04b_actionable_stress_recommended,normal,2020,Bull market,2020-01-03,2020-03-06,64,normal,-12.889792,3.411774,2.327292,-5.280805
+v04b_actionable_stress_recommended,watch,2020,Bull market,2020-03-07,2020-03-11,5,watch,-22.927546,5.128626,3.319069,-9.464141
+v04b_actionable_stress_recommended,stress,2020,Bull market,2020-03-12,2020-03-26,15,stress,-54.036507,9.999168,7.009549,-24.329604
+v04b_actionable_stress_recommended,watch,2020,Bull market,2020-03-27,2020-04-02,7,stress,,9.999168,6.058869,
+v04b_actionable_stress_recommended,stress,2020,Bull market,2020-04-03,2020-04-20,18,stress,-35.332356,9.999168,6.058869,-4.087856
+v04b_actionable_stress_recommended,watch,2020,Bull market,2020-04-21,2020-08-06,108,stress,-33.469335,4.090816,4.006706,-8.565766
+v04b_actionable_stress_recommended,normal,2020,Bull market,2020-08-07,2020-09-07,32,normal,-15.064681,2.100538,1.46398,-2.173168
+v04b_actionable_stress_recommended,watch,2020,Bull market,2020-09-08,2020-10-20,43,stress,-15.849957,2.292753,1.578244,-2.747254
+v04b_actionable_stress_recommended,normal,2020,Bull market,2020-10-21,2020-12-24,65,normal,-10.44802,2.182275,4.122659,-10.44802
+v04b_actionable_stress_recommended,normal,2021,Bull market,2021-01-01,2021-01-21,21,normal,-19.548703,,5.17907,-10.9957
+v04b_actionable_stress_recommended,watch,2021,Bull market,2021-01-22,2021-01-24,3,watch,-22.580897,,5.058263,-2.492053
+v04b_actionable_stress_recommended,normal,2021,Bull market,2021-01-25,2021-01-25,1,normal,-18.86114,,4.705025,3.389524
+v04b_actionable_stress_recommended,watch,2021,Bull market,2021-01-26,2021-02-07,13,watch,-24.436585,,4.740716,-3.757765
+v04b_actionable_stress_recommended,normal,2021,Bull market,2021-02-08,2021-04-22,74,normal,-12.400307,10.545595,5.247104,-10.00261
+v04b_actionable_stress_recommended,stress,2021,Bull market,2021-04-23,2021-04-25,3,watch,-23.076369,8.761143,4.619568,-12.737565
+v04b_actionable_stress_recommended,normal,2021,Bull market,2021-04-26,2021-04-28,3,normal,-19.688754,8.761143,4.276275,0.130596
+v04b_actionable_stress_recommended,watch,2021,Bull market,2021-04-29,2021-05-14,16,stress,-19.258143,9.491668,4.127495,-10.088635
+v04b_actionable_stress_recommended,stress,2021,Bull market,2021-05-15,2021-05-21,7,stress,-42.305372,11.545546,7.169009,-18.002004
+v04b_actionable_stress_recommended,crisis,2021,Bull market,2021-05-22,2021-05-23,2,stress,-46.401867,11.545546,7.307657,-10.610411
+v04b_actionable_stress_recommended,stress,2021,Bull market,2021-05-24,2021-05-27,4,stress,-39.735961,11.780346,7.712212,0.318859
+v04b_actionable_stress_recommended,watch,2021,Bull market,2021-05-28,2021-06-03,7,stress,,11.780346,7.120811,
+v04b_actionable_stress_recommended,crisis,2021,Bull market,2021-06-04,2021-06-06,3,stress,-43.580154,11.780346,7.120811,-2.025917
+v04b_actionable_stress_recommended,stress,2021,Bull market,2021-06-07,2021-06-07,1,stress,-42.268449,11.780346,6.526945,2.102331
+v04b_actionable_stress_recommended,crisis,2021,Bull market,2021-06-08,2021-06-09,2,stress,-47.562128,11.780346,6.78844,-9.169472
+v04b_actionable_stress_recommended,stress,2021,Bull market,2021-06-10,2021-06-10,1,stress,-39.337865,10.375612,6.817801,7.262309
+v04b_actionable_stress_recommended,crisis,2021,Bull market,2021-06-11,2021-06-13,3,stress,-42.526575,10.375612,6.639586,-2.775762
+v04b_actionable_stress_recommended,stress,2021,Bull market,2021-06-14,2021-06-17,4,stress,-38.840949,10.375612,6.26877,0.100048
+v04b_actionable_stress_recommended,crisis,2021,Bull market,2021-06-18,2021-06-20,3,stress,-45.391416,10.375612,5.649392,-5.079369
+v04b_actionable_stress_recommended,stress,2021,Bull market,2021-06-21,2021-06-22,2,stress,-52.446788,9.961989,5.856859,-11.086798
+v04b_actionable_stress_recommended,crisis,2021,Bull market,2021-06-23,2021-06-24,2,stress,-45.174287,10.872424,6.802787,0.687744
+v04b_actionable_stress_recommended,watch,2021,Bull market,2021-06-25,2021-07-08,14,stress,,10.872424,6.597697,
+v04b_actionable_stress_recommended,crisis,2021,Bull market,2021-07-09,2021-07-11,3,stress,-47.01208,10.872424,6.597697,0.850526
+v04b_actionable_stress_recommended,stress,2021,Bull market,2021-07-12,2021-07-29,18,stress,-52.350186,9.961989,6.02373,-3.382819
+v04b_actionable_stress_recommended,watch,2021,Bull market,2021-07-30,2021-09-07,40,stress,-35.234046,4.792694,4.030213,-1.327378
+v04b_actionable_stress_recommended,stress,2021,Bull market,2021-09-08,2021-09-08,1,stress,-25.073089,1.152842,2.899985,-6.971788
+v04b_actionable_stress_recommended,watch,2021,Bull market,2021-09-09,2021-09-09,1,stress,-23.821629,1.3089,2.84125,1.670241
+v04b_actionable_stress_recommended,stress,2021,Bull market,2021-09-10,2021-09-14,5,stress,-27.409269,3.187559,2.986489,-4.709526
+v04b_actionable_stress_recommended,watch,2021,Bull market,2021-09-15,2021-09-19,5,stress,-24.801416,3.223369,2.667872,-1.407278
+v04b_actionable_stress_recommended,stress,2021,Bull market,2021-09-20,2021-09-20,1,stress,-28.98099,3.223515,2.863978,-6.416786
+v04b_actionable_stress_recommended,watch,2021,Bull market,2021-09-21,2021-10-19,29,stress,-31.331181,5.648519,2.820793,-2.658096
+v04b_actionable_stress_recommended,normal,2021,Bull market,2021-10-20,2021-11-23,35,normal,-13.162302,5.648519,2.612328,-5.106337
+v04b_actionable_stress_recommended,watch,2021,Bull market,2021-11-24,2021-12-08,15,stress,-26.24721,4.887002,4.160341,-13.787219
+v04b_actionable_stress_recommended,stress,2021,Bull market,2021-12-09,2021-12-19,11,stress,-30.26582,5.903036,4.064363,-6.554881
+v04b_actionable_stress_recommended,watch,2021,Bull market,2021-12-20,2021-12-27,8,stress,-29.250948,5.903036,3.482019,-0.954881
+v04b_actionable_stress_recommended,stress,2021,Bull market,2021-12-28,2021-12-30,3,stress,-26.81069,5.528352,3.128277,-3.916806
+v04b_actionable_stress_recommended,normal,2022,Bear market,2022-01-07,2022-01-23,17,normal,-19.664794,,3.629198,-11.519976
+v04b_actionable_stress_recommended,watch,2022,Bear market,2022-01-24,2022-01-24,1,watch,-22.868191,,3.589704,-4.527624
+v04b_actionable_stress_recommended,normal,2022,Bear market,2022-01-25,2022-01-26,2,normal,-16.878394,,4.052046,5.215027
+v04b_actionable_stress_recommended,watch,2022,Bear market,2022-01-27,2022-02-14,19,stress,-15.75674,,4.069811,-3.674014
+v04b_actionable_stress_recommended,normal,2022,Bear market,2022-02-15,2022-03-07,21,normal,-19.088904,7.912703,3.694476,-7.922967
+v04b_actionable_stress_recommended,watch,2022,Bear market,2022-03-08,2022-05-07,61,stress,-19.43039,7.912703,4.077771,-6.539224
+v04b_actionable_stress_recommended,stress,2022,Bear market,2022-05-08,2022-05-26,19,stress,-36.480977,4.65018,4.096002,-10.931748
+v04b_actionable_stress_recommended,watch,2022,Bear market,2022-05-27,2022-06-02,7,stress,,4.65018,3.385891,
+v04b_actionable_stress_recommended,stress,2022,Bear market,2022-06-03,2022-06-23,21,stress,-56.749462,8.593602,4.693772,-13.322949
+v04b_actionable_stress_recommended,watch,2022,Bear market,2022-06-24,2022-07-07,14,stress,,5.529357,4.327759,
+v04b_actionable_stress_recommended,stress,2022,Bear market,2022-07-08,2022-07-28,21,stress,-56.282302,5.529357,4.327759,-4.179455
+v04b_actionable_stress_recommended,watch,2022,Bear market,2022-07-29,2022-08-04,7,stress,,5.529357,3.540733,
+v04b_actionable_stress_recommended,stress,2022,Bear market,2022-08-05,2022-08-25,21,stress,-51.980278,5.529357,3.556105,-9.712549
+v04b_actionable_stress_recommended,watch,2022,Bear market,2022-08-26,2022-09-08,14,stress,,3.63464,2.986889,
+v04b_actionable_stress_recommended,stress,2022,Bear market,2022-09-09,2022-09-29,21,stress,-58.048237,4.034826,2.986889,-3.858058
+v04b_actionable_stress_recommended,watch,2022,Bear market,2022-09-30,2022-10-06,7,stress,,3.814857,2.425679,
+v04b_actionable_stress_recommended,stress,2022,Bear market,2022-10-07,2022-10-27,21,stress,-58.190384,3.814857,2.629271,-3.703397
+v04b_actionable_stress_recommended,watch,2022,Bear market,2022-10-28,2022-11-03,7,stress,,3.138579,2.056154,
+v04b_actionable_stress_recommended,stress,2022,Bear market,2022-11-04,2022-11-24,21,crisis,-63.424948,5.451927,3.290223,-9.138438
+v04b_actionable_stress_recommended,watch,2022,Bear market,2022-11-25,2022-12-08,14,stress,,5.451927,2.394545,
+v04b_actionable_stress_recommended,stress,2022,Bear market,2022-12-09,2022-12-29,21,crisis,-62.214517,5.451927,2.394545,-2.800323
+v04b_actionable_stress_recommended,normal,2023,Recovery,2023-01-06,2023-03-12,66,normal,-18.902711,3.403368,2.649188,-8.948255
+v04b_actionable_stress_recommended,watch,2023,Recovery,2023-03-13,2023-03-16,4,watch,-17.59483,4.233107,2.987976,-3.764706
+v04b_actionable_stress_recommended,normal,2023,Recovery,2023-03-17,2023-05-04,49,normal,-10.360898,4.233107,5.720382,-3.209425
+v04b_actionable_stress_recommended,watch,2023,Recovery,2023-05-05,2023-06-28,55,stress,-17.579313,3.529521,3.389421,-3.747493
+v04b_actionable_stress_recommended,normal,2023,Recovery,2023-06-29,2023-08-03,36,normal,-6.132515,3.023049,2.610465,-2.360764
+v04b_actionable_stress_recommended,watch,2023,Recovery,2023-08-04,2023-11-02,91,stress,-17.521855,2.461015,2.365425,-8.027079
+v04b_actionable_stress_recommended,normal,2023,Recovery,2023-11-03,2023-12-28,56,normal,-4.658308,2.42041,1.700475,-3.626304
+v04b_actionable_stress_recommended,normal,2024,ETF/Bull,2024-01-05,2024-01-24,20,normal,-15.374203,,2.1947,-4.982989
+v04b_actionable_stress_recommended,watch,2024,ETF/Bull,2024-01-25,2024-02-08,15,watch,-12.67505,,2.129503,0.343406
+v04b_actionable_stress_recommended,normal,2024,ETF/Bull,2024-02-09,2024-03-27,48,normal,-10.843526,4.959088,2.695495,-5.614032
+v04b_actionable_stress_recommended,watch,2024,ETF/Bull,2024-03-28,2024-06-06,71,stress,-14.640039,4.959088,2.577754,-4.59054
+v04b_actionable_stress_recommended,normal,2024,ETF/Bull,2024-06-07,2024-06-20,14,normal,-8.503374,2.442482,1.995059,-3.403293
+v04b_actionable_stress_recommended,watch,2024,ETF/Bull,2024-06-21,2024-07-04,14,watch,-13.585606,3.193074,1.909134,-3.767477
+v04b_actionable_stress_recommended,stress,2024,ETF/Bull,2024-07-05,2024-07-05,1,stress,-22.322262,3.193074,1.76467,
+v04b_actionable_stress_recommended,watch,2024,ETF/Bull,2024-07-06,2024-11-07,125,stress,-23.419236,3.439946,2.289569,-4.222651
+v04b_actionable_stress_recommended,normal,2024,ETF/Bull,2024-11-08,2024-12-26,49,normal,-10.212435,3.391634,3.355019,-6.247014
+v04b_actionable_stress_recommended,normal,2025,Mixed,2025-01-03,2025-02-19,48,normal,-9.963264,2.554838,2.101418,-3.621218
+v04b_actionable_stress_recommended,watch,2025,Mixed,2025-02-20,2025-03-08,17,stress,-19.993622,3.013732,2.545783,-8.626384
+v04b_actionable_stress_recommended,stress,2025,Mixed,2025-03-09,2025-03-15,7,stress,-23.341457,3.227019,2.571334,-2.942812
+v04b_actionable_stress_recommended,watch,2025,Mixed,2025-03-16,2025-03-20,5,stress,-23.467478,3.227019,2.24026,-1.485455
+v04b_actionable_stress_recommended,stress,2025,Mixed,2025-03-21,2025-03-21,1,stress,-21.403685,3.227019,2.183717,-2.133043
+v04b_actionable_stress_recommended,watch,2025,Mixed,2025-03-22,2025-04-06,16,stress,-22.797783,3.227019,2.120206,-0.656533
+v04b_actionable_stress_recommended,stress,2025,Mixed,2025-04-07,2025-04-07,1,stress,-25.878051,3.227019,2.000616,-3.98987
+v04b_actionable_stress_recommended,watch,2025,Mixed,2025-04-08,2025-04-08,1,stress,-24.672281,3.751227,1.980175,1.626739
+v04b_actionable_stress_recommended,stress,2025,Mixed,2025-04-09,2025-04-13,5,stress,-26.397829,3.751227,2.134673,-2.290722
+v04b_actionable_stress_recommended,watch,2025,Mixed,2025-04-14,2025-05-20,37,stress,-22.21878,3.227019,1.936357,-1.521524
+v04b_actionable_stress_recommended,normal,2025,Mixed,2025-05-21,2025-06-16,27,normal,-5.614361,1.944583,1.475161,-2.248862
+v04b_actionable_stress_recommended,watch,2025,Mixed,2025-06-17,2025-07-09,23,stress,-8.121291,2.000503,1.554418,-2.559908
+v04b_actionable_stress_recommended,normal,2025,Mixed,2025-07-10,2025-08-10,32,normal,-3.192282,2.228056,1.973332,-2.202626
+v04b_actionable_stress_recommended,watch,2025,Mixed,2025-08-11,2025-08-12,2,watch,-1.65094,1.975073,1.415144,-0.803335
+v04b_actionable_stress_recommended,normal,2025,Mixed,2025-08-13,2025-08-26,14,normal,-9.138825,2.45656,1.539109,-2.946075
+v04b_actionable_stress_recommended,watch,2025,Mixed,2025-08-27,2025-10-03,38,stress,-8.580512,2.45656,1.452171,-2.091057
+v04b_actionable_stress_recommended,normal,2025,Mixed,2025-10-04,2025-10-19,16,normal,-15.226599,4.741608,2.494115,-7.368192
+v04b_actionable_stress_recommended,watch,2025,Mixed,2025-10-20,2025-11-13,25,stress,-18.962159,4.973641,2.367455,-4.29694
+v04b_actionable_stress_recommended,stress,2025,Mixed,2025-11-14,2025-11-17,4,stress,-23.593558,6.233757,2.462715,-6.811762
+v04b_actionable_stress_recommended,watch,2025,Mixed,2025-11-18,2025-11-18,1,stress,,6.233757,2.255154,
+v04b_actionable_stress_recommended,stress,2025,Mixed,2025-11-19,2025-11-26,8,stress,-32.756283,6.233757,2.983408,-8.522184
+v04b_actionable_stress_recommended,watch,2025,Mixed,2025-11-27,2025-12-10,14,stress,-28.898934,5.680092,2.556861,-1.893342
+v04b_actionable_stress_recommended,stress,2025,Mixed,2025-12-11,2025-12-11,1,stress,-27.676409,5.680092,2.361177,-2.349357
+v04b_actionable_stress_recommended,watch,2025,Mixed,2025-12-12,2025-12-12,1,stress,-25.723797,5.680092,2.382854,2.699827
+v04b_actionable_stress_recommended,stress,2025,Mixed,2025-12-13,2025-12-17,5,stress,-29.410852,5.680092,2.364265,-2.051156
+v04b_actionable_stress_recommended,watch,2025,Mixed,2025-12-18,2025-12-22,5,stress,-29.304047,4.80368,2.186846,-1.377267
+v04b_actionable_stress_recommended,stress,2025,Mixed,2025-12-23,2025-12-23,1,stress,-29.897676,4.80368,2.079856,-2.911726
+v04b_actionable_stress_recommended,watch,2025,Mixed,2025-12-24,2025-12-25,2,stress,-29.601842,5.056746,2.019143,0.422003
+v04c_regime_stress,normal,2020,Bull market,2020-01-03,2020-03-06,64,normal,-12.889792,3.411774,2.327292,-5.280805
+v04c_regime_stress,watch,2020,Bull market,2020-03-07,2020-03-12,6,stress,-41.600856,5.128626,6.751152,-24.329604
+v04c_regime_stress,stress,2020,Bull market,2020-03-13,2020-03-26,14,stress,-54.036507,9.999168,7.009549,-10.239136
+v04c_regime_stress,watch,2020,Bull market,2020-03-27,2020-04-02,7,stress,,9.999168,6.058869,
+v04c_regime_stress,stress,2020,Bull market,2020-04-03,2020-04-17,15,stress,-35.332356,9.999168,6.058869,-4.087856
+v04c_regime_stress,watch,2020,Bull market,2020-04-18,2020-08-06,111,stress,-33.469335,9.999168,4.162062,-8.565766
+v04c_regime_stress,normal,2020,Bull market,2020-08-07,2020-09-07,32,normal,-15.064681,2.100538,1.46398,-2.173168
+v04c_regime_stress,watch,2020,Bull market,2020-09-08,2020-10-20,43,stress,-15.849957,2.292753,1.578244,-2.747254
+v04c_regime_stress,normal,2020,Bull market,2020-10-21,2020-12-24,65,normal,-10.44802,2.182275,4.122659,-10.44802
+v04c_regime_stress,normal,2021,Bull market,2021-01-01,2021-01-21,21,normal,-19.548703,,5.17907,-10.9957
+v04c_regime_stress,watch,2021,Bull market,2021-01-22,2021-01-24,3,watch,-22.580897,,5.058263,-2.492053
+v04c_regime_stress,normal,2021,Bull market,2021-01-25,2021-01-25,1,normal,-18.86114,,4.705025,3.389524
+v04c_regime_stress,watch,2021,Bull market,2021-01-26,2021-02-07,13,watch,-24.436585,,4.740716,-3.757765
+v04c_regime_stress,normal,2021,Bull market,2021-02-08,2021-04-22,74,normal,-12.400307,10.545595,5.247104,-10.00261
+v04c_regime_stress,stress,2021,Bull market,2021-04-23,2021-04-25,3,watch,-23.076369,8.761143,4.619568,-12.737565
+v04c_regime_stress,normal,2021,Bull market,2021-04-26,2021-04-28,3,normal,-19.688754,8.761143,4.276275,0.130596
+v04c_regime_stress,watch,2021,Bull market,2021-04-29,2021-05-18,20,stress,-29.638979,9.491668,4.1362,-10.088635
+v04c_regime_stress,stress,2021,Bull market,2021-05-19,2021-05-21,3,stress,-42.305372,11.545546,7.169009,-18.002004
+v04c_regime_stress,crisis,2021,Bull market,2021-05-22,2021-05-23,2,stress,-46.401867,11.545546,7.307657,-10.610411
+v04c_regime_stress,stress,2021,Bull market,2021-05-24,2021-05-27,4,stress,-39.735961,11.780346,7.712212,0.318859
+v04c_regime_stress,watch,2021,Bull market,2021-05-28,2021-06-03,7,stress,,11.780346,7.120811,
+v04c_regime_stress,crisis,2021,Bull market,2021-06-04,2021-06-06,3,stress,-43.580154,11.780346,7.120811,-2.025917
+v04c_regime_stress,stress,2021,Bull market,2021-06-07,2021-06-07,1,stress,-42.268449,11.780346,6.526945,2.102331
+v04c_regime_stress,crisis,2021,Bull market,2021-06-08,2021-06-09,2,stress,-47.562128,11.780346,6.78844,-9.169472
+v04c_regime_stress,stress,2021,Bull market,2021-06-10,2021-06-10,1,stress,-39.337865,10.375612,6.817801,7.262309
+v04c_regime_stress,crisis,2021,Bull market,2021-06-11,2021-06-13,3,stress,-42.526575,10.375612,6.639586,-2.775762
+v04c_regime_stress,stress,2021,Bull market,2021-06-14,2021-06-17,4,stress,-38.840949,10.375612,6.26877,0.100048
+v04c_regime_stress,crisis,2021,Bull market,2021-06-18,2021-06-20,3,stress,-45.391416,10.375612,5.649392,-5.079369
+v04c_regime_stress,stress,2021,Bull market,2021-06-21,2021-06-22,2,stress,-52.446788,9.961989,5.856859,-11.086798
+v04c_regime_stress,crisis,2021,Bull market,2021-06-23,2021-06-24,2,stress,-45.174287,10.872424,6.802787,0.687744
+v04c_regime_stress,watch,2021,Bull market,2021-06-25,2021-07-08,14,stress,,10.872424,6.597697,
+v04c_regime_stress,crisis,2021,Bull market,2021-07-09,2021-07-11,3,stress,-47.01208,10.872424,6.597697,0.850526
+v04c_regime_stress,stress,2021,Bull market,2021-07-12,2021-07-23,12,stress,-52.350186,9.961989,6.02373,-3.382819
+v04c_regime_stress,watch,2021,Bull market,2021-07-24,2021-10-19,88,stress,-47.029152,5.648519,4.61181,-6.971788
+v04c_regime_stress,normal,2021,Bull market,2021-10-20,2021-11-23,35,normal,-13.162302,5.648519,2.612328,-5.106337
+v04c_regime_stress,watch,2021,Bull market,2021-11-24,2021-12-30,37,stress,-30.26582,5.903036,4.160341,-13.787219
+v04c_regime_stress,normal,2022,Bear market,2022-01-07,2022-01-23,17,normal,-19.664794,,3.629198,-11.519976
+v04c_regime_stress,watch,2022,Bear market,2022-01-24,2022-01-24,1,watch,-22.868191,,3.589704,-4.527624
+v04c_regime_stress,normal,2022,Bear market,2022-01-25,2022-01-26,2,normal,-16.878394,,4.052046,5.215027
+v04c_regime_stress,watch,2022,Bear market,2022-01-27,2022-02-14,19,stress,-15.75674,,4.069811,-3.674014
+v04c_regime_stress,normal,2022,Bear market,2022-02-15,2022-03-07,21,normal,-19.088904,7.912703,3.694476,-7.922967
+v04c_regime_stress,watch,2022,Bear market,2022-03-08,2022-06-13,98,stress,-46.258904,7.912703,4.654067,-13.322949
+v04c_regime_stress,stress,2022,Bear market,2022-06-14,2022-06-19,6,stress,-56.749462,8.593602,4.693772,-5.735867
+v04c_regime_stress,watch,2022,Bear market,2022-06-20,2022-12-29,193,crisis,-63.424948,5.529357,4.559044,-9.712549
+v04c_regime_stress,normal,2023,Recovery,2023-01-06,2023-03-12,66,normal,-18.902711,3.403368,2.649188,-8.948255
+v04c_regime_stress,watch,2023,Recovery,2023-03-13,2023-03-16,4,watch,-17.59483,4.233107,2.987976,-3.764706
+v04c_regime_stress,normal,2023,Recovery,2023-03-17,2023-05-04,49,normal,-10.360898,4.233107,5.720382,-3.209425
+v04c_regime_stress,watch,2023,Recovery,2023-05-05,2023-06-28,55,stress,-17.579313,3.529521,3.389421,-3.747493
+v04c_regime_stress,normal,2023,Recovery,2023-06-29,2023-08-03,36,normal,-6.132515,3.023049,2.610465,-2.360764
+v04c_regime_stress,watch,2023,Recovery,2023-08-04,2023-11-02,91,stress,-17.521855,2.461015,2.365425,-8.027079
+v04c_regime_stress,normal,2023,Recovery,2023-11-03,2023-12-28,56,normal,-4.658308,2.42041,1.700475,-3.626304
+v04c_regime_stress,normal,2024,ETF/Bull,2024-01-05,2024-01-24,20,normal,-15.374203,,2.1947,-4.982989
+v04c_regime_stress,watch,2024,ETF/Bull,2024-01-25,2024-02-08,15,watch,-12.67505,,2.129503,0.343406
+v04c_regime_stress,normal,2024,ETF/Bull,2024-02-09,2024-03-27,48,normal,-10.843526,4.959088,2.695495,-5.614032
+v04c_regime_stress,watch,2024,ETF/Bull,2024-03-28,2024-06-06,71,stress,-14.640039,4.959088,2.577754,-4.59054
+v04c_regime_stress,normal,2024,ETF/Bull,2024-06-07,2024-06-20,14,normal,-8.503374,2.442482,1.995059,-3.403293
+v04c_regime_stress,watch,2024,ETF/Bull,2024-06-21,2024-11-07,140,stress,-23.419236,3.439946,2.289569,-4.222651
+v04c_regime_stress,normal,2024,ETF/Bull,2024-11-08,2024-12-26,49,normal,-10.212435,3.391634,3.355019,-6.247014
+v04c_regime_stress,normal,2025,Mixed,2025-01-03,2025-02-19,48,normal,-9.963264,2.554838,2.101418,-3.621218
+v04c_regime_stress,watch,2025,Mixed,2025-02-20,2025-05-20,90,stress,-26.397829,3.751227,2.571334,-8.626384
+v04c_regime_stress,normal,2025,Mixed,2025-05-21,2025-06-16,27,normal,-5.614361,1.944583,1.475161,-2.248862
+v04c_regime_stress,watch,2025,Mixed,2025-06-17,2025-07-09,23,stress,-8.121291,2.000503,1.554418,-2.559908
+v04c_regime_stress,normal,2025,Mixed,2025-07-10,2025-08-10,32,normal,-3.192282,2.228056,1.973332,-2.202626
+v04c_regime_stress,watch,2025,Mixed,2025-08-11,2025-08-12,2,watch,-1.65094,1.975073,1.415144,-0.803335
+v04c_regime_stress,normal,2025,Mixed,2025-08-13,2025-08-26,14,normal,-9.138825,2.45656,1.539109,-2.946075
+v04c_regime_stress,watch,2025,Mixed,2025-08-27,2025-10-03,38,stress,-8.580512,2.45656,1.452171,-2.091057
+v04c_regime_stress,normal,2025,Mixed,2025-10-04,2025-10-19,16,normal,-15.226599,4.741608,2.494115,-7.368192
+v04c_regime_stress,watch,2025,Mixed,2025-10-20,2025-12-25,67,stress,-32.756283,6.233757,2.983408,-8.522184

@@ -1,0 +1,4 @@
+configId,label,normalDays,watchDays,stressDays,crisisDays,stressOrCrisisPct,crisisPct,damageStressOrCrisisPct,transitionCount,maxStressEpisodeDays,maxCrisisEpisodeDays,largeDrawdownLeadPct,largeDrawdownFalseNegativePct,bullRecoveryStressOrCrisisPct,bullRecoveryCrisisPct,stressYearsFalseNegativePct,recommended
+v03a_drawdown_crisis_plus_var_stress,v0.3a: crisis = drawdown crisis + VaR stress,542,152,1439,16,67.70591,0.744532,53.978595,173,199,2,100,0,62.369338,0.905923,0,false
+v03b_drawdown_stress_plus_var_stress_plus_tail,v0.3b: crisis = drawdown stress + VaR stress + recent tail,542,152,1422,33,67.70591,1.535598,53.978595,183,199,3,100,0,62.369338,2.090592,0,true
+v03c_var_or_ewma_crisis_with_drawdown_watch,v0.3c: crisis = VaR crisis or EWMA crisis with drawdown watch,542,152,1439,16,67.70591,0.744532,53.978595,173,199,2,100,0,62.369338,0.905923,0,false

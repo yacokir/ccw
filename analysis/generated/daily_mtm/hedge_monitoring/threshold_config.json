@@ -1,0 +1,46 @@
+{
+  "generatedFor": "BTC Weekly OTM05 Daily MTM 2020-2025",
+  "status": "preliminary research thresholds; not hedge execution rules",
+  "thresholds": {
+    "drawdownPct": {
+      "watch": -20,
+      "stress": -35,
+      "crisis": -50
+    },
+    "ewmaVolPct": {
+      "watch": 4.25,
+      "stress": 6,
+      "crisis": 7.5
+    },
+    "historicalVaRLossPct": {
+      "watch": 6,
+      "stress": 10,
+      "crisis": 11.5
+    },
+    "dailyReturnPct": {
+      "watch": -2,
+      "stress": -5,
+      "crisis": -10
+    },
+    "underwaterDurationDays": {
+      "watch": 14,
+      "stress": 21,
+      "crisis": 28
+    }
+  },
+  "tailFrequency": {
+    "recentWindowValidReturnDays": 7,
+    "tailLossThresholdPct": -2,
+    "upgradeCount": 2
+  },
+  "hysteresis": {
+    "stressOrCrisisDowngradeValidDays": 3,
+    "watchDowngradeValidDays": 2,
+    "downgradeOnlyWhenRawSeverityIsBelowCurrent": true,
+    "downgradeBlockedByStressOrCrisisRawSignal": true
+  },
+  "dataQuality": {
+    "dataGapWhenMtmMissing": true,
+    "partialSignalWhenMtmPresentButDailyReturnMissing": true
+  }
+}

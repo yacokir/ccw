@@ -192,3 +192,38 @@ Embora ETH Weekly OTM03 tenha apresentado o maior retorno bruto historico, a van
 
 **Impacto:**
 A escolha nao significa que OTM03 seja inferior; significa apenas que a evidencia atual nao e suficientemente forte para justificar uma divergencia metodologica entre BTC e ETH. Pesquisas ETH futuras devem usar Weekly OTM05 como referencia padrao, mantendo Weekly OTM03 como a principal variante comparativa.
+
+---
+
+### [2026-06-17] Passive Hedge Monitoring v0.4b como baseline de pesquisa
+
+**Descricao:**
+Depois da generalizacao da camada Daily Approximate MTM, o projeto adicionou uma camada passiva de monitoramento de risco baseada nos artefatos BTC Weekly OTM05 multi-year.
+
+A sequencia de pesquisa foi:
+
+```text
+Daily MTM
+-> Passive Hedge Monitoring
+-> Damage State vs Alert State
+-> Threshold Calibration
+-> v0.4b como baseline de pesquisa atual
+```
+
+Decisao:
+
+- Separar `damage_state` de `alert_state`.
+- `damage_state` mede dano acumulado, baseado principalmente em drawdown MTM e underwater duration.
+- `alert_state` mede risco acionavel atual, baseado principalmente em historical VaR, EWMA volatility e tail events recentes.
+- Drawdown e underwater duration nao devem, sozinhos, manter `crisis` por longos periodos.
+- `crisis` deve representar risco agudo ou regime extremo atual, exigindo dano profundo mais confirmacao recente.
+- A calibragem `v0.4b` passa a ser a baseline provisoria de pesquisa para futura simulacao de hedge parcial.
+
+Racional:
+
+Thresholds iniciais geravam `stress`/`crisis` excessivos e tornavam o monitor pouco discriminativo. A versao `v0.3` tornou `crisis` rara e mais util. A versao `v0.4b` reduziu o excesso de `stress` acionavel ao separar dano acumulado de alerta acionavel.
+
+The `v0.4b` calibration is not intended to predict market crises. Its purpose is to produce sufficiently discriminative states for future partial-hedge simulations and economic analysis.
+
+**Impacto:**
+A camada e util para pesquisa e para preparar simulacoes futuras de hedge parcial por `alert_state`, mas ainda nao e uma politica operacional final. A calibragem `v0.4b` e uma ferramenta de classificacao de estados: nao e sinal operacional de trading, nao e politica final de hedge, nao e modelo de previsao, nao executa hedge, nao define tamanho de posicao, e ainda precisa ser validada contra funding, basis, slippage, liquidez, margem e economia real do hedge.

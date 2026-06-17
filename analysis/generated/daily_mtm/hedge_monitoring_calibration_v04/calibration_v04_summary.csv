@@ -1,0 +1,4 @@
+configId,label,normalDays,watchDays,stressDays,crisisDays,stressOrCrisisPct,crisisPct,damageStressOrCrisisPct,transitionCount,maxStressEpisodeDays,maxCrisisEpisodeDays,largeDrawdownLeadPct,largeDrawdownFalseNegativePct,stressYearsFalseNegativePct,bullRecoveryStressOrCrisisPct,bullRecoveryCrisisPct,recommended
+v04a_confirmation_stress,v0.4a confirmation stress,810,1090,231,18,11.586785,0.837599,53.978595,132,21,3,100,0,0,8.362369,1.254355,false
+v04b_actionable_stress_recommended,v0.4b actionable stress,810,1027,294,18,14.518381,0.837599,53.978595,110,21,3,100,0,0,7.874564,1.254355,true
+v04c_regime_stress,v0.4c regime stress,810,1256,65,18,3.862262,0.837599,53.978595,68,15,3,100,0,0,5.365854,1.254355,false

@@ -58,6 +58,41 @@ Intracycle crisis management is a separate future layer. It may include diagnost
 
 This layer should not be conflated with the first VaR/EWMA cyclical hedge model. The cyclical hedge determines a hedge ratio at roll time; future intracycle diagnostics would monitor conditions between rolls and may support discretionary decisions or later dynamic overlays.
 
+### Passive Hedge Monitoring Layer
+
+The Passive Hedge Monitoring Layer is the first research bridge between generalized Daily Approximate MTM and future hedge simulation. It does not execute hedges, size positions, or change baseline CCW results. Its purpose is to answer a narrower daily question:
+
+```text
+In what risk state is the strategy today?
+```
+
+The current research design separates two state concepts:
+
+- `damage_state`: accumulated damage context based primarily on MTM drawdown and underwater duration.
+- `alert_state`: actionable current-risk context based primarily on historical VaR, EWMA volatility, and recent tail-loss events, interpreted in the presence of damage.
+
+The two states answer different questions:
+
+```text
+damage_state answers: "How damaged are we?"
+alert_state answers: "How urgently should we react?"
+```
+
+`damage_state` represents accumulated damage context. `alert_state` represents the urgency and actionability of current risk. They are complementary, but they are not equivalent: a strategy can remain deeply damaged without being in an acute actionable alert state, and an actionable alert can occur before the deepest drawdown has been reached.
+
+This separation became necessary because the first threshold sets produced excessive `stress`/`crisis` days. Drawdown and underwater duration are valuable context, but they should not by themselves imply acute crisis for hundreds of days. The monitoring layer therefore treats deep drawdown as damage context, while acute alerts require recent confirmation from VaR, EWMA, or tail events.
+
+The current research baseline is `v0.4b`, selected after threshold calibration on BTC Weekly OTM05 Daily MTM multi-year artifacts. It is considered sufficiently useful for future partial-hedge simulation research, but it is not a final operational policy and it does not authorize or execute any hedge.
+
+Current interpretation:
+
+- `normal`: no material actionable alert.
+- `watch`: damage or risk context worth monitoring.
+- `stress`: actionable risk is elevated enough to support future partial-hedge simulation.
+- `crisis`: rare acute/extreme risk state requiring deep damage plus recent stress confirmation.
+
+The thresholds and state rules remain preliminary research assumptions. They should be validated against hedge economics, funding, basis, slippage, liquidity, and implementation constraints before any live risk action is considered.
+
 ### BTC Overlay Hedge Versus Option Delta Hedge
 
 The current hedge research should be interpreted as a BTC overlay hedge, not as a true option delta-aware hedge.
@@ -136,6 +171,8 @@ The current hedge research and planned cyclical model should be interpreted with
 - Tax, custody, and operational risks are not modeled.
 - Current drawdown analytics are primarily end-of-cycle, not full intracycle underwater paths.
 - Current hedge logic approximates BTC exposure and does not model full option portfolio greek sensitivity.
+- Passive hedge monitoring states are research diagnostics only and do not yet execute, size, or validate hedge trades.
+- Passive hedge monitoring thresholds are calibrated on historical Daily MTM artifacts and may be regime-dependent.
 
 These limitations are material. A hedge that appears attractive in analysis-only reconstruction may behave differently once funding, basis, margin, and stressed execution are included.
 
@@ -178,6 +215,7 @@ The validated layer currently supports:
 - Tail-event clustering analysis.
 - Crisis path analysis.
 - Approximate intracycle hedge simulations.
+- Passive hedge monitoring calibration.
 
 Current findings from the BTC weekly OTM10 2025 POC:
 
@@ -218,11 +256,14 @@ The near-term research path is:
 7. Generalize the daily approximate MTM framework beyond the validated BTC weekly OTM10 2025 POC.
 8. Compare OTM05 and 14d daily-risk behavior after the generalized layer is designed.
 9. Evaluate hybrid VaR using daily approximate MTM, including `max(EWMA VaR, Historical VaR)`.
-10. Simulate intracycle hedge-frequency alternatives using daily MTM paths.
-11. Add funding, basis, margin, and slippage realism.
-12. Add intracycle diagnostic and alert research.
-13. Evaluate event-driven or crisis-trigger hedge escalation only after simpler hedge layers are understood.
-14. Study full option mark and greek-aware hedging if external historical providers, such as Tardis, can supply sufficient data.
-15. Extend future Monte Carlo work to include hedged and unhedged variants.
+10. Preserve Passive Hedge Monitoring `v0.4b` as the current research baseline for damage versus alert state interpretation.
+11. Simulate intracycle partial-hedge actions by `alert_state`, without treating the monitoring thresholds as final policy.
+12. Validate hedge economics after funding, basis, slippage, margin, and liquidity assumptions are added.
+13. Simulate intracycle hedge-frequency alternatives using daily MTM paths.
+14. Add funding, basis, margin, and slippage realism.
+15. Add intracycle diagnostic and alert research.
+16. Evaluate event-driven or crisis-trigger hedge escalation only after simpler hedge layers are understood.
+17. Study full option mark and greek-aware hedging if external historical providers, such as Tardis, can supply sufficient data.
+18. Extend future Monte Carlo work to include hedged and unhedged variants.
 
 Each stage should preserve traceability between baseline CCW results, fixed frontier outputs, and future adaptive hedge outputs.

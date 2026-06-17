@@ -242,7 +242,81 @@ Expected to be materially less important than premium reinvestment.
 - Add generalized intracycle mark-to-market risk when suitable price paths and option OHLC proxies are available.
 - Distinguish end-of-cycle reconstructed drawdown from intracycle underwater risk.
 - Keep synthetic-cycle MTM gaps visible and avoid bridging missing observations into adjacent daily returns.
+- Preserve Passive Hedge Monitoring `v0.4b` as the current research baseline for separating `damage_state` from `alert_state`.
+- Treat `damage_state` as accumulated damage context based on drawdown and underwater duration.
+- Treat `alert_state` as actionable current-risk context based on VaR, EWMA, and recent tail events.
+- Keep Passive Hedge Monitoring as diagnostic only until hedge economics are explicitly simulated.
 - Extend realism layers for fees, slippage, funding, custody, and execution constraints.
+
+---
+
+### 10.9 Hedge Monitoring And Simulation Layer
+
+#### Phase 1: Passive Hedge Monitoring
+
+Status: complete for research.
+
+- Build passive daily risk-state artifacts from existing Daily MTM outputs.
+- Separate accumulated damage context from actionable alert state.
+- Preserve baseline CCW and Daily MTM outputs.
+
+#### Phase 2: Threshold Calibration
+
+Status: complete for research.
+
+- Calibrate thresholds across Passive Hedge Monitoring variants.
+- Select `v0.4b` as the current research baseline.
+- Treat thresholds as research assumptions, not final operational policy.
+
+#### Phase 3A: Partial Hedge Simulation And Preliminary Economic Evaluation
+
+Status: next research phase.
+
+- Test hedge intensity by `alert_state`.
+- Compare unhedged versus hedged Daily MTM paths.
+- Preserve baseline outputs and avoid mutating historical Daily MTM artifacts.
+- Measure CAGR.
+- Measure total return.
+- Measure max drawdown.
+- Measure underwater duration.
+- Measure VaR.
+- Measure volatility.
+- Measure risk-adjusted metrics.
+- Measure hedge activation frequency.
+- Measure percentage of days spent hedged.
+- Measure protection efficiency ratio: drawdown reduction / return sacrificed.
+- Evaluate economic benefit versus simplified hedge assumptions.
+- Use these metrics to evaluate the economic efficiency of simple hedge rules before realistic costs are introduced.
+- Exclude funding, basis, slippage, margin, and liquidity costs at this stage.
+
+#### Phase 3B: Economic Evaluation
+
+Status: follow-up to initial hedge simulation.
+
+- Quantify return sacrificed versus risk reduction.
+- Evaluate protection efficiency.
+- Compare hedged and unhedged paths.
+- Identify candidate hedge intensities.
+
+#### Phase 4: Realistic Hedge Economics
+
+Status: required before operational interpretation.
+
+- Add funding assumptions.
+- Add basis assumptions.
+- Add slippage assumptions.
+- Add margin requirements.
+- Add liquidity constraints.
+- Add collateral requirements.
+
+#### Phase 5: Advanced Dynamic Hedging
+
+Status: future research.
+
+- Test hedge-frequency experiments.
+- Evaluate event-driven escalation.
+- Evaluate regime-aware hedging.
+- Evaluate adaptive hedge intensity.
 
 ---
 
@@ -261,6 +335,9 @@ Research interpretation should remain conservative:
 - Hedge latency may be a key unresolved issue, especially for 14d cycles, but this is a hypothesis rather than a confirmed conclusion.
 - The Daily Approximate MTM POC validated BTC weekly OTM10 2025 daily valuation reconstruction for research purposes, but it is not production-grade accounting and does not include greeks, official marks, funding, slippage, liquidation, or margin.
 - Daily MTM exposed deeper intracycle drawdowns, visible volatility clustering, left-tail behavior, and historical VaR persistence beyond cycle-level outputs.
+- Passive Hedge Monitoring calibration showed that raw drawdown/underwater thresholds can over-alert.
+- The current monitoring research baseline is `v0.4b`, which separates accumulated damage from actionable alert state.
+- `v0.4b` is considered sufficiently useful for future partial-hedge simulation research, but it is not a final hedge policy and does not execute hedge actions.
 
 - Validate fixed hedge frontier outputs.
 - Document fixed hedge findings.
@@ -274,6 +351,10 @@ Research interpretation should remain conservative:
 - Generalize daily MTM only after preserving POC output structure and methodology traceability.
 - Use OTM05 as the default comparison target when generalizing the daily layer.
 - Add 14d comparison after weekly daily-MTM behavior is understood.
+- Implement passive monitoring artifacts around the selected `v0.4b` state model when ready to version this layer.
+- Build a Hedge Simulation Layer that tests partial hedge actions by `alert_state`.
+- Run partial hedge experiments by `alert_state`, preserving the unhedged baseline and Daily MTM methodology.
+- Validate realistic hedge economics after funding, basis, slippage, liquidity, margin, and collateral assumptions are introduced.
 - Simulate intracycle hedge-frequency alternatives to test whether hedge latency matters more than hedge sizing.
 - Add funding and basis realism.
 - Add intracycle diagnostic and alert layer.

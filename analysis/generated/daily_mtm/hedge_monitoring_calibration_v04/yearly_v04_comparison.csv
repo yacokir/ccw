@@ -1,0 +1,19 @@
+configId,year,regime,normalDays,watchDays,stressDays,crisisDays,stressOrCrisisPct,crisisPct,damageStressOrCrisisPct,transitionCount,maxStressEpisodeDays,maxCrisisEpisodeDays,largeDrawdownLeadPct,largeDrawdownFalseNegativePct,maxDrawdownPct,maxVarLossPct,maxEwmaPct
+v04a_confirmation_stress,2020,Bull market,161,160,36,0,10.084034,0,51.540616,9,18,0,100,0,-54.036507,9.999168,7.009549
+v04a_confirmation_stress,2021,Bull market,134,147,65,18,22.802198,4.945055,50.274725,39,16,3,100,0,-52.446788,11.780346,7.712212
+v04a_confirmation_stress,2022,Bear market,40,221,96,0,26.890756,0,82.633053,40,21,0,100,0,-63.424948,8.593602,4.693772
+v04a_confirmation_stress,2023,Recovery,207,150,0,0,0,0,36.97479,7,0,0,0,0,-18.902711,4.233107,5.720382
+v04a_confirmation_stress,2024,ETF/Bull,131,225,1,0,0.280112,0,51.260504,9,1,0,0,0,-23.419236,4.959088,3.355019
+v04a_confirmation_stress,2025,Mixed,137,187,33,0,9.243697,0,51.260504,28,8,0,0,0,-32.756283,6.233757,2.983408
+v04b_actionable_stress_recommended,2020,Bull market,161,163,33,0,9.243697,0,51.540616,9,18,0,100,0,-54.036507,9.999168,7.009549
+v04b_actionable_stress_recommended,2021,Bull market,134,151,61,18,21.703297,4.945055,50.274725,36,18,3,100,0,-52.446788,11.780346,7.712212
+v04b_actionable_stress_recommended,2022,Bear market,40,151,166,0,46.498599,0,82.633053,21,21,0,100,0,-63.424948,8.593602,4.693772
+v04b_actionable_stress_recommended,2023,Recovery,207,150,0,0,0,0,36.97479,7,0,0,0,0,-18.902711,4.233107,5.720382
+v04b_actionable_stress_recommended,2024,ETF/Bull,131,225,1,0,0.280112,0,51.260504,9,1,0,0,0,-23.419236,4.959088,3.355019
+v04b_actionable_stress_recommended,2025,Mixed,137,187,33,0,9.243697,0,51.260504,28,8,0,0,0,-32.756283,6.233757,2.983408
+v04c_regime_stress,2020,Bull market,161,167,29,0,8.123249,0,51.540616,9,15,0,100,0,-54.036507,9.999168,7.009549
+v04c_regime_stress,2021,Bull market,134,182,30,18,13.186813,4.945055,50.274725,27,12,3,100,0,-52.446788,11.780346,7.712212
+v04c_regime_stress,2022,Bear market,40,311,6,0,1.680672,0,82.633053,8,6,0,100,0,-63.424948,8.593602,4.693772
+v04c_regime_stress,2023,Recovery,207,150,0,0,0,0,36.97479,7,0,0,0,0,-18.902711,4.233107,5.720382
+v04c_regime_stress,2024,ETF/Bull,131,226,0,0,0,0,51.260504,7,0,0,0,0,-23.419236,4.959088,3.355019
+v04c_regime_stress,2025,Mixed,137,220,0,0,0,0,51.260504,10,0,0,0,0,-32.756283,6.233757,2.983408

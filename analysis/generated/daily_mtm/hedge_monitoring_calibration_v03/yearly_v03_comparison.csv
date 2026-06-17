@@ -1,0 +1,19 @@
+configId,year,regime,normalDays,watchDays,stressDays,crisisDays,stressOrCrisisPct,crisisPct,damageStressOrCrisisPct,transitionCount,maxStressEpisodeDays,maxCrisisEpisodeDays,largeDrawdownLeadPct,largeDrawdownFalseNegativePct,maxDrawdownPct,maxVarLossPct,maxEwmaPct
+v03a_drawdown_crisis_plus_var_stress,2020,Bull market,124,11,219,3,62.184874,0.840336,51.540616,23,146,2,100,0,-54.036507,9.999168,7.009549
+v03a_drawdown_crisis_plus_var_stress,2021,Bull market,45,46,263,10,75,2.747253,50.274725,46,119,1,100,0,-52.446788,11.780346,7.712212
+v03a_drawdown_crisis_plus_var_stress,2022,Bear market,5,5,344,3,97.19888,0.840336,82.633053,15,199,1,100,0,-63.424948,8.593602,4.693772
+v03a_drawdown_crisis_plus_var_stress,2023,Recovery,159,32,166,0,46.498599,0,36.97479,29,84,0,0,0,-18.902711,4.233107,5.720382
+v03a_drawdown_crisis_plus_var_stress,2024,ETF/Bull,104,19,234,0,65.546218,0,51.260504,27,140,0,0,0,-23.419236,4.959088,3.355019
+v03a_drawdown_crisis_plus_var_stress,2025,Mixed,105,39,213,0,59.663866,0,51.260504,33,83,0,0,0,-32.756283,6.233757,2.983408
+v03b_drawdown_stress_plus_var_stress_plus_tail,2020,Bull market,124,11,219,3,62.184874,0.840336,51.540616,23,146,2,100,0,-54.036507,9.999168,7.009549
+v03b_drawdown_stress_plus_var_stress_plus_tail,2021,Bull market,45,46,246,27,75,7.417582,50.274725,56,100,3,100,0,-52.446788,11.780346,7.712212
+v03b_drawdown_stress_plus_var_stress_plus_tail,2022,Bear market,5,5,344,3,97.19888,0.840336,82.633053,15,199,1,100,0,-63.424948,8.593602,4.693772
+v03b_drawdown_stress_plus_var_stress_plus_tail,2023,Recovery,159,32,166,0,46.498599,0,36.97479,29,84,0,0,0,-18.902711,4.233107,5.720382
+v03b_drawdown_stress_plus_var_stress_plus_tail,2024,ETF/Bull,104,19,234,0,65.546218,0,51.260504,27,140,0,0,0,-23.419236,4.959088,3.355019
+v03b_drawdown_stress_plus_var_stress_plus_tail,2025,Mixed,105,39,213,0,59.663866,0,51.260504,33,83,0,0,0,-32.756283,6.233757,2.983408
+v03c_var_or_ewma_crisis_with_drawdown_watch,2020,Bull market,124,11,219,3,62.184874,0.840336,51.540616,23,146,2,100,0,-54.036507,9.999168,7.009549
+v03c_var_or_ewma_crisis_with_drawdown_watch,2021,Bull market,45,46,263,10,75,2.747253,50.274725,46,119,1,100,0,-52.446788,11.780346,7.712212
+v03c_var_or_ewma_crisis_with_drawdown_watch,2022,Bear market,5,5,344,3,97.19888,0.840336,82.633053,15,199,1,100,0,-63.424948,8.593602,4.693772
+v03c_var_or_ewma_crisis_with_drawdown_watch,2023,Recovery,159,32,166,0,46.498599,0,36.97479,29,84,0,0,0,-18.902711,4.233107,5.720382
+v03c_var_or_ewma_crisis_with_drawdown_watch,2024,ETF/Bull,104,19,234,0,65.546218,0,51.260504,27,140,0,0,0,-23.419236,4.959088,3.355019
+v03c_var_or_ewma_crisis_with_drawdown_watch,2025,Mixed,105,39,213,0,59.663866,0,51.260504,33,83,0,0,0,-32.756283,6.233757,2.983408

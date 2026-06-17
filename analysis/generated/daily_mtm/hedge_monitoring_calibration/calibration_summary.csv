@@ -1,0 +1,4 @@
+configId,label,normalDays,watchDays,stressDays,crisisDays,stressOrCrisisDays,stressOrCrisisPct,crisisPct,transitionCount,longStressEpisodeCount,longCrisisEpisodeCount,maxStressEpisodeDays,maxCrisisEpisodeDays,stressDrawdownLeadPct,bullRecoveryCrisisPct,recommended
+current_v0_1,Current thresholds,375,213,295,1266,1561,72.638436,58.911121,181,6,15,30,309,100,55.261324,false
+less_aggressive_crisis_v0_2_candidate,Less aggressive crisis thresholds,376,215,328,1230,1558,72.498837,57.235924,181,8,13,30,309,100,53.797909,false
+confirmation_based_v0_2_recommended,Confirmation-based thresholds,393,217,352,1187,1539,71.614705,55.234993,184,8,13,38,309,100,51.777003,true

@@ -198,6 +198,26 @@ This layer should be handled conservatively. Option OHLC and trade-price proxies
 
 This extension does not include official historical marks, historical greeks, delta-aware hedging, funding, slippage, liquidation, margin, or production-quality risk accounting. Current POC outputs are archived under `analysis/generated/poc/daily_mtm_ccw_2025/` to keep them separate from future generalized daily-risk outputs. The dedicated reference document is `docs/14_daily_approx_mtm_research_layer.md`.
 
+## Passive Monitoring Use Of EWMA And VaR
+
+The Passive Hedge Monitoring calibration uses Daily Approximate MTM outputs as research inputs. It does not change the Daily MTM methodology and does not implement hedge execution.
+
+The monitoring layer separates:
+
+- `damage_state`: accumulated MTM damage, based on drawdown and underwater duration.
+- `alert_state`: actionable daily risk, based on historical VaR, EWMA volatility, and recent tail-loss events.
+
+This distinction is important for VaR and volatility interpretation. Deep drawdown can persist for long periods after the acute risk event has passed. If drawdown or underwater duration directly controls `crisis`, the monitor overstates acute risk and becomes too noisy for future hedge simulation. In the current research framework, VaR and EWMA are therefore used primarily as confirmation of current risk stress, not as standalone proof that a hedge should be executed.
+
+The current Passive Hedge Monitoring research baseline is `v0.4b`:
+
+- `damage_state` remains driven by drawdown and underwater duration.
+- `alert_state` uses recent VaR, EWMA, and tail events to identify actionable stress.
+- `crisis` remains rare and requires deep damage plus recent stress confirmation.
+- `stress` is interpreted as a candidate trigger state for future partial-hedge simulation, not as a final trading rule.
+
+The threshold family remains preliminary research. It should be revalidated when hedge costs, funding, basis, slippage, liquidity, and collateral constraints are introduced.
+
 ## Future Advanced VaR Extensions
 
 Advanced VaR and tail-risk models are important future work, but they should be explored only after the baseline EWMA/VaR cyclical hedge has been implemented, validated, and compared against fixed hedge benchmarks.

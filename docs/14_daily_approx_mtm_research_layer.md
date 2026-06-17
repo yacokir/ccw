@@ -51,6 +51,41 @@ Current BTC weekly OTM10 2025 findings support the layer as research-grade:
 
 These findings do not establish hedge effectiveness. They only validate that the daily-risk layer can support future research.
 
+## Generalized Research Layer
+
+The Daily Approximate MTM methodology has been generalized into a reusable runner and applied to:
+
+- BTC Weekly OTM05 2025.
+- BTC Weekly OTM10 2025.
+- ETH Weekly OTM05 2025.
+- ETH Weekly OTM03 2025.
+- BTC Weekly OTM05 multi-year risk research for 2020 through 2025.
+
+The generalized layer preserves the POC methodology: same snapshot convention, same underlying perpetual proxy, exact observed option 1-minute candles when available, visible gaps, no interpolation of synthetic cycles, EWMA volatility with `lambda = 0.94`, and rolling 30-observation historical VaR.
+
+The original POC remains archived and should not be overwritten. Generalized outputs live under:
+
+```text
+analysis/generated/daily_mtm/
+```
+
+## Passive Hedge Monitoring Research
+
+The Daily MTM layer now supports a Passive Hedge Monitoring research layer. This layer does not execute hedges. It classifies each valid Daily MTM observation into research states that can later be used for hedge simulation.
+
+The key conceptual change is the separation between:
+
+- `damage_state`: accumulated strategy damage, based on drawdown and underwater duration.
+- `alert_state`: actionable daily risk, based on historical VaR, EWMA volatility, and recent tail-loss events.
+
+The first monitoring attempts showed that direct thresholds on drawdown and underwater duration caused too many `stress` and `crisis` observations. The calibration sequence therefore evolved as follows:
+
+- Initial thresholds confirmed that Daily MTM signals are useful, but `stress`/`crisis` were too frequent.
+- `v0.3` separated accumulated damage from actionable alert state and made `crisis` rare and more meaningful.
+- `v0.4b` further separated damage stress from actionable stress and is the current provisional research baseline.
+
+`v0.4b` should be interpreted as sufficiently useful for future partial-hedge simulation research, not as a production hedge policy. The thresholds are still research assumptions and require validation against funding, basis, slippage, liquidity, margin, and collateral constraints.
+
 ## Limitations
 
 The current layer is approximate and exploratory:
@@ -62,6 +97,7 @@ The current layer is approximate and exploratory:
 - Option OHLC/trade-price proxies may be stale, sparse, spread-distorted, or liquidity-distorted.
 - Synthetic-cycle continuity gaps remain visible.
 - No funding, slippage, liquidation, margin, basis, collateral, custody, or tax modeling.
+- Passive monitoring states are not hedge instructions and should not be treated as final operational risk policy.
 
 ## Roadmap
 
@@ -72,6 +108,9 @@ Future work should proceed in this order:
 3. Compare OTM05 against OTM10.
 4. Compare 14d against weekly.
 5. Evaluate hybrid VaR, including `max(EWMA VaR, Historical VaR)`.
-6. Simulate intracycle hedge-frequency alternatives.
-7. Add event-driven or crisis-trigger research only after simpler daily-risk behavior is understood.
-8. Consider external historical option-mark providers, such as Tardis, for official marks, greeks, or fuller option-chain snapshots.
+6. Preserve Passive Hedge Monitoring `v0.4b` as the current research baseline for damage versus alert state.
+7. Simulate partial hedge experiments by `alert_state`.
+8. Validate realistic hedge economics, including funding, basis, slippage, liquidity, margin, and collateral.
+9. Simulate intracycle hedge-frequency alternatives.
+10. Add event-driven or crisis-trigger research only after simpler daily-risk behavior is understood.
+11. Consider external historical option-mark providers, such as Tardis, for official marks, greeks, or fuller option-chain snapshots.
