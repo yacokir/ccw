@@ -1,0 +1,1 @@
+date,decision_timestamp,asset,spot_price,option_strike,expiry,premium,damage_state,alert_state,portfolio_state,current_hedge,target_hedge,executed_delta,resulting_hedge,normal_counter,circuit_breaker_status,comments

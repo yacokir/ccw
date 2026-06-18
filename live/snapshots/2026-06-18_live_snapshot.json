@@ -1,0 +1,98 @@
+{
+  "generated_at": "2026-06-18T17:47:02.434Z",
+  "snapshot_date": "2026-06-18",
+  "mode": "t0",
+  "venue": "Bybit",
+  "decision_time": "10:00",
+  "timezone": "America/New_York",
+  "decision_timestamp": "2026-06-18 10:00 America/New_York",
+  "assumptions": {
+    "hedge_states": {
+      "normal": 0,
+      "watch": 0,
+      "stress": 30,
+      "crisis": 40
+    },
+    "target_position_logic": "delta = target hedge - current hedge",
+    "same_day_hedge_activation": true,
+    "normal_exit_rule": "close only after 2 consecutive normal days",
+    "read_only": true
+  },
+  "assets": [
+    {
+      "asset": "BTC",
+      "venue": "Bybit",
+      "timestamp": "2026-06-18 10:00 America/New_York",
+      "snapshot_date": "2026-06-18",
+      "data_as_of": "2025-12-25",
+      "spot_price": 87712.5,
+      "return_7d_pct": -0.787255,
+      "return_30d_pct": 1.351937,
+      "return_90d_pct": -20.082639,
+      "realized_vol_30d_pct": 2.368054,
+      "EWMA_pct": 1.966008,
+      "historical_VaR_pct": -2.65866,
+      "damage_state": "stress",
+      "alert_state": "watch",
+      "option_expiry": "26DEC25",
+      "OTM05_target_strike": 92000,
+      "observed_option_premium": 17.5425,
+      "current_hedge_pct": 0,
+      "target_hedge_pct": 0,
+      "executed_delta_recommendation_pct": 0,
+      "normal_counter": 0,
+      "circuit_breaker_status": "NO_TRADE",
+      "circuit_breaker_reasons": [
+        "Daily MTM stale or not current decision date",
+        "Monitoring indicators stale"
+      ],
+      "comments": "Research-grade read-only snapshot; no orders placed. watch_maps_to_no_hedge Monitoring source: analysis\\generated\\daily_mtm\\hedge_monitoring_calibration_v04\\signals_v04_recommended.csv. Daily MTM source count: 6.",
+      "source_files": {
+        "daily_mtm": [
+          "analysis\\generated\\daily_mtm\\btc_otm05_multiyear\\years\\btc_weekly_otm05_2020\\btc_weekly_otm05_2020_daily_mtm.json",
+          "analysis\\generated\\daily_mtm\\btc_otm05_multiyear\\years\\btc_weekly_otm05_2021\\btc_weekly_otm05_2021_daily_mtm.json",
+          "analysis\\generated\\daily_mtm\\btc_otm05_multiyear\\years\\btc_weekly_otm05_2022\\btc_weekly_otm05_2022_daily_mtm.json",
+          "analysis\\generated\\daily_mtm\\btc_otm05_multiyear\\years\\btc_weekly_otm05_2023\\btc_weekly_otm05_2023_daily_mtm.json",
+          "analysis\\generated\\daily_mtm\\btc_otm05_multiyear\\years\\btc_weekly_otm05_2024\\btc_weekly_otm05_2024_daily_mtm.json",
+          "analysis\\generated\\daily_mtm\\btc_weekly_otm05_2025\\btc_weekly_otm05_2025_daily_mtm.json"
+        ],
+        "monitoring_signal": "analysis\\generated\\daily_mtm\\hedge_monitoring_calibration_v04\\signals_v04_recommended.csv"
+      }
+    },
+    {
+      "asset": "ETH",
+      "venue": "Bybit",
+      "timestamp": "2026-06-18 10:00 America/New_York",
+      "snapshot_date": "2026-06-18",
+      "data_as_of": "2025-12-25",
+      "spot_price": 2934,
+      "return_7d_pct": -0.562597,
+      "return_30d_pct": 2.137436,
+      "return_90d_pct": -26.233218,
+      "realized_vol_30d_pct": 3.318229,
+      "EWMA_pct": 2.573526,
+      "historical_VaR_pct": -3.35224,
+      "damage_state": "stress",
+      "alert_state": "watch",
+      "option_expiry": "26DEC25",
+      "OTM05_target_strike": 3100,
+      "observed_option_premium": 0.2934,
+      "current_hedge_pct": 0,
+      "target_hedge_pct": 0,
+      "executed_delta_recommendation_pct": 0,
+      "normal_counter": 0,
+      "circuit_breaker_status": "NO_TRADE",
+      "circuit_breaker_reasons": [
+        "Daily MTM stale or not current decision date",
+        "Monitoring indicators stale"
+      ],
+      "comments": "Research-grade read-only snapshot; no orders placed. watch_maps_to_no_hedge Monitoring source: analysis\\generated\\daily_mtm\\eth_hedge_monitoring_calibration_v04\\signals_v04_recommended.csv. Daily MTM source count: 1.",
+      "source_files": {
+        "daily_mtm": [
+          "analysis\\generated\\daily_mtm\\eth_weekly_otm05_2025\\eth_weekly_otm05_2025_daily_mtm.json"
+        ],
+        "monitoring_signal": "analysis\\generated\\daily_mtm\\eth_hedge_monitoring_calibration_v04\\signals_v04_recommended.csv"
+      }
+    }
+  ]
+}

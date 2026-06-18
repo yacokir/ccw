@@ -316,6 +316,8 @@ Status: complete for research.
 Status: next research phase; required before operational interpretation.
 
 - Live research execution playbook added in `docs/16_live_research_execution_playbook.md` for initial manual BTC/ETH Dynamic Hedge Overlay testing.
+- Phase 3.5A live research snapshot generator added as a read-only manual execution aid.
+- ETH Passive Hedge Monitoring v0.4b artifacts added for live snapshot `damage_state` and `alert_state` support, using the available ETH Weekly OTM05 2025 Daily MTM artifact only; this is not yet full multi-year ETH monitoring parity.
 - Phase 4 remains pending and is still required before operational or economic validation.
 - Next step: optionally create manual log templates, then implement realistic hedge economics when ready.
 

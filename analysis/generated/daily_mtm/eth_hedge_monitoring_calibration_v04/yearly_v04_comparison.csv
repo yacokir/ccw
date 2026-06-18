@@ -1,0 +1,4 @@
+configId,year,regime,normalDays,watchDays,stressDays,crisisDays,stressOrCrisisPct,crisisPct,damageStressOrCrisisPct,transitionCount,maxStressEpisodeDays,maxCrisisEpisodeDays,largeDrawdownLeadPct,largeDrawdownFalseNegativePct,maxDrawdownPct,maxVarLossPct,maxEwmaPct
+v04a_confirmation_stress,2025,Mixed,109,138,110,0,30.812325,0,65.266106,30,21,0,100,0,-58.245352,9.08889,5.089849
+v04b_actionable_stress_recommended,2025,Mixed,109,134,114,0,31.932773,0,65.266106,30,21,0,100,0,-58.245352,9.08889,5.089849
+v04c_regime_stress,2025,Mixed,109,248,0,0,0,0,65.266106,6,0,0,100,0,-58.245352,9.08889,5.089849

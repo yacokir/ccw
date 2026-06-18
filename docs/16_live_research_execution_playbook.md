@@ -94,6 +94,8 @@ The daily procedure runs once per asset at 10:00 AM America/New_York, DST-aware.
 
 The operating rule is target-based. Existing hedge exposure is not closed and reopened when the target changes; only the difference between current hedge and target hedge should be traded.
 
+The optional Phase 3.5A helper script `src/scripts/generate_live_research_snapshot.js` can be used to create a read-only manual decision snapshot under `live/snapshots/`. It reads BTC and ETH Passive Hedge Monitoring v0.4b signal artifacts where available. The current ETH v0.4b artifact uses only the available ETH Weekly OTM05 2025 Daily MTM artifact; this is sufficient to support the live snapshot generator, but it is not yet full multi-year ETH monitoring parity. The helper does not place orders and should preserve circuit breakers when required data is missing, stale, or unavailable.
+
 ## Hysteresis And Churn Control
 
 The playbook uses simple hysteresis to reduce unnecessary hedge churn.
