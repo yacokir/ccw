@@ -315,12 +315,34 @@ Status: complete for research.
 
 Status: next research phase; required before operational interpretation.
 
+- Live research execution playbook added in `docs/16_live_research_execution_playbook.md` for initial manual BTC/ETH Dynamic Hedge Overlay testing.
+- Phase 4 remains pending and is still required before operational or economic validation.
+- Next step: optionally create manual log templates, then implement realistic hedge economics when ready.
+
+##### Phase 4A: Economic Assumptions
+
+- Compare perpetual versus futures.
 - Add funding assumptions.
 - Add basis assumptions.
-- Add slippage assumptions.
 - Add margin requirements.
+
+##### Phase 4B: Execution Assumptions
+
+- Add slippage assumptions.
+- Add execution latency assumptions.
+- Add partial fill assumptions.
 - Add liquidity constraints.
 - Add collateral requirements.
+
+##### Phase 4C: Economic Simulation
+
+- Simulate CCW.
+- Simulate Dynamic Hedge Overlay.
+- Simulate realistic costs.
+- Validate whether the preliminary hedge benefit survives realistic economics.
+
+##### Additional Phase 4 Research
+
 - Add instrument selection research: perpetual, future, and option overlay candidates.
 - Add latency sensitivity.
 - Add execution assumptions.
@@ -329,8 +351,11 @@ Status: next research phase; required before operational interpretation.
 #### Current Phase 3 Conclusions
 
 - The preliminary hedge benefit survived Phase 3A, Phase 3B, and Phase 3C.
+- Current evidence suggests the hedge overlay is capturing structural periods of elevated risk, not only exploiting near-perfect timing assumptions.
 - The research hedge reduced max drawdown, VaR, and volatility versus unhedged in the tested configurations.
 - Aggregate return was superior to unhedged in the simplified research methodology.
+- Aggregate return improvement does not imply return improvement in every individual year. 2020 and 2025 showed sacrificed return in selected scenarios, while other years were mixed.
+- The benefit remained present under plausible operational frictions, including 1 valid MTM day delay, confirmation requirements, and delay plus confirmation.
 - The v02 proportional formula is retained only as a simplified proxy:
 
 ```text
@@ -346,6 +371,7 @@ hedged_return = ccw_return - hedge_ratio * underlying_return
 - `stress30_crisis40` is the current primary candidate.
 - `stress25_crisis50` remains the conservative benchmark inherited from v01.
 - The benefit does not appear to depend exclusively on perfect execution, but latency matters materially.
+- The project has evolved from covered-call backtesting toward a Dynamic Covered Call Risk Management Framework: Covered Call plus Daily Risk Engine plus Regime Detection plus Adaptive Hedge Overlay.
 
 #### Phase 5: Advanced Dynamic Hedging
 
