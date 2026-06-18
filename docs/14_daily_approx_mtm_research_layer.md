@@ -86,6 +86,42 @@ The first monitoring attempts showed that direct thresholds on drawdown and unde
 
 `v0.4b` should be interpreted as sufficiently useful for future partial-hedge simulation research, not as a production hedge policy. The thresholds are still research assumptions and require validation against funding, basis, slippage, liquidity, margin, and collateral constraints.
 
+## Hedge Simulation Research
+
+The Daily MTM layer now supports a Hedge Simulation Research Layer built on top of Passive Hedge Monitoring `v0.4b`.
+
+Completed research phases:
+
+- Phase 3A: Partial Hedge Simulation And Preliminary Economic Evaluation.
+- Phase 3B: Hedge Intensity Robustness.
+- Phase 3C: Operational Robustness Validation.
+
+The v01/v02 simulation used a proportional exposure proxy:
+
+```text
+hedged_return = ccw_return * (1 - hedge_ratio)
+```
+
+That proxy is retained only as a simplified first screen. It mechanically scales the CCW return stream and is not the preferred approximation for a short futures or perpetual overlay.
+
+The v03 and v04 simulations use the current reference research formula:
+
+```text
+hedged_return = ccw_return - hedge_ratio * underlying_return
+```
+
+The `underlying_return` is reconstructed from the `underlying_price` already present in the Daily MTM artifacts, using the same valid daily snapshot path as the CCW return. This better approximates a short BTC underlying/perpetual overlay while preserving the approximate Daily MTM source methodology.
+
+Current findings:
+
+- The preliminary hedge benefit survived the move from v02 proportional proxy to v03 underlying-overlay.
+- `stress30_crisis40` is the current primary research candidate.
+- `stress25_crisis50` is retained as a conservative benchmark inherited from v01.
+- Operational robustness testing showed that `A_immediate`, `B_delay_1_valid_mtm_day`, `D_confirmation`, and `F_delay_confirmation` remain useful scenarios for realistic economics.
+- `C_delay_2_valid_mtm_days` remained superior to unhedged in the research artifacts, but showed material deterioration and should be treated as an operational latency limit.
+
+These results are research-grade only. They do not establish hedge viability because funding, basis, slippage, margin, liquidity, collateral, instrument selection, liquidation risk, and execution mechanics remain excluded.
+
 ## Limitations
 
 The current layer is approximate and exploratory:
@@ -98,6 +134,7 @@ The current layer is approximate and exploratory:
 - Synthetic-cycle continuity gaps remain visible.
 - No funding, slippage, liquidation, margin, basis, collateral, custody, or tax modeling.
 - Passive monitoring states are not hedge instructions and should not be treated as final operational risk policy.
+- Hedge simulation outputs are research approximations and do not yet model realistic hedge economics or instrument-specific PnL.
 
 ## Roadmap
 
@@ -109,8 +146,10 @@ Future work should proceed in this order:
 4. Compare 14d against weekly.
 5. Evaluate hybrid VaR, including `max(EWMA VaR, Historical VaR)`.
 6. Preserve Passive Hedge Monitoring `v0.4b` as the current research baseline for damage versus alert state.
-7. Simulate partial hedge experiments by `alert_state`.
-8. Validate realistic hedge economics, including funding, basis, slippage, liquidity, margin, and collateral.
-9. Simulate intracycle hedge-frequency alternatives.
-10. Add event-driven or crisis-trigger research only after simpler daily-risk behavior is understood.
-11. Consider external historical option-mark providers, such as Tardis, for official marks, greeks, or fuller option-chain snapshots.
+7. Preserve Hedge Simulation v03 underlying-overlay as the reference research methodology.
+8. Carry `stress30_crisis40` as the primary candidate and `stress25_crisis50` as the conservative benchmark.
+9. Validate realistic hedge economics, including funding, basis, slippage, liquidity, margin, collateral, and instrument selection.
+10. Simulate intracycle hedge-frequency alternatives.
+11. Add latency sensitivity, execution assumptions, and hedge implementation research.
+12. Add event-driven or crisis-trigger research only after simpler daily-risk behavior is understood.
+13. Consider external historical option-mark providers, such as Tardis, for official marks, greeks, or fuller option-chain snapshots.

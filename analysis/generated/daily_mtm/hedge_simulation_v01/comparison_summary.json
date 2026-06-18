@@ -1,0 +1,99 @@
+{
+  "metadata": {
+    "generatedAt": "2026-06-17T19:31:12.795Z",
+    "classification": "research-grade only",
+    "strategy": {
+      "asset": "BTC",
+      "tenor": "weekly",
+      "moneyness": "OTM05",
+      "period": "2020-2025"
+    },
+    "monitoringInput": "analysis\\generated\\daily_mtm\\hedge_monitoring_calibration_v04\\signals_v04_recommended.csv",
+    "methodology": {
+      "formula": "hedged_daily_return = unhedged_daily_return * (1 - hedge_ratio)",
+      "timing": "previous valid Daily MTM alert_state is applied to the next valid daily return to avoid same-day lookahead",
+      "simplification": "proportional exposure reduction on Daily MTM returns",
+      "excluded": [
+        "funding",
+        "basis",
+        "slippage",
+        "margin",
+        "liquidity",
+        "collateral",
+        "liquidation",
+        "exchange constraints",
+        "option greeks"
+      ]
+    },
+    "policy": {
+      "normal": 0,
+      "watch": 0,
+      "stress": 0.25,
+      "crisis": 0.5
+    }
+  },
+  "rows": [
+    {
+      "scope": "2020-2025",
+      "year": null,
+      "regime": null,
+      "series": "unhedged",
+      "startDate": "2020-01-04",
+      "endDate": "2025-12-25",
+      "validReturnDays": 1480,
+      "totalReturnPct": 51.442572,
+      "CAGRpct": 7.194406,
+      "maxDrawdownPct": -80.891376,
+      "maxUnderwaterDurationDays": 1173,
+      "avgUnderwaterDurationDays": 95.866667,
+      "pctTimeUnderwater": 97.162162,
+      "volatilityPct": 2.909341,
+      "historicalVaRPct": -4.180938,
+      "ewmaMeanPct": 2.63278,
+      "ewmaMaxPct": 7.713906,
+      "ewmaP95Pct": 5.104252,
+      "hedgeActivationEvents": null,
+      "hedgeActivationFrequencyPct": null,
+      "pctDaysHedged": null,
+      "averageHedgeRatioPct": null,
+      "returnSacrificedPct": null,
+      "drawdownReductionPctPoints": null,
+      "volatilityReductionPctPoints": null,
+      "varReductionPctPoints": null,
+      "protectionEfficiencyRatio": null,
+      "volatilityEfficiencyRatio": null,
+      "varEfficiencyRatio": null
+    },
+    {
+      "scope": "2020-2025",
+      "year": null,
+      "regime": null,
+      "series": "hedged_v01",
+      "startDate": "2020-01-04",
+      "endDate": "2025-12-25",
+      "validReturnDays": 1480,
+      "totalReturnPct": 90.112791,
+      "CAGRpct": 11.353622,
+      "maxDrawdownPct": -75.202563,
+      "maxUnderwaterDurationDays": 892,
+      "avgUnderwaterDurationDays": 59.375,
+      "pctTimeUnderwater": 96.283784,
+      "volatilityPct": 2.674064,
+      "historicalVaRPct": -3.797859,
+      "ewmaMeanPct": 2.454904,
+      "ewmaMaxPct": 6.810413,
+      "ewmaP95Pct": 4.684024,
+      "hedgeActivationEvents": 18,
+      "hedgeActivationFrequencyPct": 1.216216,
+      "pctDaysHedged": 20.135135,
+      "averageHedgeRatioPct": 5.320946,
+      "returnSacrificedPct": -38.670219,
+      "drawdownReductionPctPoints": 5.688813,
+      "volatilityReductionPctPoints": 0.235278,
+      "varReductionPctPoints": 0.383079,
+      "protectionEfficiencyRatio": null,
+      "volatilityEfficiencyRatio": null,
+      "varEfficiencyRatio": null
+    }
+  ]
+}

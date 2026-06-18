@@ -270,7 +270,7 @@ Status: complete for research.
 
 #### Phase 3A: Partial Hedge Simulation And Preliminary Economic Evaluation
 
-Status: next research phase.
+Status: complete for research.
 
 - Test hedge intensity by `alert_state`.
 - Compare unhedged versus hedged Daily MTM paths.
@@ -289,18 +289,31 @@ Status: next research phase.
 - Use these metrics to evaluate the economic efficiency of simple hedge rules before realistic costs are introduced.
 - Exclude funding, basis, slippage, margin, and liquidity costs at this stage.
 
-#### Phase 3B: Economic Evaluation
+#### Phase 3B: Hedge Intensity Robustness And Preliminary Economic Evaluation
 
-Status: follow-up to initial hedge simulation.
+Status: complete for research.
 
 - Quantify return sacrificed versus risk reduction.
 - Evaluate protection efficiency.
 - Compare hedged and unhedged paths.
 - Identify candidate hedge intensities.
+- Validate whether the v01 result depends specifically on `stress=25%` and `crisis=50%`.
+- Preserve `stress25_crisis50` as a conservative benchmark inherited from v01.
+- Identify `stress30_crisis40` as the current primary candidate from the research grid.
+
+#### Phase 3C: Operational Robustness Validation
+
+Status: complete for research.
+
+- Test timing robustness using immediate execution, 1 valid MTM day delay, 2 valid MTM day delay, confirmation, and combined delay/confirmation scenarios.
+- Validate that the preliminary benefit does not depend exclusively on perfect execution timing.
+- Treat 2 valid MTM day delay as an operational latency limit: still superior to unhedged in this research pass, but materially degraded.
+- Preserve `A_immediate`, `B_delay_1_valid_mtm_day`, `D_confirmation`, and `F_delay_confirmation` as scenarios worth carrying into realistic economics.
+- Keep all results labeled research-grade only.
 
 #### Phase 4: Realistic Hedge Economics
 
-Status: required before operational interpretation.
+Status: next research phase; required before operational interpretation.
 
 - Add funding assumptions.
 - Add basis assumptions.
@@ -308,6 +321,31 @@ Status: required before operational interpretation.
 - Add margin requirements.
 - Add liquidity constraints.
 - Add collateral requirements.
+- Add instrument selection research: perpetual, future, and option overlay candidates.
+- Add latency sensitivity.
+- Add execution assumptions.
+- Add hedge implementation research.
+
+#### Current Phase 3 Conclusions
+
+- The preliminary hedge benefit survived Phase 3A, Phase 3B, and Phase 3C.
+- The research hedge reduced max drawdown, VaR, and volatility versus unhedged in the tested configurations.
+- Aggregate return was superior to unhedged in the simplified research methodology.
+- The v02 proportional formula is retained only as a simplified proxy:
+
+```text
+hedged_return = ccw_return * (1 - hedge_ratio)
+```
+
+- The v03 underlying-overlay formula is the reference methodology going forward:
+
+```text
+hedged_return = ccw_return - hedge_ratio * underlying_return
+```
+
+- `stress30_crisis40` is the current primary candidate.
+- `stress25_crisis50` remains the conservative benchmark inherited from v01.
+- The benefit does not appear to depend exclusively on perfect execution, but latency matters materially.
 
 #### Phase 5: Advanced Dynamic Hedging
 
@@ -338,6 +376,10 @@ Research interpretation should remain conservative:
 - Passive Hedge Monitoring calibration showed that raw drawdown/underwater thresholds can over-alert.
 - The current monitoring research baseline is `v0.4b`, which separates accumulated damage from actionable alert state.
 - `v0.4b` is considered sufficiently useful for future partial-hedge simulation research, but it is not a final hedge policy and does not execute hedge actions.
+- Hedge Simulation research Phases 3A, 3B, and 3C showed that the partial hedge hypothesis remains promising under the research-grade underlying-overlay methodology.
+- The v03 underlying-overlay formula supersedes the v02 proportional formula as the hedge simulation reference.
+- `stress30_crisis40` is the current primary hedge-intensity candidate; `stress25_crisis50` remains a conservative benchmark.
+- Operational robustness testing suggests the benefit is not purely dependent on perfect timing, although latency materially degrades results.
 
 - Validate fixed hedge frontier outputs.
 - Document fixed hedge findings.
@@ -354,7 +396,9 @@ Research interpretation should remain conservative:
 - Implement passive monitoring artifacts around the selected `v0.4b` state model when ready to version this layer.
 - Build a Hedge Simulation Layer that tests partial hedge actions by `alert_state`.
 - Run partial hedge experiments by `alert_state`, preserving the unhedged baseline and Daily MTM methodology.
-- Validate realistic hedge economics after funding, basis, slippage, liquidity, margin, and collateral assumptions are introduced.
+- Validate realistic hedge economics after funding, basis, slippage, liquidity, margin, collateral, and instrument-selection assumptions are introduced.
+- Compare perpetual, future, and option overlay implementation candidates.
+- Model latency sensitivity and execution assumptions explicitly.
 - Simulate intracycle hedge-frequency alternatives to test whether hedge latency matters more than hedge sizing.
 - Add funding and basis realism.
 - Add intracycle diagnostic and alert layer.

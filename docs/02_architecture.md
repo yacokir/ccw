@@ -63,10 +63,14 @@ Responsável por interpretar os resultados.
 - Geração de indicadores de performance  
 - Comparação com benchmarks  
 - Análises estatísticas e de risco  
+- Daily Approximate MTM research  
+- Passive Hedge Monitoring research  
+- Hedge Simulation research and operational robustness analysis  
 
 **Output:**
 - Métricas consolidadas  
 - Insights sobre performance e risco  
+- Artefatos de pesquisa sob `analysis/generated/`, preservando rastreabilidade entre baseline, Daily MTM, monitoring e hedge simulation  
 
 ---
 
@@ -109,6 +113,26 @@ The provisional ETH baseline is Weekly OTM05. Weekly OTM03 remains the primary c
 Although ETH Weekly OTM03 had the highest historical gross return, its advantage over OTM05 is relatively small when annualized. Considering OTM05's better performance under friction and stress, its greater operational simplicity, its victory in more individual years, and its compatibility with the BTC baseline, the project adopts ETH Weekly OTM05 as the provisional baseline.
 
 This choice does not mean OTM03 is inferior. It means the current evidence is not strong enough to justify a methodological divergence between BTC and ETH.
+
+---
+
+### 4.4 Current risk and hedge research state
+
+The Daily Approximate MTM layer, Passive Hedge Monitoring layer, and Hedge Simulation Research Layer are Analysis Layer capabilities. They process existing run and Daily MTM artifacts and should not mutate baseline backtest outputs.
+
+Current hedge simulation research uses BTC Weekly OTM05 Daily MTM multi-year artifacts and Passive Hedge Monitoring `v0.4b`. The v03/v04 reference methodology approximates a BTC underlying overlay:
+
+```text
+hedged_return = ccw_return - hedge_ratio * underlying_return
+```
+
+The earlier proportional formula is retained only as a simplified proxy:
+
+```text
+hedged_return = ccw_return * (1 - hedge_ratio)
+```
+
+The current primary research candidate is `stress30_crisis40`, with `stress25_crisis50` retained as a conservative benchmark. These are research artifacts only. Realistic hedge economics, including funding, basis, slippage, margin, liquidity, collateral, execution assumptions, and instrument selection, remain future work.
 
 ---
 

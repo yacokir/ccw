@@ -1,0 +1,137 @@
+{
+  "metadata": {
+    "generatedAt": "2026-06-18T08:37:56.317Z",
+    "classification": "research-grade only",
+    "strategy": {
+      "asset": "BTC",
+      "tenor": "weekly",
+      "moneyness": "OTM05",
+      "period": "2020-2025"
+    },
+    "monitoringInput": "analysis\\generated\\daily_mtm\\hedge_monitoring_calibration_v04\\signals_v04_recommended.csv",
+    "methodology": {
+      "formula": "hedged_daily_return = unhedged_daily_return * (1 - hedge_ratio)",
+      "timing": "previous valid Daily MTM alert_state is applied to the next valid daily return",
+      "excluded": [
+        "specific hedge instrument",
+        "funding",
+        "basis",
+        "slippage",
+        "margin",
+        "liquidity",
+        "collateral"
+      ]
+    },
+    "grid": {
+      "stress": [
+        0.1,
+        0.2,
+        0.25,
+        0.3
+      ],
+      "crisis": [
+        0.4,
+        0.5,
+        0.6
+      ]
+    },
+    "baselineStats": {
+      "validReturnDays": 1480,
+      "totalReturnPct": 51.442572,
+      "CAGRpct": 7.194406,
+      "maxDrawdownPct": -80.891376,
+      "maxUnderwaterDurationDays": 1173,
+      "avgUnderwaterDurationDays": 95.866667,
+      "pctTimeUnderwater": 97.162162,
+      "volatilityPct": 2.909341,
+      "historicalVaRPct": -4.180938,
+      "ewmaMaxPct": 7.713906
+    }
+  },
+  "rows": [
+    {
+      "configId": "stress30_crisis40",
+      "stressHedgePct": 30,
+      "crisisHedgePct": 40,
+      "validReturnDays": 1480,
+      "totalReturnPct": 102.350973,
+      "CAGRpct": 12.522577,
+      "maxDrawdownPct": -73.415592,
+      "maxUnderwaterDurationDays": 887,
+      "avgUnderwaterDurationDays": 56.88,
+      "pctTimeUnderwater": 96.081081,
+      "volatilityPct": 2.64728,
+      "historicalVaRPct": -3.764845,
+      "ewmaMaxPct": 6.776848,
+      "hedgeActivationEvents": 18,
+      "hedgeActivationFrequencyPct": 1.216216,
+      "pctDaysHedged": 20.135135,
+      "averageHedgeRatioPct": 6.155405,
+      "returnSacrificedPct": -50.908402,
+      "returnEffect": "return improved",
+      "drawdownReductionPctPoints": 7.475784,
+      "volatilityReductionPctPoints": 0.262061,
+      "varReductionPctPoints": 0.416094,
+      "protectionEfficiencyRatio": null,
+      "volatilityEfficiencyRatio": null,
+      "varEfficiencyRatio": null,
+      "paretoCandidate": true
+    },
+    {
+      "configId": "stress30_crisis50",
+      "stressHedgePct": 30,
+      "crisisHedgePct": 50,
+      "validReturnDays": 1480,
+      "totalReturnPct": 100.269944,
+      "CAGRpct": 12.328034,
+      "maxDrawdownPct": -73.688992,
+      "maxUnderwaterDurationDays": 887,
+      "avgUnderwaterDurationDays": 56.88,
+      "pctTimeUnderwater": 96.081081,
+      "volatilityPct": 2.640602,
+      "historicalVaRPct": -3.764845,
+      "ewmaMaxPct": 6.776848,
+      "hedgeActivationEvents": 18,
+      "hedgeActivationFrequencyPct": 1.216216,
+      "pctDaysHedged": 20.135135,
+      "averageHedgeRatioPct": 6.27027,
+      "returnSacrificedPct": -48.827372,
+      "returnEffect": "return improved",
+      "drawdownReductionPctPoints": 7.202383,
+      "volatilityReductionPctPoints": 0.268739,
+      "varReductionPctPoints": 0.416094,
+      "protectionEfficiencyRatio": null,
+      "volatilityEfficiencyRatio": null,
+      "varEfficiencyRatio": null,
+      "paretoCandidate": true
+    },
+    {
+      "configId": "stress30_crisis60",
+      "stressHedgePct": 30,
+      "crisisHedgePct": 60,
+      "validReturnDays": 1480,
+      "totalReturnPct": 98.118448,
+      "CAGRpct": 12.125126,
+      "maxDrawdownPct": -73.971651,
+      "maxUnderwaterDurationDays": 887,
+      "avgUnderwaterDurationDays": 56.88,
+      "pctTimeUnderwater": 96.081081,
+      "volatilityPct": 2.635131,
+      "historicalVaRPct": -3.764845,
+      "ewmaMaxPct": 6.776848,
+      "hedgeActivationEvents": 18,
+      "hedgeActivationFrequencyPct": 1.216216,
+      "pctDaysHedged": 20.135135,
+      "averageHedgeRatioPct": 6.385135,
+      "returnSacrificedPct": -46.675876,
+      "returnEffect": "return improved",
+      "drawdownReductionPctPoints": 6.919725,
+      "volatilityReductionPctPoints": 0.27421,
+      "varReductionPctPoints": 0.416094,
+      "protectionEfficiencyRatio": null,
+      "volatilityEfficiencyRatio": null,
+      "varEfficiencyRatio": null,
+      "paretoCandidate": true
+    }
+  ]
+}

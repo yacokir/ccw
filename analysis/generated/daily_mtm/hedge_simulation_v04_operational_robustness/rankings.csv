@@ -1,0 +1,18 @@
+ranking,rank,scenarioId,configId,metricValue,totalReturnPct,maxDrawdownPct,historicalVaRPct,volatilityPct,pctDaysHedged,averageHedgeRatioPct,returnEffect,paretoCandidate
+best_total_return,1,A_immediate,stress30_crisis40,91.849644,91.849644,-74.47765,-3.768169,2.63692,20.135135,6.155405,return improved,true
+best_total_return,2,E_gradual_deescalation,stress30_crisis40,91.849644,91.849644,-74.47765,-3.768169,2.63692,20.135135,6.155405,return improved,true
+best_total_return,3,D_confirmation,stress30_crisis40,87.569434,87.569434,-75.090181,-3.781987,2.645529,18.918919,5.790541,return improved,false
+best_total_return,4,B_delay_1_valid_mtm_day,stress30_crisis40,84.140212,84.140212,-75.358439,-3.781987,2.640777,20.067568,6.135135,return improved,false
+best_total_return,5,A_immediate,stress25_crisis50,81.825963,81.825963,-76.037493,-3.798788,2.663877,20.135135,5.320946,return improved,false
+best_max_drawdown,1,A_immediate,stress30_crisis40,-74.47765,91.849644,-74.47765,-3.768169,2.63692,20.135135,6.155405,return improved,true
+best_max_drawdown,2,E_gradual_deescalation,stress30_crisis40,-74.47765,91.849644,-74.47765,-3.768169,2.63692,20.135135,6.155405,return improved,true
+best_max_drawdown,3,D_confirmation,stress30_crisis40,-75.090181,87.569434,-75.090181,-3.781987,2.645529,18.918919,5.790541,return improved,false
+best_max_drawdown,4,B_delay_1_valid_mtm_day,stress30_crisis40,-75.358439,84.140212,-75.358439,-3.781987,2.640777,20.067568,6.135135,return improved,false
+best_max_drawdown,5,A_immediate,stress25_crisis50,-76.037493,81.825963,-76.037493,-3.798788,2.663877,20.135135,5.320946,return improved,false
+best_historical_var,1,A_immediate,stress30_crisis40,-3.768169,91.849644,-74.47765,-3.768169,2.63692,20.135135,6.155405,return improved,true
+best_historical_var,2,E_gradual_deescalation,stress30_crisis40,-3.768169,91.849644,-74.47765,-3.768169,2.63692,20.135135,6.155405,return improved,true
+best_historical_var,3,B_delay_1_valid_mtm_day,stress30_crisis40,-3.781987,84.140212,-75.358439,-3.781987,2.640777,20.067568,6.135135,return improved,false
+best_historical_var,4,C_delay_2_valid_mtm_days,stress30_crisis40,-3.781987,64.901157,-77.049401,-3.781987,2.643837,20,6.121622,return improved,false
+best_historical_var,5,D_confirmation,stress30_crisis40,-3.781987,87.569434,-75.090181,-3.781987,2.645529,18.918919,5.790541,return improved,false
+pareto_candidates,1,A_immediate,stress30_crisis40,91.849644,91.849644,-74.47765,-3.768169,2.63692,20.135135,6.155405,return improved,true
+pareto_candidates,2,E_gradual_deescalation,stress30_crisis40,91.849644,91.849644,-74.47765,-3.768169,2.63692,20.135135,6.155405,return improved,true

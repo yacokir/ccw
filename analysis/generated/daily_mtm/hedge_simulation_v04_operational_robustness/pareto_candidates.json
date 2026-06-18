@@ -1,0 +1,132 @@
+{
+  "metadata": {
+    "generatedAt": "2026-06-18T08:57:25.503Z",
+    "classification": "research-grade only",
+    "formula": "hedged_daily_return = ccw_daily_return - hedge_ratio * underlying_daily_return",
+    "configs": [
+      {
+        "configId": "stress30_crisis40",
+        "stressHedgePct": 30,
+        "crisisHedgePct": 40
+      },
+      {
+        "configId": "stress25_crisis50",
+        "stressHedgePct": 25,
+        "crisisHedgePct": 50
+      }
+    ],
+    "scenarios": [
+      {
+        "scenarioId": "A_immediate",
+        "label": "Immediate execution",
+        "kind": "immediate"
+      },
+      {
+        "scenarioId": "B_delay_1_valid_mtm_day",
+        "label": "1 valid MTM day delay",
+        "kind": "delay",
+        "delay": 1
+      },
+      {
+        "scenarioId": "C_delay_2_valid_mtm_days",
+        "label": "2 valid MTM days delay",
+        "kind": "delay",
+        "delay": 2
+      },
+      {
+        "scenarioId": "D_confirmation",
+        "label": "Confirmation rule",
+        "kind": "confirmation"
+      },
+      {
+        "scenarioId": "E_gradual_deescalation",
+        "label": "Gradual de-escalation",
+        "kind": "gradual"
+      },
+      {
+        "scenarioId": "F_delay_confirmation",
+        "label": "Delay + confirmation",
+        "kind": "delay_confirmation",
+        "delay": 1
+      },
+      {
+        "scenarioId": "G_delay_confirmation_gradual_exit",
+        "label": "Delay + confirmation + gradual exit",
+        "kind": "delay_confirmation_gradual",
+        "delay": 1
+      }
+    ],
+    "baseline": {
+      "validReturnDays": 1480,
+      "totalReturnPct": 51.442572,
+      "CAGRpct": 7.194406,
+      "maxDrawdownPct": -80.891376,
+      "maxUnderwaterDurationDays": 1173,
+      "avgUnderwaterDurationDays": 95.866667,
+      "pctTimeUnderwater": 97.162162,
+      "volatilityPct": 2.909341,
+      "historicalVaRPct": -4.180938,
+      "ewmaMaxPct": 7.713906
+    }
+  },
+  "rows": [
+    {
+      "scenarioId": "A_immediate",
+      "label": "Immediate execution",
+      "configId": "stress30_crisis40",
+      "stressHedgePct": 30,
+      "crisisHedgePct": 40,
+      "validReturnDays": 1480,
+      "totalReturnPct": 91.849644,
+      "CAGRpct": 11.523269,
+      "maxDrawdownPct": -74.47765,
+      "maxUnderwaterDurationDays": 891,
+      "avgUnderwaterDurationDays": 59.333333,
+      "pctTimeUnderwater": 96.216216,
+      "volatilityPct": 2.63692,
+      "historicalVaRPct": -3.768169,
+      "ewmaMaxPct": 6.867883,
+      "hedgeActivationEvents": 18,
+      "hedgeActivationFrequencyPct": 1.216216,
+      "pctDaysHedged": 20.135135,
+      "averageHedgeRatioPct": 6.155405,
+      "averageActivationDurationDays": 16.555556,
+      "returnSacrificedPct": -40.407073,
+      "returnEffect": "return improved",
+      "drawdownReductionPctPoints": 6.413725,
+      "volatilityReductionPctPoints": 0.272421,
+      "varReductionPctPoints": 0.412769,
+      "protectionEfficiencyRatio": null,
+      "paretoCandidate": true
+    },
+    {
+      "scenarioId": "E_gradual_deescalation",
+      "label": "Gradual de-escalation",
+      "configId": "stress30_crisis40",
+      "stressHedgePct": 30,
+      "crisisHedgePct": 40,
+      "validReturnDays": 1480,
+      "totalReturnPct": 91.849644,
+      "CAGRpct": 11.523269,
+      "maxDrawdownPct": -74.47765,
+      "maxUnderwaterDurationDays": 891,
+      "avgUnderwaterDurationDays": 59.333333,
+      "pctTimeUnderwater": 96.216216,
+      "volatilityPct": 2.63692,
+      "historicalVaRPct": -3.768169,
+      "ewmaMaxPct": 6.867883,
+      "hedgeActivationEvents": 18,
+      "hedgeActivationFrequencyPct": 1.216216,
+      "pctDaysHedged": 20.135135,
+      "averageHedgeRatioPct": 6.155405,
+      "averageActivationDurationDays": 16.555556,
+      "returnSacrificedPct": -40.407073,
+      "returnEffect": "return improved",
+      "drawdownReductionPctPoints": 6.413725,
+      "volatilityReductionPctPoints": 0.272421,
+      "varReductionPctPoints": 0.412769,
+      "protectionEfficiencyRatio": null,
+      "paretoCandidate": true
+    }
+  ]
+}

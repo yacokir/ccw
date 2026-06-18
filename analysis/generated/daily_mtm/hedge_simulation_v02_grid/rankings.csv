@@ -1,0 +1,19 @@
+ranking,rank,configId,stressHedgePct,crisisHedgePct,metricValue,totalReturnPct,maxDrawdownPct,historicalVaRPct,volatilityPct,returnSacrificedPct,returnEffect,paretoCandidate
+best_total_return,1,stress30_crisis40,30,40,102.350973,102.350973,-73.415592,-3.764845,2.64728,-50.908402,return improved,true
+best_total_return,2,stress30_crisis50,30,50,100.269944,100.269944,-73.688992,-3.764845,2.640602,-48.827372,return improved,true
+best_total_return,3,stress30_crisis60,30,60,98.118448,98.118448,-73.971651,-3.764845,2.635131,-46.675876,return improved,true
+best_total_return,4,stress25_crisis40,25,40,92.088228,92.088228,-74.944893,-3.797859,2.680659,-40.645657,return improved,false
+best_total_return,5,stress25_crisis50,25,50,90.112743,90.112743,-75.202566,-3.797859,2.674064,-38.670172,return improved,false
+best_max_drawdown,1,stress30_crisis40,30,40,-73.415592,102.350973,-73.415592,-3.764845,2.64728,-50.908402,return improved,true
+best_max_drawdown,2,stress30_crisis50,30,50,-73.688992,100.269944,-73.688992,-3.764845,2.640602,-48.827372,return improved,true
+best_max_drawdown,3,stress30_crisis60,30,60,-73.971651,98.118448,-73.971651,-3.764845,2.635131,-46.675876,return improved,true
+best_max_drawdown,4,stress25_crisis40,25,40,-74.944893,92.088228,-74.944893,-3.797859,2.680659,-40.645657,return improved,false
+best_max_drawdown,5,stress25_crisis50,25,50,-75.202566,90.112743,-75.202566,-3.797859,2.674064,-38.670172,return improved,false
+best_historical_var,1,stress30_crisis40,30,40,-3.764845,102.350973,-73.415592,-3.764845,2.64728,-50.908402,return improved,true
+best_historical_var,2,stress30_crisis50,30,50,-3.764845,100.269944,-73.688992,-3.764845,2.640602,-48.827372,return improved,true
+best_historical_var,3,stress30_crisis60,30,60,-3.764845,98.118448,-73.971651,-3.764845,2.635131,-46.675876,return improved,true
+best_historical_var,4,stress25_crisis40,25,40,-3.797859,92.088228,-74.944893,-3.797859,2.680659,-40.645657,return improved,false
+best_historical_var,5,stress25_crisis50,25,50,-3.797859,90.112743,-75.202566,-3.797859,2.674064,-38.670172,return improved,false
+pareto_candidates,1,stress30_crisis40,30,40,102.350973,102.350973,-73.415592,-3.764845,2.64728,-50.908402,return improved,true
+pareto_candidates,2,stress30_crisis50,30,50,100.269944,100.269944,-73.688992,-3.764845,2.640602,-48.827372,return improved,true
+pareto_candidates,3,stress30_crisis60,30,60,98.118448,98.118448,-73.971651,-3.764845,2.635131,-46.675876,return improved,true

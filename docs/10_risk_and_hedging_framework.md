@@ -101,6 +101,45 @@ The framework approximately hedges BTC downside exposure using BTC-linked instru
 
 This distinction matters because a covered-call portfolio is not identical to spot BTC. The option leg changes total strategy sensitivity through time and across price paths. Current overlay results can still be useful for crisis mitigation research, but they should not be described as full option portfolio hedging.
 
+### Hedge Simulation Research Layer
+
+The Hedge Simulation Research Layer uses Daily Approximate MTM and Passive Hedge Monitoring states to test whether simple partial hedge rules appear economically promising before realistic hedge costs are introduced.
+
+The completed Phase 3 research sequence is:
+
+- Phase 3A: Partial Hedge Simulation And Preliminary Economic Evaluation.
+- Phase 3B: Hedge Intensity Robustness.
+- Phase 3C: Operational Robustness Validation.
+
+The initial v01/v02 simulation used a proportional exposure-reduction proxy:
+
+```text
+hedged_return = ccw_return * (1 - hedge_ratio)
+```
+
+This proxy is useful as a first screen, but it should not be treated as the reference model for a short futures or perpetual overlay.
+
+The current reference research methodology is the v03 underlying-overlay formula:
+
+```text
+hedged_return = ccw_return - hedge_ratio * underlying_return
+```
+
+This better approximates a short BTC perpetual or futures overlay because hedge PnL is tied to BTC underlying returns rather than mechanically scaled CCW returns.
+
+Current research conclusions:
+
+- The preliminary hedge benefit survived the move from v02 proportional proxy to v03 underlying-overlay.
+- Tested hedge rules reduced max drawdown, historical VaR, and volatility versus unhedged in the research artifacts.
+- Aggregate return was higher than unhedged in this simplified research layer.
+- `stress30_crisis40` is the current primary candidate.
+- `stress25_crisis50` remains a conservative benchmark inherited from v01.
+- Operational robustness testing showed that the benefit does not appear to depend exclusively on perfect execution.
+- Latency matters: 1 valid MTM day delay remained robust, while 2 valid MTM days remained above unhedged but showed material deterioration.
+- Confirmation-based scenarios remained useful and should be carried into realistic economics.
+
+These results are research-grade only. They do not include funding, basis, slippage, margin, liquidity, collateral, liquidation risk, instrument selection, or real execution assumptions. They justify Phase 4 realistic hedge economics; they do not establish a production hedge policy.
+
 ## Risk Objectives
 
 The primary risk objectives are:
@@ -173,6 +212,8 @@ The current hedge research and planned cyclical model should be interpreted with
 - Current hedge logic approximates BTC exposure and does not model full option portfolio greek sensitivity.
 - Passive hedge monitoring states are research diagnostics only and do not yet execute, size, or validate hedge trades.
 - Passive hedge monitoring thresholds are calibrated on historical Daily MTM artifacts and may be regime-dependent.
+- Hedge simulation results are research-grade and do not yet include funding, basis, slippage, margin, liquidity, collateral, or specific hedge-instrument mechanics.
+- The current hedge simulation reference is an underlying-overlay approximation, not full futures/perpetual accounting.
 
 These limitations are material. A hedge that appears attractive in analysis-only reconstruction may behave differently once funding, basis, margin, and stressed execution are included.
 
@@ -257,13 +298,15 @@ The near-term research path is:
 8. Compare OTM05 and 14d daily-risk behavior after the generalized layer is designed.
 9. Evaluate hybrid VaR using daily approximate MTM, including `max(EWMA VaR, Historical VaR)`.
 10. Preserve Passive Hedge Monitoring `v0.4b` as the current research baseline for damage versus alert state interpretation.
-11. Simulate intracycle partial-hedge actions by `alert_state`, without treating the monitoring thresholds as final policy.
-12. Validate hedge economics after funding, basis, slippage, margin, and liquidity assumptions are added.
-13. Simulate intracycle hedge-frequency alternatives using daily MTM paths.
-14. Add funding, basis, margin, and slippage realism.
-15. Add intracycle diagnostic and alert research.
-16. Evaluate event-driven or crisis-trigger hedge escalation only after simpler hedge layers are understood.
-17. Study full option mark and greek-aware hedging if external historical providers, such as Tardis, can supply sufficient data.
-18. Extend future Monte Carlo work to include hedged and unhedged variants.
+11. Preserve Hedge Simulation v03 underlying-overlay as the reference research methodology for partial hedge simulations.
+12. Carry `stress30_crisis40` as the current primary candidate and `stress25_crisis50` as a conservative benchmark.
+13. Validate realistic hedge economics after funding, basis, slippage, margin, liquidity, collateral, and instrument-selection assumptions are added.
+14. Model latency sensitivity, execution assumptions, and hedge implementation details explicitly.
+15. Simulate intracycle hedge-frequency alternatives using daily MTM paths.
+16. Add funding, basis, margin, and slippage realism.
+17. Add intracycle diagnostic and alert research.
+18. Evaluate event-driven or crisis-trigger hedge escalation only after simpler hedge layers are understood.
+19. Study full option mark and greek-aware hedging if external historical providers, such as Tardis, can supply sufficient data.
+20. Extend future Monte Carlo work to include hedged and unhedged variants.
 
 Each stage should preserve traceability between baseline CCW results, fixed frontier outputs, and future adaptive hedge outputs.

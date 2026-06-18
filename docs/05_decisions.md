@@ -227,3 +227,40 @@ The `v0.4b` calibration is not intended to predict market crises. Its purpose is
 
 **Impacto:**
 A camada e util para pesquisa e para preparar simulacoes futuras de hedge parcial por `alert_state`, mas ainda nao e uma politica operacional final. A calibragem `v0.4b` e uma ferramenta de classificacao de estados: nao e sinal operacional de trading, nao e politica final de hedge, nao e modelo de previsao, nao executa hedge, nao define tamanho de posicao, e ainda precisa ser validada contra funding, basis, slippage, liquidez, margem e economia real do hedge.
+
+---
+
+### [2026-06-18] Hedge Simulation Research Layer v03/v04 como referencia de pesquisa
+
+**Descricao:**
+A camada Hedge Simulation Research foi consolidada em tres fases sobre BTC Weekly OTM05 Daily MTM multi-year e Passive Hedge Monitoring `v0.4b`:
+
+- Phase 3A: Partial Hedge Simulation And Preliminary Economic Evaluation.
+- Phase 3B: Hedge Intensity Robustness.
+- Phase 3C: Operational Robustness Validation.
+
+Decisao:
+
+- A formula v02 proporcional passa a ser tratada apenas como proxy simplificada:
+
+```text
+hedged_return = ccw_return * (1 - hedge_ratio)
+```
+
+- A formula v03 underlying-overlay passa a ser a referencia de pesquisa daqui para frente:
+
+```text
+hedged_return = ccw_return - hedge_ratio * underlying_return
+```
+
+- `stress30_crisis40` e o candidato principal atual.
+- `stress25_crisis50` permanece como benchmark conservador herdado da v01.
+- Os cenarios operacionais `A_immediate`, `B_delay_1_valid_mtm_day`, `D_confirmation` e `F_delay_confirmation` devem ser carregados para a futura fase de economia realista.
+- `C_delay_2_valid_mtm_days` continua superior ao unhedged nos artefatos de pesquisa, mas apresentou deterioracao material e deve ser tratado como limite de latencia operacional.
+
+Racional:
+
+O beneficio preliminar sobreviveu a variacao de intensidade e a aproximacao mais realista de hedge via underlying-overlay. A camada reduziu drawdown, VaR e volatilidade versus unhedged nos artefatos testados, e apresentou retorno agregado superior ao unhedged na metodologia simplificada. A validacao operacional sugere que o resultado nao depende exclusivamente de execucao perfeita, embora latencia importe.
+
+**Impacto:**
+A hipotese de hedge parcial permanece suficientemente promissora para justificar Phase 4: Realistic Hedge Economics. Antes de qualquer conclusao operacional, o projeto deve modelar funding, basis, slippage, margin requirements, liquidity constraints, collateral requirements e selecao de instrumento, incluindo perpetual, future e option overlay. Esta decisao nao define politica final de hedge e nao sugere execucao real.
