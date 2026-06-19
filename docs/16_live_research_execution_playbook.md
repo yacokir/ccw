@@ -96,6 +96,16 @@ The operating rule is target-based. Existing hedge exposure is not closed and re
 
 The optional Phase 3.5A helper script `src/scripts/generate_live_research_snapshot.js` can be used to create a read-only manual decision snapshot under `live/snapshots/`. It reads BTC and ETH Passive Hedge Monitoring v0.4b signal artifacts where available. The current ETH v0.4b artifact uses only the available ETH Weekly OTM05 2025 Daily MTM artifact; this is sufficient to support the live snapshot generator, but it is not yet full multi-year ETH monitoring parity. The helper does not place orders and should preserve circuit breakers when required data is missing, stale, or unavailable.
 
+Snapshot volatility metrics are displayed in both daily and annualized form, using `sqrt(365)` for crypto annualization. Historical VaR is displayed as a 95% one-day empirical historical VaR. The expected tail frequency is an interpretation aid only and does not represent a forecast.
+
+Snapshots may also expose presentation-only decision aids such as `execution_state`, `today_action`, stale-data warnings, and Markdown-oriented numeric formatting. These fields improve manual readability and do not alter model behavior, hedge targets, circuit breakers, or execution assumptions.
+
+Phase 3.5B/3.5C adds an incremental read-only refresh helper, `src/scripts/refresh_live_research_data.js`, for public same-day BTC/ETH price refresh before snapshot generation. The refresh layer writes current price, recent public daily price history, and spot-risk metrics under `live/data/` only. It does not refresh options, recalculate live monitoring states, place orders, or alter hedge methodology.
+
+Phase 3.5D adds `src/scripts/build_live_monitoring_signals.js`, which applies the existing v0.4b monitoring thresholds to the live price-history proxy and writes same-day `damage_state` and `alert_state` under `live/data/`. This remains a research-grade monitoring aid and does not recalibrate thresholds, refresh options, or add execution logic.
+
+Phase 3.5E adds read-only live option discovery for T0 support. The option discovery layer selects the nearest available weekly call around the OTM05 target strike from public option-chain data, records any available public premium fields, and leaves premium null with warnings when unavailable. It does not place orders or validate executable pricing.
+
 ## Hysteresis And Churn Control
 
 The playbook uses simple hysteresis to reduce unnecessary hedge churn.

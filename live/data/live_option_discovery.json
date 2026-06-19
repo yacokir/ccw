@@ -1,0 +1,73 @@
+{
+  "generated_at": "2026-06-19T01:21:08.920Z",
+  "rows": [
+    {
+      "asset": "BTC",
+      "venue": "Deribit",
+      "source": "deribit_public_option_instruments_and_order_book",
+      "generated_at": "2026-06-19T01:21:07.817Z",
+      "data_as_of": "2026-06-18",
+      "underlying_price": 63042.4,
+      "target_moneyness": 1.05,
+      "target_strike_raw": 66194.52,
+      "selected_expiry": "2026-06-26",
+      "selected_instrument": "BTC-26JUN26-66000-C",
+      "selected_strike": 66000,
+      "selection_reference_date": "2026-06-18",
+      "days_to_expiration": 8,
+      "selection_method": "weekly_window",
+      "expiry_window_min_days": 6,
+      "expiry_window_max_days": 9,
+      "bybit_server_date": "2026-06-19",
+      "observed_premium": 327.82048,
+      "premium_source": "deribit_bid_ask_mid_underlying_converted_to_usd",
+      "option_bid": 308.90776,
+      "option_ask": 346.7332,
+      "option_mark_price": 334.12472,
+      "option_last_price": 308.90776,
+      "warnings": [
+        "No live call option instruments found in public Bybit instrument list.",
+        "Bybit option discovery unavailable; used Deribit public option fallback."
+      ],
+      "endpoints": {
+        "instruments": "https://api.bybit.com/v5/market/instruments-info?category=option&baseCoin=BTC&limit=1000",
+        "ticker": "https://www.deribit.com/api/v2/public/get_order_book?instrument_name=BTC-26JUN26-66000-C",
+        "deribit_instruments": "https://www.deribit.com/api/v2/public/get_instruments?currency=BTC&kind=option&expired=false"
+      }
+    },
+    {
+      "asset": "ETH",
+      "venue": "Deribit",
+      "source": "deribit_public_option_instruments_and_order_book",
+      "generated_at": "2026-06-19T01:21:08.920Z",
+      "data_as_of": "2026-06-18",
+      "underlying_price": 1717.35,
+      "target_moneyness": 1.05,
+      "target_strike_raw": 1803.2175,
+      "selected_expiry": "2026-06-26",
+      "selected_instrument": "ETH-26JUN26-1800-C",
+      "selected_strike": 1800,
+      "selection_reference_date": "2026-06-18",
+      "days_to_expiration": 8,
+      "selection_method": "weekly_window",
+      "expiry_window_min_days": 6,
+      "expiry_window_max_days": 9,
+      "bybit_server_date": "2026-06-19",
+      "observed_premium": 18.89085,
+      "premium_source": "deribit_bid_ask_mid_underlying_converted_to_usd",
+      "option_bid": 18.032175,
+      "option_ask": 19.749525,
+      "option_mark_price": 19.57779,
+      "option_last_price": 18.89085,
+      "warnings": [
+        "No live call option instruments found in public Bybit instrument list.",
+        "Bybit option discovery unavailable; used Deribit public option fallback."
+      ],
+      "endpoints": {
+        "instruments": "https://api.bybit.com/v5/market/instruments-info?category=option&baseCoin=ETH&limit=1000",
+        "ticker": "https://www.deribit.com/api/v2/public/get_order_book?instrument_name=ETH-26JUN26-1800-C",
+        "deribit_instruments": "https://www.deribit.com/api/v2/public/get_instruments?currency=ETH&kind=option&expired=false"
+      }
+    }
+  ]
+}

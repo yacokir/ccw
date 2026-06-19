@@ -14,6 +14,8 @@ const {
 
 const LIVE_DIR = path.join(REPO_ROOT, 'live');
 const SNAPSHOT_DIR = path.join(LIVE_DIR, 'snapshots');
+const LIVE_MONITORING_SIGNALS_PATH = path.join(LIVE_DIR, 'data', 'live_monitoring_signals.json');
+const LIVE_OPTION_DISCOVERY_PATH = path.join(LIVE_DIR, 'data', 'live_option_discovery.json');
 
 const DEFAULTS = {
   mode: 'daily',
@@ -33,6 +35,9 @@ const HEDGE_BY_STATE = {
   crisis: 40
 };
 
+const TRADING_DAYS_PER_YEAR_CRYPTO = 365;
+const HISTORICAL_VAR_EXPECTED_TAIL_DAYS = 20;
+
 const ASSETS = [
   {
     asset: 'BTC',
@@ -46,7 +51,8 @@ const ASSETS = [
       path.join(OUTPUT_DIR, 'daily_mtm', 'btc_otm05_multiyear', 'years', 'btc_weekly_otm05_2024', 'btc_weekly_otm05_2024_daily_mtm.json'),
       path.join(OUTPUT_DIR, 'daily_mtm', 'btc_weekly_otm05_2025', 'btc_weekly_otm05_2025_daily_mtm.json')
     ],
-    signalPath: path.join(OUTPUT_DIR, 'daily_mtm', 'hedge_monitoring_calibration_v04', 'signals_v04_recommended.csv')
+    signalPath: path.join(OUTPUT_DIR, 'daily_mtm', 'hedge_monitoring_calibration_v04', 'signals_v04_recommended.csv'),
+    liveMetricsPath: path.join(LIVE_DIR, 'data', 'btc_live_metrics.json')
   },
   {
     asset: 'ETH',
@@ -55,7 +61,8 @@ const ASSETS = [
     dailyMtmPaths: [
       path.join(OUTPUT_DIR, 'daily_mtm', 'eth_weekly_otm05_2025', 'eth_weekly_otm05_2025_daily_mtm.json')
     ],
-    signalPath: path.join(OUTPUT_DIR, 'daily_mtm', 'eth_hedge_monitoring_calibration_v04', 'signals_v04_recommended.csv')
+    signalPath: path.join(OUTPUT_DIR, 'daily_mtm', 'eth_hedge_monitoring_calibration_v04', 'signals_v04_recommended.csv'),
+    liveMetricsPath: path.join(LIVE_DIR, 'data', 'eth_live_metrics.json')
   }
 ];
 
@@ -149,6 +156,30 @@ function loadSignals(assetConfig) {
   return { signals, source: path.relative(REPO_ROOT, assetConfig.signalPath) };
 }
 
+function loadCurrentLiveMetrics(assetConfig, snapshotDate) {
+  if (!assetConfig.liveMetricsPath || !fs.existsSync(assetConfig.liveMetricsPath)) return null;
+  const payload = readJson(assetConfig.liveMetricsPath);
+  return payload && payload.snapshot_date === snapshotDate ? payload : null;
+}
+
+function loadLiveMonitoringSignals(snapshotDate) {
+  if (!fs.existsSync(LIVE_MONITORING_SIGNALS_PATH)) return new Map();
+  const payload = readJson(LIVE_MONITORING_SIGNALS_PATH);
+  const rows = Array.isArray(payload.rows) ? payload.rows : [];
+  return new Map(rows
+    .filter(row => row.asset && row.data_as_of === snapshotDate)
+    .map(row => [row.asset, row]));
+}
+
+function loadLiveOptionDiscovery(snapshotDate) {
+  if (!fs.existsSync(LIVE_OPTION_DISCOVERY_PATH)) return new Map();
+  const payload = readJson(LIVE_OPTION_DISCOVERY_PATH);
+  const rows = Array.isArray(payload.rows) ? payload.rows : [];
+  return new Map(rows
+    .filter(row => row.asset && row.data_as_of === snapshotDate)
+    .map(row => [row.asset, row]));
+}
+
 function latestRowOnOrBefore(rows, date) {
   const candidates = rows.filter(row => row.date && row.date <= date);
   if (candidates.length === 0) return null;
@@ -190,6 +221,49 @@ function realizedVol30d(rows, date) {
   }
 
   return roundNumber(sampleStdDev(returns));
+}
+
+function annualizeDailyVolPct(value) {
+  const daily = optionalNumber(value);
+  if (daily === null) return null;
+  return roundNumber(daily * Math.sqrt(TRADING_DAYS_PER_YEAR_CRYPTO));
+}
+
+function executionStateFor(targetHedgePct) {
+  const target = optionalNumber(targetHedgePct);
+  if (target === 0) return 'NO_HEDGE';
+  if (target === 30) return 'HEDGE_30';
+  if (target === 40) return 'HEDGE_40';
+  return 'CUSTOM_HEDGE';
+}
+
+function todayActionFor(asset, targetHedgePct, deltaPct) {
+  const target = optionalNumber(targetHedgePct);
+  const delta = optionalNumber(deltaPct);
+  const symbol = `${asset}USDT`;
+  if (target === null || delta === null) return '';
+  if (target === 0 && delta === 0) return 'NO ACTION';
+  if (target === 0 && delta < 0) return 'CLOSE HEDGE';
+  if (delta > 0) return `SELL ${symbol} PERP (${formatHedgePct(delta)} of spot exposure)`;
+  if (delta < 0) return `REDUCE HEDGE TO ${formatHedgePct(target)}`;
+  return 'NO ACTION';
+}
+
+function premiumStatusFor(source, premium) {
+  if (optionalNumber(premium) === null) return 'UNAVAILABLE';
+  const rawSource = String(source || '').toLowerCase();
+  if (rawSource.includes('deribit') || rawSource.includes('fallback')) return 'INDICATIVE_DERIBIT';
+  if (rawSource.includes('bybit')) return 'EXECUTABLE_BYBIT';
+  return 'UNAVAILABLE';
+}
+
+function staleWarning(sourceDate, snapshotDate) {
+  if (!sourceDate || sourceDate === snapshotDate) return null;
+  return {
+    data_as_of: sourceDate,
+    snapshot_date: snapshotDate,
+    message: 'Metrics are based on stale source data. Trade recommendations may be blocked by circuit breakers.'
+  };
 }
 
 function parseInstrument(instrumentName) {
@@ -259,19 +333,54 @@ function circuitBreakers(fields) {
   };
 }
 
-function buildAssetSnapshot(assetConfig, args, now, snapshotDate) {
+function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoringSignals, liveOptionDiscovery) {
   const { rows, sources } = loadDailyRows(assetConfig);
   const { signals, source: signalSource } = loadSignals(assetConfig);
-  const dailyRow = latestRowOnOrBefore(rows, snapshotDate);
-  const signalRow = dailyRow ? signals.get(dailyRow.date) : null;
-  const parsedInstrument = parseInstrument(dailyRow && dailyRow.instrument_name);
+  const historicalRow = latestRowOnOrBefore(rows, snapshotDate);
+  const liveMetrics = loadCurrentLiveMetrics(assetConfig, snapshotDate);
+  const dailyRow = liveMetrics
+    ? {
+      ...(historicalRow || {}),
+      date: snapshotDate,
+      underlying_price: liveMetrics.current_price,
+      source_file: path.relative(REPO_ROOT, assetConfig.liveMetricsPath)
+    }
+    : historicalRow;
+  const liveSignalRow = liveMonitoringSignals.get(assetConfig.asset) || null;
+  const liveOptionRow = liveOptionDiscovery.get(assetConfig.asset) || null;
+  const historicalSignalRow = historicalRow ? signals.get(historicalRow.date) : null;
+  const signalRow = liveSignalRow || historicalSignalRow;
+  const monitoringSource = liveSignalRow
+    ? path.relative(REPO_ROOT, LIVE_MONITORING_SIGNALS_PATH)
+    : signalSource;
+  const parsedInstrument = parseInstrument(historicalRow && historicalRow.instrument_name);
+  const optionExpiry = liveOptionRow ? liveOptionRow.selected_expiry : parsedInstrument.expiry;
+  const optionStrike = liveOptionRow ? optionalNumber(liveOptionRow.selected_strike) : parsedInstrument.strike;
+  const optionPremium = liveOptionRow
+    ? optionalNumber(liveOptionRow.observed_premium)
+    : optionalNumber(historicalRow && historicalRow.option_price_proxy);
+  const optionPremiumSource = liveOptionRow ? liveOptionRow.premium_source : 'historical_option_price_proxy';
+  const optionWarnings = [
+    ...(liveOptionRow && Array.isArray(liveOptionRow.warnings) ? liveOptionRow.warnings : []),
+    ...(!liveOptionRow && parsedInstrument.expiry ? ['Using historical option fields because live option discovery is unavailable for snapshot date.'] : [])
+  ];
   const stale = isStale(dailyRow && dailyRow.date, snapshotDate);
-  const signalStale = Boolean(signalRow && signalRow.date !== snapshotDate);
+  const signalDate = signalRow ? (signalRow.data_as_of || signalRow.date) : null;
+  const signalStale = Boolean(signalRow && signalDate !== snapshotDate);
   const spotPrice = optionalNumber(dailyRow && dailyRow.underlying_price);
   const currentHedge = optionalNumber(args[assetConfig.currentHedgeArg]) ?? 0;
   const normalCounter = optionalNumber(args[assetConfig.normalCounterArg]) ?? 0;
   const alertState = signalRow ? signalRow.alert_state : null;
   const damageState = signalRow ? signalRow.damage_state : null;
+  const realizedVolDailyPct = liveMetrics
+    ? roundNumber(optionalNumber(liveMetrics.realized_vol_daily_pct))
+    : realizedVol30d(rows, dailyRow && dailyRow.date);
+  const ewmaDailyPct = liveMetrics
+    ? roundNumber(optionalNumber(liveMetrics.ewma_daily_pct))
+    : roundNumber(optionalNumber(dailyRow && dailyRow.EWMA_vol_pct, signalRow && signalRow.ewma_vol_pct));
+  const historicalVarPct = liveMetrics
+    ? roundNumber(optionalNumber(liveMetrics.historical_VaR_pct))
+    : roundNumber(optionalNumber(dailyRow && dailyRow.historical_VaR_pct));
   const baseTarget = alertState ? baseTargetForState(alertState) : null;
   const hysteresis = alertState
     ? applyHysteresis(alertState, baseTarget, currentHedge, normalCounter)
@@ -282,15 +391,18 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate) {
     signalRow,
     signalStale,
     spotPrice,
-    ewma: optionalNumber(dailyRow && dailyRow.EWMA_vol_pct, signalRow && signalRow.ewma_vol_pct),
-    historicalVaR: optionalNumber(dailyRow && dailyRow.historical_VaR_pct),
-    optionExpiry: parsedInstrument.expiry,
-    optionStrike: parsedInstrument.strike,
+    ewma: ewmaDailyPct,
+    historicalVaR: historicalVarPct,
+    optionExpiry,
+    optionStrike,
     marketDataAbnormal: Boolean(dailyRow && dailyRow.notes && String(dailyRow.notes).includes('suspicious'))
   });
 
   const targetHedge = breaker.status === 'OK' ? hysteresis.targetHedge : currentHedge;
   const executedDeltaRecommendation = roundNumber(targetHedge - currentHedge);
+  const executionState = executionStateFor(targetHedge);
+  const todayAction = todayActionFor(assetConfig.asset, targetHedge, executedDeltaRecommendation);
+  const warning = staleWarning(dailyRow && dailyRow.date, snapshotDate);
 
   return {
     asset: assetConfig.asset,
@@ -298,33 +410,61 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate) {
     timestamp: decisionTimestamp(now, args),
     snapshot_date: snapshotDate,
     data_as_of: dailyRow ? dailyRow.date : null,
+    market_data_source: liveMetrics ? 'live_refresh' : 'historical_daily_mtm',
+    live_metrics_used: Boolean(liveMetrics),
+    live_metrics_timestamp: liveMetrics ? liveMetrics.timestamp : null,
     spot_price: roundNumber(spotPrice),
-    return_7d_pct: roundNumber(spotReturnPct(dailyRow, rowDaysBefore(rows, dailyRow && dailyRow.date, 7))),
-    return_30d_pct: roundNumber(spotReturnPct(dailyRow, rowDaysBefore(rows, dailyRow && dailyRow.date, 30))),
-    return_90d_pct: roundNumber(spotReturnPct(dailyRow, rowDaysBefore(rows, dailyRow && dailyRow.date, 90))),
-    realized_vol_30d_pct: realizedVol30d(rows, dailyRow && dailyRow.date),
-    EWMA_pct: roundNumber(optionalNumber(dailyRow && dailyRow.EWMA_vol_pct, signalRow && signalRow.ewma_vol_pct)),
-    historical_VaR_pct: roundNumber(optionalNumber(dailyRow && dailyRow.historical_VaR_pct)),
+    return_7d_pct: liveMetrics ? roundNumber(optionalNumber(liveMetrics.return_7d_pct)) : roundNumber(spotReturnPct(dailyRow, rowDaysBefore(rows, dailyRow && dailyRow.date, 7))),
+    return_30d_pct: liveMetrics ? roundNumber(optionalNumber(liveMetrics.return_30d_pct)) : roundNumber(spotReturnPct(dailyRow, rowDaysBefore(rows, dailyRow && dailyRow.date, 30))),
+    return_90d_pct: liveMetrics ? roundNumber(optionalNumber(liveMetrics.return_90d_pct)) : roundNumber(spotReturnPct(dailyRow, rowDaysBefore(rows, dailyRow && dailyRow.date, 90))),
+    realized_vol_30d_pct: realizedVolDailyPct,
+    realized_vol_daily_pct: realizedVolDailyPct,
+    realized_vol_annualized_pct: annualizeDailyVolPct(realizedVolDailyPct),
+    EWMA_pct: ewmaDailyPct,
+    ewma_daily_pct: ewmaDailyPct,
+    ewma_annualized_pct: annualizeDailyVolPct(ewmaDailyPct),
+    historical_VaR_pct: historicalVarPct,
+    historical_var_confidence: '95%',
+    historical_var_horizon: '1D',
+    historical_var_expected_tail_days: HISTORICAL_VAR_EXPECTED_TAIL_DAYS,
+    historical_var_interpretation: 'Estimated one-day loss threshold derived from recent historical returns. Approximately 5% of observed days experienced losses worse than this level.',
     damage_state: damageState,
     alert_state: alertState,
-    option_expiry: parsedInstrument.expiry,
-    OTM05_target_strike: parsedInstrument.strike,
-    observed_option_premium: roundNumber(optionalNumber(dailyRow && dailyRow.option_price_proxy)),
+    option_expiry: optionExpiry,
+    days_to_expiration: liveOptionRow ? optionalNumber(liveOptionRow.days_to_expiration) : null,
+    OTM05_target_strike: optionStrike,
+    selected_option_instrument: liveOptionRow ? liveOptionRow.selected_instrument : (historicalRow && historicalRow.instrument_name) || null,
+    observed_option_premium: roundNumber(optionPremium),
+    option_data_source: liveOptionRow ? path.relative(REPO_ROOT, LIVE_OPTION_DISCOVERY_PATH) : 'historical_daily_mtm',
+    option_premium_source: optionPremiumSource,
+    premium_status: premiumStatusFor(optionPremiumSource, optionPremium),
+    option_bid: liveOptionRow ? roundNumber(optionalNumber(liveOptionRow.option_bid)) : null,
+    option_ask: liveOptionRow ? roundNumber(optionalNumber(liveOptionRow.option_ask)) : null,
+    option_mark_price: liveOptionRow ? roundNumber(optionalNumber(liveOptionRow.option_mark_price)) : null,
+    option_last_price: liveOptionRow ? roundNumber(optionalNumber(liveOptionRow.option_last_price)) : null,
+    option_warnings: optionWarnings,
     current_hedge_pct: currentHedge,
     target_hedge_pct: targetHedge,
     executed_delta_recommendation_pct: executedDeltaRecommendation,
+    execution_state: executionState,
+    today_action: todayAction,
+    ...(warning ? { stale_warning: warning } : {}),
     normal_counter: hysteresis.resultingNormalCounter,
     circuit_breaker_status: breaker.status,
     circuit_breaker_reasons: breaker.reasons,
     comments: [
       'Research-grade read-only snapshot; no orders placed.',
       hysteresis.hysteresisNote,
-      signalSource ? `Monitoring source: ${signalSource}.` : 'No monitoring signal source available for this asset.',
+      liveMetrics ? `Live market data source: ${path.relative(REPO_ROOT, assetConfig.liveMetricsPath)}.` : 'Live market data unavailable for snapshot date; using historical Daily MTM fallback.',
+      liveOptionRow ? `Live option discovery source: ${path.relative(REPO_ROOT, LIVE_OPTION_DISCOVERY_PATH)}.` : 'Live option discovery unavailable for snapshot date; using historical option fallback if present.',
+      monitoringSource ? `Monitoring source: ${monitoringSource}.` : 'No monitoring signal source available for this asset.',
       sources.length ? `Daily MTM source count: ${sources.length}.` : 'No Daily MTM source available.'
     ].join(' '),
     source_files: {
       daily_mtm: sources,
-      monitoring_signal: signalSource
+      live_metrics: liveMetrics ? path.relative(REPO_ROOT, assetConfig.liveMetricsPath) : null,
+      monitoring_signal: monitoringSource,
+      option_discovery: liveOptionRow ? path.relative(REPO_ROOT, LIVE_OPTION_DISCOVERY_PATH) : null
     }
   };
 }
@@ -333,12 +473,13 @@ function renderMarkdown(snapshot) {
   const rows = snapshot.assets.map(asset => [
     asset.asset,
     asset.data_as_of || '',
-    value(asset.spot_price),
+    formatPrice(asset.spot_price),
     asset.damage_state || '',
     asset.alert_state || '',
-    value(asset.current_hedge_pct),
-    value(asset.target_hedge_pct),
-    value(asset.executed_delta_recommendation_pct),
+    formatHedgePct(asset.current_hedge_pct),
+    formatHedgePct(asset.target_hedge_pct),
+    formatHedgePct(asset.executed_delta_recommendation_pct),
+    asset.execution_state || '',
     asset.circuit_breaker_status,
     asset.circuit_breaker_reasons.join('; ')
   ]);
@@ -354,8 +495,8 @@ function renderMarkdown(snapshot) {
     '',
     '## Asset Summary',
     '',
-    '| Asset | Data As Of | Spot | Damage | Alert | Current Hedge % | Target Hedge % | Delta Recommendation % | Circuit Breaker | Reasons |',
-    '| --- | --- | ---: | --- | --- | ---: | ---: | ---: | --- | --- |',
+    '| Asset | Data As Of | Spot | Damage | Alert | Current Hedge | Target Hedge | Delta | Execution State | Circuit Breaker | Reasons |',
+    '| --- | --- | ---: | --- | --- | ---: | ---: | ---: | --- | --- | --- |',
     ...rows.map(row => `| ${row.join(' | ')} |`),
     '',
     '## Details',
@@ -363,12 +504,62 @@ function renderMarkdown(snapshot) {
     ...snapshot.assets.flatMap(asset => [
       `### ${asset.asset}`,
       '',
-      `- Spot price: ${value(asset.spot_price)}.`,
-      `- 7d / 30d / 90d return: ${value(asset.return_7d_pct)}% / ${value(asset.return_30d_pct)}% / ${value(asset.return_90d_pct)}%.`,
-      `- 30d realized volatility: ${value(asset.realized_vol_30d_pct)}%.`,
-      `- EWMA: ${value(asset.EWMA_pct)}%.`,
-      `- Historical VaR: ${value(asset.historical_VaR_pct)}%.`,
-      `- Option expiry / OTM05 target strike / observed premium: ${asset.option_expiry || ''} / ${value(asset.OTM05_target_strike)} / ${value(asset.observed_option_premium)}.`,
+      ...staleWarningMarkdown(asset),
+      `Spot: ${formatPrice(asset.spot_price)}`,
+      '',
+      'Returns',
+      '',
+      `- 7d: ${formatPct(asset.return_7d_pct)}.`,
+      `- 30d: ${formatPct(asset.return_30d_pct)}.`,
+      `- 90d: ${formatPct(asset.return_90d_pct)}.`,
+      '',
+      'Risk',
+      '',
+      'Realized Vol:',
+      '',
+      `- ${formatPct(asset.realized_vol_daily_pct)} daily.`,
+      `- ${formatPct(asset.realized_vol_annualized_pct)} annualized.`,
+      '',
+      'EWMA:',
+      '',
+      `- ${formatPct(asset.ewma_daily_pct)} daily.`,
+      `- ${formatPct(asset.ewma_annualized_pct)} annualized.`,
+      '',
+      'Historical VaR (95%, 1D):',
+      '',
+      `- ${formatPct(asset.historical_VaR_pct)}.`,
+      '- Estimated one-day loss threshold derived from recent historical returns.',
+      '- Approximately 5% of observed days experienced losses worse than this level.',
+      '',
+      'Expected Tail Frequency:',
+      '',
+      `- ~1 day every ${value(asset.historical_var_expected_tail_days)} days.`,
+      '',
+      'Monitoring',
+      '',
+      `- damage_state: ${asset.damage_state || ''}.`,
+      `- alert_state: ${asset.alert_state || ''}.`,
+      '',
+      'Execution',
+      '',
+      `- execution_state: ${asset.execution_state || ''}.`,
+      `- current_hedge: ${formatHedgePct(asset.current_hedge_pct)}.`,
+      `- target_hedge: ${formatHedgePct(asset.target_hedge_pct)}.`,
+      `- delta: ${formatHedgePct(asset.executed_delta_recommendation_pct)}.`,
+      `- today_action: ${asset.today_action || ''}.`,
+      '',
+      'Position',
+      '',
+      `- Option expiry: ${asset.option_expiry || ''}.`,
+      `- Days to expiration (DTE): ${value(asset.days_to_expiration)}.`,
+      `- Selected option: ${asset.selected_option_instrument || ''}.`,
+      `- OTM05 target strike: ${formatPrice(asset.OTM05_target_strike)}.`,
+      `- Premium Status: ${asset.premium_status || ''}.`,
+      `- Observed premium: ${formatPremium(asset)}.`,
+      ...premiumNoteMarkdown(asset),
+      `- Premium source: ${asset.option_premium_source || ''}.`,
+      `- Option bid / ask / mark / last: ${formatPrice(asset.option_bid)} / ${formatPrice(asset.option_ask)} / ${formatPrice(asset.option_mark_price)} / ${formatPrice(asset.option_last_price)}.`,
+      ...optionWarningsMarkdown(asset),
       `- Normal counter: ${value(asset.normal_counter)}.`,
       `- Comments: ${asset.comments}`,
       ''
@@ -383,6 +574,65 @@ function renderMarkdown(snapshot) {
 
 function value(raw) {
   return raw === null || raw === undefined ? '' : String(raw);
+}
+
+function formatNumber(raw, decimals = 2) {
+  const number = optionalNumber(raw);
+  if (number === null) return '';
+  return number.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+}
+
+function formatPrice(raw) {
+  return optionalNumber(raw) === null ? 'N/A' : formatNumber(raw, 2);
+}
+
+function formatPremium(asset) {
+  const premium = optionalNumber(asset && asset.observed_option_premium);
+  if (premium === null) return 'N/A';
+  return `${formatNumber(premium, 2)} USD`;
+}
+
+function formatPct(raw) {
+  const number = optionalNumber(raw);
+  if (number === null) return 'N/A';
+  return `${formatNumber(number, 2)}%`;
+}
+
+function formatHedgePct(raw) {
+  const number = optionalNumber(raw);
+  if (number === null) return 'N/A';
+  return `${formatNumber(number, 0)}%`;
+}
+
+function staleWarningMarkdown(asset) {
+  if (!asset.stale_warning) return [];
+  return [
+    'WARNING:',
+    '',
+    `Metrics are based on data as of: ${asset.stale_warning.data_as_of}`,
+    '',
+    `Snapshot date: ${asset.stale_warning.snapshot_date}`,
+    '',
+    'Data may be stale.',
+    'Trade recommendations may be blocked by circuit breakers.',
+    ''
+  ];
+}
+
+function premiumNoteMarkdown(asset) {
+  const status = asset && asset.premium_status;
+  if (status === 'INDICATIVE_DERIBIT') {
+    return ['  (Indicative research price, not an executable Bybit quote.)'];
+  }
+  return [];
+}
+
+function optionWarningsMarkdown(asset) {
+  if (!Array.isArray(asset.option_warnings) || asset.option_warnings.length === 0) return [];
+  return asset.option_warnings.map(warning => `- Option warning: ${warning}`);
 }
 
 function ensureLiveFiles() {
@@ -424,6 +674,8 @@ function main() {
 
   const now = new Date();
   const snapshotDate = localDateString(now, args.timezone);
+  const liveMonitoringSignals = loadLiveMonitoringSignals(snapshotDate);
+  const liveOptionDiscovery = loadLiveOptionDiscovery(snapshotDate);
   const snapshot = {
     generated_at: now.toISOString(),
     snapshot_date: snapshotDate,
@@ -439,7 +691,7 @@ function main() {
       normal_exit_rule: 'close only after 2 consecutive normal days',
       read_only: true
     },
-    assets: ASSETS.map(asset => buildAssetSnapshot(asset, args, now, snapshotDate))
+    assets: ASSETS.map(asset => buildAssetSnapshot(asset, args, now, snapshotDate, liveMonitoringSignals, liveOptionDiscovery))
   };
 
   const outputs = writeSnapshot(snapshot);

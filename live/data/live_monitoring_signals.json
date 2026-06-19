@@ -1,0 +1,82 @@
+{
+  "generated_at": "2026-06-19T01:04:50.168Z",
+  "methodology_version": "v0.4b_live_price_proxy",
+  "thresholds": {
+    "drawdownPct": {
+      "watch": -20,
+      "stress": -40,
+      "crisis": -60
+    },
+    "ewmaVolPct": {
+      "watch": 4.25,
+      "stress": 6,
+      "crisis": 8
+    },
+    "historicalVaRLossPct": {
+      "watch": 6,
+      "stress": 10,
+      "crisis": 12
+    },
+    "dailyReturnPct": {
+      "watch": -2,
+      "stress": -5,
+      "crisis": -10
+    },
+    "underwaterDurationDays": {
+      "watch": 14,
+      "stress": 21
+    }
+  },
+  "rows": [
+    {
+      "asset": "BTC",
+      "data_as_of": "2026-06-18",
+      "damage_state": "stress",
+      "alert_state": "stress",
+      "monitoring_source": "live/data price history and metrics",
+      "methodology_version": "v0.4b_live_price_proxy",
+      "alert_reason": "drawdown_watch_plus_duration_plus_risk_signal",
+      "diagnostics": {
+        "drawdown_state": "watch",
+        "duration_state": "stress",
+        "var_state": "normal",
+        "ewma_state": "normal",
+        "tail_state": "watch",
+        "rolling_drawdown_pct": -23.289191,
+        "historical_var_loss_pct": 4.191523,
+        "ewma_vol_pct": 2.151793,
+        "daily_return_pct": -2.224373,
+        "underwater_duration_days": 39,
+        "recent_tail_loss_days": 1,
+        "observation_count": 119,
+        "history_start_date": "2026-02-20",
+        "history_end_date": "2026-06-18"
+      }
+    },
+    {
+      "asset": "ETH",
+      "data_as_of": "2026-06-18",
+      "damage_state": "stress",
+      "alert_state": "watch",
+      "monitoring_source": "live/data price history and metrics",
+      "methodology_version": "v0.4b_live_price_proxy",
+      "alert_reason": "damage_watch_context",
+      "diagnostics": {
+        "drawdown_state": "watch",
+        "duration_state": "stress",
+        "var_state": "normal",
+        "ewma_state": "normal",
+        "tail_state": "normal",
+        "rolling_drawdown_pct": -28.953509,
+        "historical_var_loss_pct": 5.454586,
+        "ewma_vol_pct": 3.121705,
+        "daily_return_pct": -1.847766,
+        "underwater_duration_days": 62,
+        "recent_tail_loss_days": 1,
+        "observation_count": 119,
+        "history_start_date": "2026-02-20",
+        "history_end_date": "2026-06-18"
+      }
+    }
+  ]
+}
