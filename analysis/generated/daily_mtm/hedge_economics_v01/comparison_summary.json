@@ -1,0 +1,168 @@
+{
+  "metadata": {
+    "generatedAt": "2026-06-19T10:11:13.654Z",
+    "classification": "research-grade only",
+    "methodology": "v03/v04 underlying-overlay with v01 realistic hedge economics",
+    "formula": "net_hedged_return = ccw_return - hedge_ratio * underlying_return - fees - slippage + funding_effect + basis_effect + collateral_effect",
+    "signalTiming": "The applied alert_state is the latest prior valid MTM alert_state, not the same-day signal. This matches v04 timing and avoids lookahead bias.",
+    "rebalancingConvention": "Fees and slippage are charged only when hedge_ratio changes. Equity drift while hedge_ratio is unchanged does not create a synthetic daily rebalance cost.",
+    "policies": [
+      {
+        "policyId": "stress30_crisis40",
+        "stressHedgePct": 30,
+        "crisisHedgePct": 40
+      },
+      {
+        "policyId": "stress25_crisis50",
+        "stressHedgePct": 25,
+        "crisisHedgePct": 50
+      }
+    ],
+    "economicScenarios": [
+      {
+        "scenarioId": "BASE",
+        "takerFee": 0.00055,
+        "slippage": 0.0002,
+        "fundingMode": "historical_or_zero",
+        "fundingProxyDaily": 0,
+        "basisDaily": 0,
+        "collateralEffectDaily": 0,
+        "leverage": 3
+      },
+      {
+        "scenarioId": "CONSERVATIVE",
+        "takerFee": 0.00055,
+        "slippage": 0.0005,
+        "fundingMode": "adverse_proxy",
+        "fundingProxyDaily": -0.0002,
+        "basisDaily": -0.0001,
+        "collateralEffectDaily": 0,
+        "leverage": 2
+      },
+      {
+        "scenarioId": "STRESS",
+        "takerFee": 0.00055,
+        "slippage": 0.001,
+        "fundingMode": "adverse_proxy",
+        "fundingProxyDaily": -0.0005,
+        "basisDaily": -0.0003,
+        "collateralEffectDaily": 0.00005,
+        "leverage": 1
+      }
+    ],
+    "funding": {
+      "historicalFundingUsed": true,
+      "fundingFetchError": null,
+      "fundingSource": "Bybit public /v5/market/funding/history",
+      "fundingSymbol": "BTCUSDT",
+      "fundingRows": 6322,
+      "fundingDateCount": 2108,
+      "fundingSignConvention": "For a short perpetual hedge, positive fundingRate is treated as income and negative fundingRate as cost."
+    },
+    "baseline": {
+      "validReturnDays": 1480,
+      "totalReturnPct": 51.442572,
+      "CAGRpct": 7.194406,
+      "maxDrawdownPct": -80.891376,
+      "maxUnderwaterDurationDays": 1173,
+      "avgUnderwaterDurationDays": 95.866667,
+      "pctTimeUnderwater": 97.162162,
+      "volatilityPct": 2.909341,
+      "historicalVaRPct": -4.180938,
+      "ewmaMaxPct": 7.713906
+    }
+  },
+  "rows": [
+    {
+      "seriesId": "UNHEDGED",
+      "policyId": null,
+      "economicScenarioId": null,
+      "validReturnDays": 1480,
+      "totalReturnPct": 51.442572,
+      "CAGRpct": 7.194406,
+      "maxDrawdownPct": -80.891376,
+      "maxUnderwaterDurationDays": 1173,
+      "volatilityPct": 2.909341,
+      "historicalVaRPct": -4.180938,
+      "ewmaMaxPct": 7.713906
+    },
+    {
+      "seriesId": "NET_HEDGED",
+      "policyId": "stress30_crisis40",
+      "economicScenarioId": "BASE",
+      "validReturnDays": 1480,
+      "totalReturnPct": 90.721344,
+      "CAGRpct": 11.413209,
+      "maxDrawdownPct": -74.481454,
+      "maxUnderwaterDurationDays": 891,
+      "volatilityPct": 2.636373,
+      "historicalVaRPct": -3.768169,
+      "ewmaMaxPct": 6.869553
+    },
+    {
+      "seriesId": "NET_HEDGED",
+      "policyId": "stress30_crisis40",
+      "economicScenarioId": "CONSERVATIVE",
+      "validReturnDays": 1480,
+      "totalReturnPct": 84.3173,
+      "CAGRpct": 10.778051,
+      "maxDrawdownPct": -75.122768,
+      "maxUnderwaterDurationDays": 892,
+      "volatilityPct": 2.637251,
+      "historicalVaRPct": -3.768169,
+      "ewmaMaxPct": 6.870893
+    },
+    {
+      "seriesId": "NET_HEDGED",
+      "policyId": "stress30_crisis40",
+      "economicScenarioId": "STRESS",
+      "validReturnDays": 1480,
+      "totalReturnPct": 75.832641,
+      "CAGRpct": 9.907611,
+      "maxDrawdownPct": -75.94699,
+      "maxUnderwaterDurationDays": 894,
+      "volatilityPct": 2.637601,
+      "historicalVaRPct": -3.768169,
+      "ewmaMaxPct": 6.873019
+    },
+    {
+      "seriesId": "NET_HEDGED",
+      "policyId": "stress25_crisis50",
+      "economicScenarioId": "BASE",
+      "validReturnDays": 1480,
+      "totalReturnPct": 80.603387,
+      "CAGRpct": 10.401236,
+      "maxDrawdownPct": -76.084319,
+      "maxUnderwaterDurationDays": 894,
+      "volatilityPct": 2.66343,
+      "historicalVaRPct": -3.798412,
+      "ewmaMaxPct": 6.89128
+    },
+    {
+      "seriesId": "NET_HEDGED",
+      "policyId": "stress25_crisis50",
+      "economicScenarioId": "CONSERVATIVE",
+      "validReturnDays": 1480,
+      "totalReturnPct": 75.332082,
+      "CAGRpct": 9.855175,
+      "maxDrawdownPct": -76.613368,
+      "maxUnderwaterDurationDays": 895,
+      "volatilityPct": 2.664243,
+      "historicalVaRPct": -3.799162,
+      "ewmaMaxPct": 6.89243
+    },
+    {
+      "seriesId": "NET_HEDGED",
+      "policyId": "stress25_crisis50",
+      "economicScenarioId": "STRESS",
+      "validReturnDays": 1480,
+      "totalReturnPct": 68.19317,
+      "CAGRpct": 9.093426,
+      "maxDrawdownPct": -77.306142,
+      "maxUnderwaterDurationDays": 911,
+      "volatilityPct": 2.664577,
+      "historicalVaRPct": -3.799725,
+      "ewmaMaxPct": 6.894255
+    }
+  ]
+}
