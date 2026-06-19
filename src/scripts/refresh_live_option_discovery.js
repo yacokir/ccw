@@ -27,6 +27,8 @@ const ASSETS = [
   }
 ];
 
+const DEBUG = process.argv.includes('--debug');
+
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
@@ -55,20 +57,31 @@ function fetchJson(url) {
 }
 
 async function fetchBybitOptionInstruments(baseCoin) {
-  const rows = [];
-  let cursor = '';
+  const bySymbol = new Map();
+  const requestSummaries = [];
   let serverTime = null;
-  do {
-    const url = `https://api.bybit.com/v5/market/instruments-info?category=option&baseCoin=${baseCoin}&limit=1000${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
-    const payload = await fetchJson(url);
-    if (serverTime === null) serverTime = optionalNumber(payload.time);
-    const result = payload.result || {};
-    if (Array.isArray(result.list)) rows.push(...result.list);
-    cursor = result.nextPageCursor || '';
-  } while (cursor);
+  const statuses = [null, 'Trading', 'PreLaunch'];
+
+  for (const status of statuses) {
+    let cursor = '';
+    do {
+      const url = `https://api.bybit.com/v5/market/instruments-info?category=option&baseCoin=${baseCoin}&limit=1000${status ? `&status=${status}` : ''}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
+      const payload = await fetchJson(url);
+      if (serverTime === null) serverTime = optionalNumber(payload.time);
+      const result = payload.result || {};
+      const list = Array.isArray(result.list) ? result.list : [];
+      requestSummaries.push({ status: status || 'default', count: list.length, nextPageCursor: result.nextPageCursor || '' });
+      for (const row of list) {
+        if (row.symbol) bySymbol.set(row.symbol, row);
+      }
+      cursor = result.nextPageCursor || '';
+    } while (cursor);
+  }
+
   return {
-    rows,
-    serverDate: serverTime === null ? null : new Date(serverTime).toISOString().slice(0, 10)
+    rows: [...bySymbol.values()],
+    serverDate: serverTime === null ? null : new Date(serverTime).toISOString().slice(0, 10),
+    requestSummaries
   };
 }
 
@@ -111,6 +124,35 @@ function dateFromMillis(value) {
   return new Date(number).toISOString().slice(0, 10);
 }
 
+const MONTHS = {
+  JAN: '01',
+  FEB: '02',
+  MAR: '03',
+  APR: '04',
+  MAY: '05',
+  JUN: '06',
+  JUL: '07',
+  AUG: '08',
+  SEP: '09',
+  OCT: '10',
+  NOV: '11',
+  DEC: '12'
+};
+
+function parseOptionSymbol(symbol) {
+  const match = String(symbol || '').match(/^([A-Z]+)-(\d{1,2})([A-Z]{3})(\d{2})-(\d+(?:\.\d+)?)-([CP])(?:-[A-Z]+)?$/);
+  if (!match) return {};
+  const day = match[2].padStart(2, '0');
+  const month = MONTHS[match[3]];
+  const year = `20${match[4]}`;
+  return {
+    baseCoin: match[1],
+    expiry: month ? `${year}-${month}-${day}` : null,
+    strike: optionalNumber(match[5]),
+    optionType: match[6] === 'C' ? 'Call' : 'Put'
+  };
+}
+
 function daysBetween(startDate, endDate) {
   const start = new Date(`${startDate}T00:00:00Z`);
   const end = new Date(`${endDate}T00:00:00Z`);
@@ -119,28 +161,40 @@ function daysBetween(startDate, endDate) {
 }
 
 function normalizeInstrument(row) {
+  const parsed = parseOptionSymbol(row.symbol);
+  const optionType = row.optionsType || row.optionType || row.option_type || parsed.optionType;
+  const deliveryTime = optionalNumber(row.deliveryTime, row.expirationTime, row.expiryTime);
   return {
     symbol: row.symbol,
     status: row.status,
-    baseCoin: row.baseCoin,
-    optionsType: row.optionsType,
-    deliveryTime: optionalNumber(row.deliveryTime),
-    expiry: dateFromMillis(row.deliveryTime),
-    strike: optionalNumber(row.strike)
+    baseCoin: row.baseCoin || parsed.baseCoin,
+    optionsType: optionType,
+    optionType,
+    deliveryTime,
+    expiry: dateFromMillis(deliveryTime) || parsed.expiry,
+    strike: optionalNumber(row.strike, row.strikePrice, parsed.strike)
   };
 }
 
 function isCallOption(row) {
   return String(row.optionsType || row.optionType || '').toLowerCase() === 'call'
-    || String(row.symbol || '').endsWith('-C');
+    || /-C(?:-[A-Z]+)?$/.test(String(row.symbol || ''));
 }
 
-function chooseInstrument(instruments, dataAsOf, targetStrikeRaw, serverDate) {
+function chooseInstrument(instruments, dataAsOf, targetStrikeRaw, serverDate, debugLabel) {
   const warnings = [];
-  const calls = instruments
-    .map(normalizeInstrument)
+  const normalized = instruments.map(normalizeInstrument);
+  const calls = normalized
     .filter(row => row.symbol && isCallOption(row) && row.expiry && row.strike !== null)
     .filter(row => !row.status || !['Settled', 'Delivering', 'Closed'].includes(row.status));
+
+  if (DEBUG && debugLabel) {
+    const expiries = [...new Set(calls.map(row => row.expiry))].sort();
+    console.log(`[debug] ${debugLabel}: normalized call count=${calls.length}`);
+    console.log(`[debug] ${debugLabel}: first 5 normalized calls=${JSON.stringify(calls.slice(0, 5), null, 2)}`);
+    console.log(`[debug] ${debugLabel}: available expiries=${expiries.join(', ') || 'none'}`);
+    console.log(`[debug] ${debugLabel}: target DTE window=${EXPIRY_WINDOW_MIN_DAYS}-${EXPIRY_WINDOW_MAX_DAYS}`);
+  }
 
   if (!calls.length) return { selected: null, warnings: ['No live call option instruments found in public Bybit instrument list.'] };
 
@@ -181,13 +235,17 @@ function chooseInstrument(instruments, dataAsOf, targetStrikeRaw, serverDate) {
     return rowDistance < bestDistance ? row : best;
   }, null);
 
-  return {
+  const result = {
     selected,
     warnings,
     selectionReferenceDate: referenceDate,
     daysToExpiration: selectedExpiryRow.dte,
     selectionMethod
   };
+  if (DEBUG && debugLabel) {
+    console.log(`[debug] ${debugLabel}: selected candidate=${JSON.stringify(result, null, 2)}`);
+  }
+  return result;
 }
 
 function premiumFromTicker(ticker) {
@@ -197,9 +255,9 @@ function premiumFromTicker(ticker) {
   const last = optionalNumber(ticker && ticker.lastPrice);
   const mid = bid !== null && ask !== null && ask >= bid ? (bid + ask) / 2 : null;
 
-  if (mid !== null) return { premium: roundNumber(mid), source: 'bid_ask_mid' };
-  if (mark !== null) return { premium: roundNumber(mark), source: 'mark_price' };
-  if (last !== null) return { premium: roundNumber(last), source: 'last_price' };
+  if (mid !== null) return { premium: roundNumber(mid), source: 'bybit_bid_ask_mid' };
+  if (mark !== null) return { premium: roundNumber(mark), source: 'bybit_mark_price' };
+  if (last !== null) return { premium: roundNumber(last), source: 'bybit_last_price' };
   return { premium: null, source: null };
 }
 
@@ -240,12 +298,17 @@ async function discoverAsset(asset) {
   if (!dataAsOf) warnings.push('Live metrics data_as_of unavailable.');
 
   const instruments = await fetchBybitOptionInstruments(asset.baseCoin);
+  if (DEBUG) {
+    console.log(`[debug] ${asset.asset}: Bybit request summaries=${JSON.stringify(instruments.requestSummaries)}`);
+    console.log(`[debug] ${asset.asset}: Bybit raw instrument count=${instruments.rows.length}`);
+    console.log(`[debug] ${asset.asset}: first 5 raw instruments=${JSON.stringify(instruments.rows.slice(0, 5), null, 2)}`);
+  }
   const targetStrikeRaw = underlyingPrice === null ? null : underlyingPrice * TARGET_MONEYNESS;
   let venue = 'Bybit';
   let source = 'bybit_public_option_instruments_and_ticker';
   let choice = targetStrikeRaw === null || !dataAsOf
     ? { selected: null, warnings: ['Cannot select option without underlying price and data_as_of.'] }
-    : chooseInstrument(instruments.rows, dataAsOf, targetStrikeRaw, instruments.serverDate);
+    : chooseInstrument(instruments.rows, dataAsOf, targetStrikeRaw, instruments.serverDate, `${asset.asset} Bybit`);
   warnings.push(...choice.warnings);
 
   let tickerResult = { endpoint: null, row: null };
@@ -268,7 +331,7 @@ async function discoverAsset(asset) {
   if (!choice.selected && targetStrikeRaw !== null && dataAsOf) {
     const deribit = await fetchDeribitInstruments(asset);
     deribitEndpoint = deribit.endpoint;
-    choice = chooseInstrument(deribit.rows, dataAsOf, targetStrikeRaw, instruments.serverDate);
+    choice = chooseInstrument(deribit.rows, dataAsOf, targetStrikeRaw, instruments.serverDate, `${asset.asset} Deribit`);
     if (choice.selected) {
       venue = 'Deribit';
       source = 'deribit_public_option_instruments_and_order_book';
