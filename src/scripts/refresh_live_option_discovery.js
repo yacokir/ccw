@@ -160,6 +160,11 @@ function daysBetween(startDate, endDate) {
   return Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
 }
 
+function isFriday(dateValue) {
+  const date = new Date(`${dateValue}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.getUTCDay() === 5;
+}
+
 function normalizeInstrument(row) {
   const parsed = parseOptionSymbol(row.symbol);
   const optionType = row.optionsType || row.optionType || row.option_type || parsed.optionType;
@@ -211,20 +216,23 @@ function chooseInstrument(instruments, dataAsOf, targetStrikeRaw, serverDate, de
   const expiries = [...new Set(eligible.map(row => row.expiry))].sort();
   const expiryRows = expiries.map(expiry => ({ expiry, dte: daysBetween(referenceDate, expiry) }))
     .filter(row => row.dte !== null && row.dte > 0);
-  const windowExpiries = expiryRows.filter(row => row.dte >= EXPIRY_WINDOW_MIN_DAYS && row.dte <= EXPIRY_WINDOW_MAX_DAYS);
+  const weeklyExpiryRows = expiryRows.filter(row => isFriday(row.expiry));
+  const windowExpiries = weeklyExpiryRows.filter(row => row.dte >= EXPIRY_WINDOW_MIN_DAYS && row.dte <= EXPIRY_WINDOW_MAX_DAYS);
   let selectedExpiryRow = null;
   let selectionMethod = 'weekly_window';
 
   if (windowExpiries.length) {
     selectedExpiryRow = windowExpiries[0];
   } else {
-    selectedExpiryRow = expiryRows[0] || null;
-    selectionMethod = 'fallback_nearest_later_expiry';
+    selectedExpiryRow = weeklyExpiryRows[0] || null;
+    selectionMethod = 'fallback_nearest_later_weekly_expiry';
     warnings.push(`No option expiry found inside the target ${EXPIRY_WINDOW_MIN_DAYS}-${EXPIRY_WINDOW_MAX_DAYS} day weekly window.`);
-    warnings.push('Used nearest later expiry as fallback.');
+    if (selectedExpiryRow) {
+      warnings.push('Used nearest later weekly Friday expiry as fallback.');
+    }
   }
 
-  if (!selectedExpiryRow) return { selected: null, warnings: [...warnings, 'No later option expiry found for selection.'] };
+  if (!selectedExpiryRow) return { selected: null, warnings: [...warnings, 'No later weekly Friday option expiry found for selection.'] };
 
   const selectedExpiry = selectedExpiryRow.expiry;
   const expiryCalls = eligible.filter(row => row.expiry === selectedExpiry);

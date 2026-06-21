@@ -28,7 +28,7 @@ node src\scripts\generate_live_research_snapshot.js --mode=daily --btcNormalCoun
 if errorlevel 1 goto fail
 echo.
 
-for /f %%i in ('powershell -NoProfile -Command "[System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), 'America/New_York').ToString('yyyy-MM-dd')"') do set SNAPSHOT_DATE=%%i
+for /f %%i in ('powershell -NoProfile -Command "[System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), 'Eastern Standard Time').ToString('yyyy-MM-dd')"') do set SNAPSHOT_DATE=%%i
 set SNAPSHOT_PATH=live\snapshots\%SNAPSHOT_DATE%_daily_monitoring_snapshot.md
 
 echo ========================================
