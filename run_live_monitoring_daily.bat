@@ -2,11 +2,10 @@
 setlocal enabledelayedexpansion
 
 echo ========================================
-echo CCW Live Research Snapshot Workflow - T0 Discovery
+echo CCW Live Active Monitoring - Daily
 echo ========================================
 echo Read-only research workflow. No orders are placed.
-echo This legacy helper is for T0 discovery only.
-echo For active positions use run_live_monitoring_daily.bat or run_live_monitoring_now.bat.
+echo Uses live\position_register.json. No option discovery is performed.
 echo.
 
 echo [1/4] Refresh live market data
@@ -19,27 +18,24 @@ node src\scripts\build_live_monitoring_signals.js
 if errorlevel 1 goto fail
 echo.
 
-echo [3/4] Refresh live option discovery
-node src\scripts\refresh_live_option_discovery.js
+echo [3/4] Refresh registered position monitoring
+node src\scripts\refresh_live_position_monitoring.js
 if errorlevel 1 goto fail
 echo.
 
-echo [4/4] Generate live research snapshot
-node src\scripts\generate_live_research_snapshot.js --mode=t0 --btcCurrentHedge=0 --ethCurrentHedge=0 --btcNormalCounter=0 --ethNormalCounter=0
+echo [4/4] Generate active daily monitoring snapshot
+node src\scripts\generate_live_research_snapshot.js --mode=daily --btcNormalCounter=0 --ethNormalCounter=0
 if errorlevel 1 goto fail
 echo.
 
 for /f %%i in ('powershell -NoProfile -Command "[System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), 'America/New_York').ToString('yyyy-MM-dd')"') do set SNAPSHOT_DATE=%%i
-set SNAPSHOT_PATH=live\snapshots\%SNAPSHOT_DATE%_t0_discovery_snapshot.md
+set SNAPSHOT_PATH=live\snapshots\%SNAPSHOT_DATE%_daily_monitoring_snapshot.md
 
 echo ========================================
-echo Workflow complete
+echo Daily monitoring complete
 echo ========================================
 echo Final snapshot:
 echo %SNAPSHOT_PATH%
-echo.
-echo Open the snapshot with:
-echo notepad %SNAPSHOT_PATH%
 exit /b 0
 
 :fail

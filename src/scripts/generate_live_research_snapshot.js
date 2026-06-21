@@ -16,6 +16,8 @@ const LIVE_DIR = path.join(REPO_ROOT, 'live');
 const SNAPSHOT_DIR = path.join(LIVE_DIR, 'snapshots');
 const LIVE_MONITORING_SIGNALS_PATH = path.join(LIVE_DIR, 'data', 'live_monitoring_signals.json');
 const LIVE_OPTION_DISCOVERY_PATH = path.join(LIVE_DIR, 'data', 'live_option_discovery.json');
+const POSITION_REGISTER_PATH = path.join(LIVE_DIR, 'position_register.json');
+const LIVE_POSITION_MONITORING_PATH = path.join(LIVE_DIR, 'data', 'live_position_monitoring.json');
 
 const DEFAULTS = {
   mode: 'daily',
@@ -96,8 +98,8 @@ function parseArgs(argv) {
 }
 
 function assertArgs(args) {
-  if (!['t0', 'daily'].includes(args.mode)) {
-    throw new Error(`Invalid --mode=${args.mode}. Expected --mode=t0 or --mode=daily.`);
+  if (!['t0', 'daily', 'manual'].includes(args.mode)) {
+    throw new Error(`Invalid --mode=${args.mode}. Expected --mode=t0, --mode=daily, or --mode=manual.`);
   }
   if (!/^\d{2}:\d{2}$/.test(args.decisionTime)) {
     throw new Error(`Invalid --decisionTime=${args.decisionTime}. Expected HH:MM.`);
@@ -126,6 +128,11 @@ function localDateString(date, timezone) {
 function decisionTimestamp(date, args) {
   const parts = datePartsInTimezone(date, args.timezone);
   return `${parts.year}-${parts.month}-${parts.day} ${args.decisionTime} ${args.timezone}`;
+}
+
+function localTimeCompact(date, timezone) {
+  const parts = datePartsInTimezone(date, timezone);
+  return `${parts.hour}${parts.minute}`;
 }
 
 function loadDailyRows(assetConfig) {
@@ -174,6 +181,29 @@ function loadLiveMonitoringSignals(snapshotDate) {
 function loadLiveOptionDiscovery(snapshotDate) {
   if (!fs.existsSync(LIVE_OPTION_DISCOVERY_PATH)) return new Map();
   const payload = readJson(LIVE_OPTION_DISCOVERY_PATH);
+  const rows = Array.isArray(payload.rows) ? payload.rows : [];
+  return new Map(rows
+    .filter(row => row.asset && row.data_as_of === snapshotDate)
+    .map(row => [row.asset, row]));
+}
+
+function loadActivePositionRegister() {
+  if (!fs.existsSync(POSITION_REGISTER_PATH)) {
+    return { positions: new Map(), source: null, missing: true };
+  }
+  const payload = readJson(POSITION_REGISTER_PATH);
+  const positions = Array.isArray(payload.positions) ? payload.positions : [];
+  const active = positions.filter(position => String(position.status || '').toUpperCase() === 'ACTIVE');
+  return {
+    positions: new Map(active.filter(position => position.asset).map(position => [position.asset, position])),
+    source: path.relative(REPO_ROOT, POSITION_REGISTER_PATH),
+    missing: false
+  };
+}
+
+function loadLivePositionMonitoring(snapshotDate) {
+  if (!fs.existsSync(LIVE_POSITION_MONITORING_PATH)) return new Map();
+  const payload = readJson(LIVE_POSITION_MONITORING_PATH);
   const rows = Array.isArray(payload.rows) ? payload.rows : [];
   return new Map(rows
     .filter(row => row.asset && row.data_as_of === snapshotDate)
@@ -276,6 +306,13 @@ function parseInstrument(instrumentName) {
   };
 }
 
+function daysBetween(startDate, endDate) {
+  const start = new Date(`${startDate}T00:00:00Z`);
+  const end = new Date(`${endDate}T00:00:00Z`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+  return Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+}
+
 function isStale(sourceDate, snapshotDate) {
   return !sourceDate || sourceDate !== snapshotDate;
 }
@@ -325,6 +362,8 @@ function circuitBreakers(fields) {
   if (optionalNumber(fields.ewma) === null) reasons.push('EWMA unavailable');
   if (optionalNumber(fields.historicalVaR) === null) reasons.push('Historical VaR unavailable');
   if (!fields.optionExpiry || optionalNumber(fields.optionStrike) === null) reasons.push('Option expiry or strike unavailable');
+  if (fields.monitoringMode && !fields.positionRow) reasons.push('Active Position Register entry unavailable');
+  if (fields.monitoringMode && fields.positionMonitoringStale) reasons.push('Registered position monitoring stale or unavailable');
   if (fields.marketDataAbnormal) reasons.push('Market data abnormal');
 
   return {
@@ -333,7 +372,22 @@ function circuitBreakers(fields) {
   };
 }
 
-function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoringSignals, liveOptionDiscovery) {
+function currentHedgeFromPosition(positionRow, fallback) {
+  const underlyingQty = optionalNumber(positionRow && positionRow.underlying_qty);
+  const hedgeQty = optionalNumber(positionRow && positionRow.hedge_qty);
+  if (underlyingQty === null || underlyingQty === 0 || hedgeQty === null) return fallback;
+  return roundNumber(Math.abs(hedgeQty) / Math.abs(underlyingQty) * 100);
+}
+
+function modeLabel(mode) {
+  if (mode === 't0') return 'T0_DISCOVERY';
+  if (mode === 'daily') return 'ACTIVE_MONITORING_DAILY';
+  if (mode === 'manual') return 'ACTIVE_MONITORING_MANUAL';
+  return mode;
+}
+
+function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoringSignals, liveOptionDiscovery, positionRegister, livePositionMonitoring) {
+  const monitoringMode = args.mode === 'daily' || args.mode === 'manual';
   const { rows, sources } = loadDailyRows(assetConfig);
   const { signals, source: signalSource } = loadSignals(assetConfig);
   const historicalRow = latestRowOnOrBefore(rows, snapshotDate);
@@ -354,21 +408,33 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoring
     ? path.relative(REPO_ROOT, LIVE_MONITORING_SIGNALS_PATH)
     : signalSource;
   const parsedInstrument = parseInstrument(historicalRow && historicalRow.instrument_name);
-  const optionExpiry = liveOptionRow ? liveOptionRow.selected_expiry : parsedInstrument.expiry;
-  const optionStrike = liveOptionRow ? optionalNumber(liveOptionRow.selected_strike) : parsedInstrument.strike;
-  const optionPremium = liveOptionRow
+  const positionRow = monitoringMode ? positionRegister.positions.get(assetConfig.asset) || null : null;
+  const positionMonitoringRow = monitoringMode ? livePositionMonitoring.get(assetConfig.asset) || null : null;
+  const selectedOptionRow = monitoringMode ? null : liveOptionRow;
+  const optionExpiry = positionRow ? positionRow.option_expiry : selectedOptionRow ? selectedOptionRow.selected_expiry : parsedInstrument.expiry;
+  const optionStrike = positionRow ? optionalNumber(positionRow.option_strike) : selectedOptionRow ? optionalNumber(selectedOptionRow.selected_strike) : parsedInstrument.strike;
+  const optionInstrument = positionRow ? positionRow.option_instrument : selectedOptionRow ? selectedOptionRow.selected_instrument : (historicalRow && historicalRow.instrument_name) || null;
+  const optionPremium = selectedOptionRow
     ? optionalNumber(liveOptionRow.observed_premium)
+    : positionMonitoringRow
+      ? optionalNumber(positionMonitoringRow.option_mark_price)
     : optionalNumber(historicalRow && historicalRow.option_price_proxy);
-  const optionPremiumSource = liveOptionRow ? liveOptionRow.premium_source : 'historical_option_price_proxy';
+  const optionPremiumSource = selectedOptionRow ? selectedOptionRow.premium_source : positionMonitoringRow ? 'bybit_registered_option_mark_price' : 'historical_option_price_proxy';
   const optionWarnings = [
-    ...(liveOptionRow && Array.isArray(liveOptionRow.warnings) ? liveOptionRow.warnings : []),
-    ...(!liveOptionRow && parsedInstrument.expiry ? ['Using historical option fields because live option discovery is unavailable for snapshot date.'] : [])
+    ...(selectedOptionRow && Array.isArray(selectedOptionRow.warnings) ? selectedOptionRow.warnings : []),
+    ...(positionMonitoringRow && Array.isArray(positionMonitoringRow.warnings) ? positionMonitoringRow.warnings : []),
+    ...(monitoringMode && !positionRow ? ['Active monitoring requires an ACTIVE entry in live/position_register.json.'] : []),
+    ...(monitoringMode && positionRow && positionMonitoringRow && positionMonitoringRow.option_instrument !== positionRow.option_instrument
+      ? [`Registered option instrument mismatch: register=${positionRow.option_instrument}; monitoring=${positionMonitoringRow.option_instrument}.`]
+      : []),
+    ...(!monitoringMode && !selectedOptionRow && parsedInstrument.expiry ? ['Using historical option fields because live option discovery is unavailable for snapshot date.'] : [])
   ];
   const stale = isStale(dailyRow && dailyRow.date, snapshotDate);
   const signalDate = signalRow ? (signalRow.data_as_of || signalRow.date) : null;
   const signalStale = Boolean(signalRow && signalDate !== snapshotDate);
   const spotPrice = optionalNumber(dailyRow && dailyRow.underlying_price);
-  const currentHedge = optionalNumber(args[assetConfig.currentHedgeArg]) ?? 0;
+  const cliCurrentHedge = optionalNumber(args[assetConfig.currentHedgeArg]) ?? 0;
+  const currentHedge = monitoringMode ? currentHedgeFromPosition(positionRow, cliCurrentHedge) : cliCurrentHedge;
   const normalCounter = optionalNumber(args[assetConfig.normalCounterArg]) ?? 0;
   const alertState = signalRow ? signalRow.alert_state : null;
   const damageState = signalRow ? signalRow.damage_state : null;
@@ -395,6 +461,9 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoring
     historicalVaR: historicalVarPct,
     optionExpiry,
     optionStrike,
+    monitoringMode,
+    positionRow,
+    positionMonitoringStale: monitoringMode && (!positionMonitoringRow || positionMonitoringRow.data_as_of !== snapshotDate),
     marketDataAbnormal: Boolean(dailyRow && dailyRow.notes && String(dailyRow.notes).includes('suspicious'))
   });
 
@@ -431,17 +500,28 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoring
     damage_state: damageState,
     alert_state: alertState,
     option_expiry: optionExpiry,
-    days_to_expiration: liveOptionRow ? optionalNumber(liveOptionRow.days_to_expiration) : null,
+    days_to_expiration: positionRow ? daysBetween(snapshotDate, optionExpiry) : selectedOptionRow ? optionalNumber(liveOptionRow.days_to_expiration) : null,
     OTM05_target_strike: optionStrike,
-    selected_option_instrument: liveOptionRow ? liveOptionRow.selected_instrument : (historicalRow && historicalRow.instrument_name) || null,
+    selected_option_instrument: optionInstrument,
+    position_register_source: positionRow ? positionRegister.source : null,
+    cycle_id: positionRow ? positionRow.cycle_id : null,
+    underlying_qty: positionRow ? optionalNumber(positionRow.underlying_qty) : null,
+    option_qty: positionRow ? optionalNumber(positionRow.option_qty) : null,
+    option_entry_premium: positionRow ? optionalNumber(positionRow.option_entry_premium) : null,
+    hedge_instrument: positionRow ? positionRow.hedge_instrument : null,
+    hedge_qty: positionRow ? optionalNumber(positionRow.hedge_qty) : null,
+    hedge_entry_price: positionRow ? optionalNumber(positionRow.hedge_entry_price) : null,
+    distance_to_strike_pct: spotPrice === null || optionStrike === null || spotPrice === 0 ? null : roundNumber((optionStrike / spotPrice - 1) * 100),
     observed_option_premium: roundNumber(optionPremium),
-    option_data_source: liveOptionRow ? path.relative(REPO_ROOT, LIVE_OPTION_DISCOVERY_PATH) : 'historical_daily_mtm',
+    option_data_source: positionMonitoringRow ? path.relative(REPO_ROOT, LIVE_POSITION_MONITORING_PATH) : selectedOptionRow ? path.relative(REPO_ROOT, LIVE_OPTION_DISCOVERY_PATH) : 'historical_daily_mtm',
     option_premium_source: optionPremiumSource,
     premium_status: premiumStatusFor(optionPremiumSource, optionPremium),
-    option_bid: liveOptionRow ? roundNumber(optionalNumber(liveOptionRow.option_bid)) : null,
-    option_ask: liveOptionRow ? roundNumber(optionalNumber(liveOptionRow.option_ask)) : null,
-    option_mark_price: liveOptionRow ? roundNumber(optionalNumber(liveOptionRow.option_mark_price)) : null,
-    option_last_price: liveOptionRow ? roundNumber(optionalNumber(liveOptionRow.option_last_price)) : null,
+    option_bid: positionMonitoringRow ? roundNumber(optionalNumber(positionMonitoringRow.option_bid)) : selectedOptionRow ? roundNumber(optionalNumber(liveOptionRow.option_bid)) : null,
+    option_ask: positionMonitoringRow ? roundNumber(optionalNumber(positionMonitoringRow.option_ask)) : selectedOptionRow ? roundNumber(optionalNumber(liveOptionRow.option_ask)) : null,
+    option_mark_price: positionMonitoringRow ? roundNumber(optionalNumber(positionMonitoringRow.option_mark_price)) : selectedOptionRow ? roundNumber(optionalNumber(liveOptionRow.option_mark_price)) : null,
+    option_last_price: positionMonitoringRow ? roundNumber(optionalNumber(positionMonitoringRow.option_last_price)) : selectedOptionRow ? roundNumber(optionalNumber(liveOptionRow.option_last_price)) : null,
+    option_greeks: positionMonitoringRow && positionMonitoringRow.greeks ? positionMonitoringRow.greeks : null,
+    option_mtm_pnl: positionMonitoringRow ? roundNumber(optionalNumber(positionMonitoringRow.option_mtm_pnl)) : null,
     option_warnings: optionWarnings,
     current_hedge_pct: currentHedge,
     target_hedge_pct: targetHedge,
@@ -456,7 +536,7 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoring
       'Research-grade read-only snapshot; no orders placed.',
       hysteresis.hysteresisNote,
       liveMetrics ? `Live market data source: ${path.relative(REPO_ROOT, assetConfig.liveMetricsPath)}.` : 'Live market data unavailable for snapshot date; using historical Daily MTM fallback.',
-      liveOptionRow ? `Live option discovery source: ${path.relative(REPO_ROOT, LIVE_OPTION_DISCOVERY_PATH)}.` : 'Live option discovery unavailable for snapshot date; using historical option fallback if present.',
+      monitoringMode ? `Active monitoring uses Position Register source: ${positionRegister.source || 'missing'}.` : selectedOptionRow ? `Live option discovery source: ${path.relative(REPO_ROOT, LIVE_OPTION_DISCOVERY_PATH)}.` : 'Live option discovery unavailable for snapshot date; using historical option fallback if present.',
       monitoringSource ? `Monitoring source: ${monitoringSource}.` : 'No monitoring signal source available for this asset.',
       sources.length ? `Daily MTM source count: ${sources.length}.` : 'No Daily MTM source available.'
     ].join(' '),
@@ -464,7 +544,9 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoring
       daily_mtm: sources,
       live_metrics: liveMetrics ? path.relative(REPO_ROOT, assetConfig.liveMetricsPath) : null,
       monitoring_signal: monitoringSource,
-      option_discovery: liveOptionRow ? path.relative(REPO_ROOT, LIVE_OPTION_DISCOVERY_PATH) : null
+      option_discovery: selectedOptionRow ? path.relative(REPO_ROOT, LIVE_OPTION_DISCOVERY_PATH) : null,
+      position_register: positionRow ? positionRegister.source : null,
+      position_monitoring: positionMonitoringRow ? path.relative(REPO_ROOT, LIVE_POSITION_MONITORING_PATH) : null
     }
   };
 }
@@ -550,15 +632,25 @@ function renderMarkdown(snapshot) {
       '',
       'Position',
       '',
+      `- Cycle ID: ${asset.cycle_id || ''}.`,
       `- Option expiry: ${asset.option_expiry || ''}.`,
       `- Days to expiration (DTE): ${value(asset.days_to_expiration)}.`,
       `- Selected option: ${asset.selected_option_instrument || ''}.`,
       `- OTM05 target strike: ${formatPrice(asset.OTM05_target_strike)}.`,
+      `- Distance to strike: ${formatPct(asset.distance_to_strike_pct)}.`,
+      `- Underlying qty: ${value(asset.underlying_qty)}.`,
+      `- Option qty: ${value(asset.option_qty)}.`,
+      `- Option entry premium: ${formatPrice(asset.option_entry_premium)}.`,
       `- Premium Status: ${asset.premium_status || ''}.`,
       `- Observed premium: ${formatPremium(asset)}.`,
       ...premiumNoteMarkdown(asset),
       `- Premium source: ${asset.option_premium_source || ''}.`,
       `- Option bid / ask / mark / last: ${formatPrice(asset.option_bid)} / ${formatPrice(asset.option_ask)} / ${formatPrice(asset.option_mark_price)} / ${formatPrice(asset.option_last_price)}.`,
+      `- Option MTM P&L: ${formatPrice(asset.option_mtm_pnl)}.`,
+      `- Greeks delta / gamma / vega / theta: ${formatGreek(asset.option_greeks, 'delta')} / ${formatGreek(asset.option_greeks, 'gamma')} / ${formatGreek(asset.option_greeks, 'vega')} / ${formatGreek(asset.option_greeks, 'theta')}.`,
+      `- Hedge instrument: ${asset.hedge_instrument || ''}.`,
+      `- Hedge qty: ${value(asset.hedge_qty)}.`,
+      `- Hedge entry price: ${formatPrice(asset.hedge_entry_price)}.`,
       ...optionWarningsMarkdown(asset),
       `- Normal counter: ${value(asset.normal_counter)}.`,
       `- Comments: ${asset.comments}`,
@@ -605,6 +697,12 @@ function formatHedgePct(raw) {
   const number = optionalNumber(raw);
   if (number === null) return 'N/A';
   return `${formatNumber(number, 0)}%`;
+}
+
+function formatGreek(greeks, key) {
+  if (!greeks) return 'N/A';
+  const number = optionalNumber(greeks[key]);
+  return number === null ? 'N/A' : formatNumber(number, 6);
 }
 
 function staleWarningMarkdown(asset) {
@@ -660,7 +758,10 @@ function ensureLiveFiles() {
 
 function writeSnapshot(snapshot) {
   ensureLiveFiles();
-  const baseName = `${snapshot.snapshot_date}_live_snapshot`;
+  const baseName = snapshot.output_basename;
+  if (!baseName) {
+    throw new Error('Missing output_basename; refusing to write ambiguous legacy live_snapshot output.');
+  }
   const jsonPath = path.join(SNAPSHOT_DIR, `${baseName}.json`);
   const mdPath = path.join(SNAPSHOT_DIR, `${baseName}.md`);
   fs.writeFileSync(jsonPath, `${JSON.stringify(snapshot, null, 2)}\n`);
@@ -674,12 +775,21 @@ function main() {
 
   const now = new Date();
   const snapshotDate = localDateString(now, args.timezone);
+  const generatedTime = localTimeCompact(now, args.timezone);
   const liveMonitoringSignals = loadLiveMonitoringSignals(snapshotDate);
   const liveOptionDiscovery = loadLiveOptionDiscovery(snapshotDate);
+  const positionRegister = loadActivePositionRegister();
+  const livePositionMonitoring = loadLivePositionMonitoring(snapshotDate);
+  if ((args.mode === 'daily' || args.mode === 'manual') && positionRegister.positions.size === 0) {
+    throw new Error('Active monitoring requires at least one ACTIVE Position Register entry in live/position_register.json.');
+  }
   const snapshot = {
     generated_at: now.toISOString(),
     snapshot_date: snapshotDate,
-    mode: args.mode,
+    generated_time: generatedTime,
+    output_basename: outputBasename(snapshotDate, args.mode, generatedTime),
+    mode: modeLabel(args.mode),
+    requested_mode: args.mode,
     venue: args.venue,
     decision_time: args.decisionTime,
     timezone: args.timezone,
@@ -691,7 +801,7 @@ function main() {
       normal_exit_rule: 'close only after 2 consecutive normal days',
       read_only: true
     },
-    assets: ASSETS.map(asset => buildAssetSnapshot(asset, args, now, snapshotDate, liveMonitoringSignals, liveOptionDiscovery))
+    assets: ASSETS.map(asset => buildAssetSnapshot(asset, args, now, snapshotDate, liveMonitoringSignals, liveOptionDiscovery, positionRegister, livePositionMonitoring))
   };
 
   const outputs = writeSnapshot(snapshot);
@@ -705,6 +815,13 @@ function main() {
   }
   console.log(`JSON: ${path.relative(REPO_ROOT, outputs.jsonPath)}`);
   console.log(`MD: ${path.relative(REPO_ROOT, outputs.mdPath)}`);
+}
+
+function outputBasename(snapshotDate, requestedMode, generatedTime) {
+  if (requestedMode === 't0') return `${snapshotDate}_t0_discovery_snapshot`;
+  if (requestedMode === 'daily') return `${snapshotDate}_daily_monitoring_snapshot`;
+  if (requestedMode === 'manual') return `${snapshotDate}_${generatedTime}_NY_manual_monitoring_snapshot`;
+  throw new Error(`No snapshot output naming rule for mode=${requestedMode}.`);
 }
 
 if (require.main === module) {

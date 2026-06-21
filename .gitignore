@@ -24,3 +24,6 @@ runs/*
 
 # temp scripts
 pirulo.js
+
+# Local live operational state
+live/position_register.json
