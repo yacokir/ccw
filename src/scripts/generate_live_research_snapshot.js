@@ -14,6 +14,12 @@ const {
 
 const LIVE_DIR = path.join(REPO_ROOT, 'live');
 const SNAPSHOT_DIR = path.join(LIVE_DIR, 'snapshots');
+const REPORTS_DIR = path.join(LIVE_DIR, 'reports');
+const ACTIVE_DAILY_REPORT_PATH = path.join(LIVE_DIR, 'ACTIVE_MONITORING_DAILY.md');
+const ACTIVE_DAILY_REPORT_HTML_PATH = path.join(REPORTS_DIR, 'ACTIVE_MONITORING_DAILY.html');
+const LIVE_POSITION_TIMELINE_PATH = path.join(LIVE_DIR, 'LIVE_POSITION_TIMELINE.md');
+const LIVE_POSITION_TIMELINE_HTML_PATH = path.join(REPORTS_DIR, 'LIVE_POSITION_TIMELINE.html');
+const LIVE_POSITION_TIMELINE_CSV_PATH = path.join(LIVE_DIR, 'LIVE_POSITION_TIMELINE.csv');
 const LIVE_MONITORING_SIGNALS_PATH = path.join(LIVE_DIR, 'data', 'live_monitoring_signals.json');
 const LIVE_OPTION_DISCOVERY_PATH = path.join(LIVE_DIR, 'data', 'live_option_discovery.json');
 const POSITION_REGISTER_PATH = path.join(LIVE_DIR, 'position_register.json');
@@ -193,11 +199,37 @@ function loadActivePositionRegister() {
   }
   const payload = readJson(POSITION_REGISTER_PATH);
   const positions = Array.isArray(payload.positions) ? payload.positions : [];
-  const active = positions.filter(position => String(position.status || '').toUpperCase() === 'ACTIVE');
+  const active = positions
+    .map(normalizePositionRegisterRow)
+    .filter(position => String(position.position_status || '').toUpperCase() === 'ACTIVE');
   return {
     positions: new Map(active.filter(position => position.asset).map(position => [position.asset, position])),
     source: path.relative(REPO_ROOT, POSITION_REGISTER_PATH),
     missing: false
+  };
+}
+
+function firstValue(...values) {
+  for (const value of values) {
+    if (value !== null && value !== undefined && value !== '') return value;
+  }
+  return null;
+}
+
+function normalizePositionRegisterRow(position) {
+  return {
+    ...position,
+    position_status: firstValue(position.position_status, position.status),
+    underlying_entry_price: optionalNumber(position.underlying_entry_price),
+    underlying_entry_timestamp: firstValue(position.underlying_entry_timestamp, position.opened_at),
+    short_call_symbol: firstValue(position.short_call_symbol, position.option_instrument),
+    short_call_qty: optionalNumber(position.short_call_qty, position.option_qty),
+    short_call_expiry: firstValue(position.short_call_expiry, position.option_expiry),
+    short_call_strike: optionalNumber(position.short_call_strike, position.option_strike),
+    short_call_entry_premium: optionalNumber(position.short_call_entry_premium, position.option_entry_premium),
+    short_call_entry_timestamp: firstValue(position.short_call_entry_timestamp, position.opened_at),
+    hedge_entry_timestamp: firstValue(position.hedge_entry_timestamp, position.opened_at),
+    accumulated_fees: optionalNumber(position.accumulated_fees)
   };
 }
 
@@ -311,6 +343,96 @@ function daysBetween(startDate, endDate) {
   const end = new Date(`${endDate}T00:00:00Z`);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
   return Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+}
+
+function sumIfComplete(...values) {
+  if (values.some(value => optionalNumber(value) === null)) return null;
+  return roundNumber(values.reduce((sum, value) => sum + optionalNumber(value), 0));
+}
+
+function accountingFields(positionRow, positionMonitoringRow, spotPrice, snapshotDate) {
+  const warnings = [];
+  const currentSpotPrice = optionalNumber(positionMonitoringRow && positionMonitoringRow.current_spot_price, spotPrice);
+  const underlyingQty = optionalNumber(positionRow && positionRow.underlying_qty);
+  const underlyingEntryPrice = optionalNumber(positionRow && positionRow.underlying_entry_price);
+  const shortCallQty = optionalNumber(positionRow && positionRow.short_call_qty, positionRow && positionRow.option_qty);
+  const shortCallEntryPremium = optionalNumber(positionRow && positionRow.short_call_entry_premium, positionRow && positionRow.option_entry_premium);
+  const optionMarkPrice = optionalNumber(positionMonitoringRow && positionMonitoringRow.option_mark_price);
+  const hedgeQty = optionalNumber(positionRow && positionRow.hedge_qty);
+  const hedgeEntryPrice = optionalNumber(positionRow && positionRow.hedge_entry_price);
+  const hedgeMarkPrice = optionalNumber(positionMonitoringRow && positionMonitoringRow.hedge_mark_price);
+  const accumulatedFees = optionalNumber(positionRow && positionRow.accumulated_fees) || 0;
+
+  const underlyingUnrealizedPnl = underlyingQty === null || underlyingEntryPrice === null || currentSpotPrice === null
+    ? null
+    : roundNumber((currentSpotPrice - underlyingEntryPrice) * underlyingQty);
+  const optionUnrealizedPnl = shortCallQty === null || shortCallEntryPremium === null || optionMarkPrice === null
+    ? null
+    : roundNumber((optionMarkPrice - shortCallEntryPremium) * shortCallQty);
+  const hedgeUnrealizedPnl = hedgeQty === null || hedgeEntryPrice === null || hedgeMarkPrice === null
+    ? null
+    : roundNumber((hedgeMarkPrice - hedgeEntryPrice) * hedgeQty);
+
+  if (underlyingEntryPrice === null) warnings.push('Underlying entry price unavailable; underlying and net PnL are not currently calculable.');
+  if (underlyingQty === null) warnings.push('Underlying quantity unavailable; underlying and net PnL are not currently calculable.');
+  if (positionRow && !positionRow.underlying_entry_timestamp) warnings.push('Underlying entry timestamp unavailable; days since entry may be unavailable.');
+  if (optionMarkPrice === null) warnings.push('Option mark price is unavailable; option unrealized PnL is N/A.');
+  if (hedgeQty !== null && hedgeQty !== 0 && hedgeMarkPrice === null) warnings.push('Hedge mark price is unavailable; hedge unrealized PnL is N/A.');
+
+  const entryTimestamp = firstValue(positionRow && positionRow.short_call_entry_timestamp, positionRow && positionRow.underlying_entry_timestamp);
+  const expiry = firstValue(positionRow && positionRow.short_call_expiry, positionRow && positionRow.option_expiry);
+
+  return {
+    current_spot_price: roundNumber(currentSpotPrice),
+    underlying_entry_price: underlyingEntryPrice,
+    underlying_entry_timestamp: positionRow ? positionRow.underlying_entry_timestamp || null : null,
+    underlying_unrealized_pnl: underlyingUnrealizedPnl,
+    premium_received: shortCallQty === null || shortCallEntryPremium === null ? null : roundNumber(Math.abs(shortCallQty) * shortCallEntryPremium),
+    short_call_symbol: positionRow ? firstValue(positionRow.short_call_symbol, positionRow.option_instrument) : null,
+    short_call_qty: shortCallQty,
+    short_call_expiry: expiry,
+    short_call_strike: optionalNumber(positionRow && positionRow.short_call_strike, positionRow && positionRow.option_strike),
+    short_call_entry_premium: shortCallEntryPremium,
+    short_call_entry_timestamp: positionRow ? positionRow.short_call_entry_timestamp || null : null,
+    option_mark_price: roundNumber(optionMarkPrice),
+    option_unrealized_pnl_approx: optionUnrealizedPnl,
+    hedge_entry_timestamp: positionRow ? positionRow.hedge_entry_timestamp || null : null,
+    hedge_mark_price: roundNumber(hedgeMarkPrice),
+    hedge_unrealized_pnl_approx: hedgeUnrealizedPnl,
+    accumulated_fees: optionalNumber(positionRow && positionRow.accumulated_fees),
+    net_unrealized_pnl_approx: sumIfComplete(underlyingUnrealizedPnl, optionUnrealizedPnl, hedgeUnrealizedPnl, -accumulatedFees),
+    days_since_entry: entryTimestamp ? daysBetween(String(entryTimestamp).slice(0, 10), snapshotDate) : null,
+    days_to_expiry: expiry ? daysBetween(snapshotDate, expiry) : null,
+    accounting_warnings: warnings
+  };
+}
+
+function normalizeWarningText(warning) {
+  const raw = String(warning || '').trim();
+  const lower = raw.toLowerCase();
+  if (!raw) return null;
+  if (lower.includes('underlying entry price') && (lower.includes('unavailable') || lower.includes('missing'))) {
+    return 'Underlying entry price unavailable; underlying and net PnL are not currently calculable.';
+  }
+  if (lower.includes('underlying quantity') && (lower.includes('unavailable') || lower.includes('missing'))) {
+    return 'Underlying quantity unavailable; underlying and net PnL are not currently calculable.';
+  }
+  if (lower.includes('underlying entry timestamp') && (lower.includes('unavailable') || lower.includes('missing'))) {
+    return 'Underlying entry timestamp unavailable; days since entry may be unavailable.';
+  }
+  return raw;
+}
+
+function dedupeWarnings(warnings) {
+  const normalized = [];
+  const seen = new Set();
+  for (const warning of warnings || []) {
+    const value = normalizeWarningText(warning);
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    normalized.push(value);
+  }
+  return normalized;
 }
 
 function isStale(sourceDate, snapshotDate) {
@@ -472,6 +594,7 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoring
   const executionState = executionStateFor(targetHedge);
   const todayAction = todayActionFor(assetConfig.asset, targetHedge, executedDeltaRecommendation);
   const warning = staleWarning(dailyRow && dailyRow.date, snapshotDate);
+  const accounting = accountingFields(positionRow, positionMonitoringRow, spotPrice, snapshotDate);
 
   return {
     asset: assetConfig.asset,
@@ -499,18 +622,33 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoring
     historical_var_interpretation: 'Estimated one-day loss threshold derived from recent historical returns. Approximately 5% of observed days experienced losses worse than this level.',
     damage_state: damageState,
     alert_state: alertState,
+    position_status: positionRow ? positionRow.position_status : null,
     option_expiry: optionExpiry,
-    days_to_expiration: positionRow ? daysBetween(snapshotDate, optionExpiry) : selectedOptionRow ? optionalNumber(liveOptionRow.days_to_expiration) : null,
+    days_to_expiration: accounting.days_to_expiry ?? (positionRow ? daysBetween(snapshotDate, optionExpiry) : selectedOptionRow ? optionalNumber(liveOptionRow.days_to_expiration) : null),
+    days_to_expiry: accounting.days_to_expiry,
+    days_since_entry: accounting.days_since_entry,
     OTM05_target_strike: optionStrike,
     selected_option_instrument: optionInstrument,
     position_register_source: positionRow ? positionRegister.source : null,
     cycle_id: positionRow ? positionRow.cycle_id : null,
     underlying_qty: positionRow ? optionalNumber(positionRow.underlying_qty) : null,
-    option_qty: positionRow ? optionalNumber(positionRow.option_qty) : null,
-    option_entry_premium: positionRow ? optionalNumber(positionRow.option_entry_premium) : null,
+    underlying_entry_price: accounting.underlying_entry_price,
+    underlying_entry_timestamp: accounting.underlying_entry_timestamp,
+    current_spot_price: accounting.current_spot_price,
+    underlying_unrealized_pnl: accounting.underlying_unrealized_pnl,
+    short_call_symbol: accounting.short_call_symbol,
+    short_call_qty: accounting.short_call_qty,
+    short_call_expiry: accounting.short_call_expiry,
+    short_call_strike: accounting.short_call_strike,
+    short_call_entry_premium: accounting.short_call_entry_premium,
+    short_call_entry_timestamp: accounting.short_call_entry_timestamp,
+    option_qty: accounting.short_call_qty,
+    option_entry_premium: accounting.short_call_entry_premium,
+    premium_received: accounting.premium_received,
     hedge_instrument: positionRow ? positionRow.hedge_instrument : null,
     hedge_qty: positionRow ? optionalNumber(positionRow.hedge_qty) : null,
     hedge_entry_price: positionRow ? optionalNumber(positionRow.hedge_entry_price) : null,
+    hedge_entry_timestamp: accounting.hedge_entry_timestamp,
     distance_to_strike_pct: spotPrice === null || optionStrike === null || spotPrice === 0 ? null : roundNumber((optionStrike / spotPrice - 1) * 100),
     observed_option_premium: roundNumber(optionPremium),
     option_data_source: positionMonitoringRow ? path.relative(REPO_ROOT, LIVE_POSITION_MONITORING_PATH) : selectedOptionRow ? path.relative(REPO_ROOT, LIVE_OPTION_DISCOVERY_PATH) : 'historical_daily_mtm',
@@ -518,11 +656,16 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoring
     premium_status: premiumStatusFor(optionPremiumSource, optionPremium),
     option_bid: positionMonitoringRow ? roundNumber(optionalNumber(positionMonitoringRow.option_bid)) : selectedOptionRow ? roundNumber(optionalNumber(liveOptionRow.option_bid)) : null,
     option_ask: positionMonitoringRow ? roundNumber(optionalNumber(positionMonitoringRow.option_ask)) : selectedOptionRow ? roundNumber(optionalNumber(liveOptionRow.option_ask)) : null,
-    option_mark_price: positionMonitoringRow ? roundNumber(optionalNumber(positionMonitoringRow.option_mark_price)) : selectedOptionRow ? roundNumber(optionalNumber(liveOptionRow.option_mark_price)) : null,
+    option_mark_price: accounting.option_mark_price,
     option_last_price: positionMonitoringRow ? roundNumber(optionalNumber(positionMonitoringRow.option_last_price)) : selectedOptionRow ? roundNumber(optionalNumber(liveOptionRow.option_last_price)) : null,
     option_greeks: positionMonitoringRow && positionMonitoringRow.greeks ? positionMonitoringRow.greeks : null,
-    option_mtm_pnl: positionMonitoringRow ? roundNumber(optionalNumber(positionMonitoringRow.option_mtm_pnl)) : null,
-    option_warnings: optionWarnings,
+    option_mtm_pnl: accounting.option_unrealized_pnl_approx,
+    option_unrealized_pnl_approx: accounting.option_unrealized_pnl_approx,
+    hedge_mark_price: accounting.hedge_mark_price,
+    hedge_unrealized_pnl_approx: accounting.hedge_unrealized_pnl_approx,
+    net_unrealized_pnl_approx: accounting.net_unrealized_pnl_approx,
+    accumulated_fees: accounting.accumulated_fees,
+    option_warnings: dedupeWarnings([...optionWarnings, ...accounting.accounting_warnings]),
     current_hedge_pct: currentHedge,
     target_hedge_pct: targetHedge,
     executed_delta_recommendation_pct: executedDeltaRecommendation,
@@ -639,8 +782,11 @@ function renderMarkdown(snapshot) {
       `- OTM05 target strike: ${formatPrice(asset.OTM05_target_strike)}.`,
       `- Distance to strike: ${formatPct(asset.distance_to_strike_pct)}.`,
       `- Underlying qty: ${value(asset.underlying_qty)}.`,
+      `- Underlying entry price: ${formatPrice(asset.underlying_entry_price)}.`,
+      `- Underlying unrealized PnL: ${formatPrice(asset.underlying_unrealized_pnl)}.`,
       `- Option qty: ${value(asset.option_qty)}.`,
       `- Option entry premium: ${formatPrice(asset.option_entry_premium)}.`,
+      `- Premium received: ${formatPrice(asset.premium_received)}.`,
       `- Premium Status: ${asset.premium_status || ''}.`,
       `- Observed premium: ${formatPremium(asset)}.`,
       ...premiumNoteMarkdown(asset),
@@ -651,6 +797,9 @@ function renderMarkdown(snapshot) {
       `- Hedge instrument: ${asset.hedge_instrument || ''}.`,
       `- Hedge qty: ${value(asset.hedge_qty)}.`,
       `- Hedge entry price: ${formatPrice(asset.hedge_entry_price)}.`,
+      `- Hedge mark price: ${formatPrice(asset.hedge_mark_price)}.`,
+      `- Hedge unrealized PnL approx: ${formatPrice(asset.hedge_unrealized_pnl_approx)}.`,
+      `- Net unrealized PnL approx: ${formatPrice(asset.net_unrealized_pnl_approx)}.`,
       ...optionWarningsMarkdown(asset),
       `- Normal counter: ${value(asset.normal_counter)}.`,
       `- Comments: ${asset.comments}`,
@@ -664,8 +813,454 @@ function renderMarkdown(snapshot) {
   ].join('\n');
 }
 
+function renderActiveMonitoringReport(snapshot) {
+  const rows = snapshot.assets.map(asset => [
+    asset.asset,
+    formatPrice(asset.spot_price),
+    asset.damage_state || 'N/A',
+    asset.alert_state || 'N/A',
+    formatPct(asset.ewma_daily_pct),
+    formatPct(asset.historical_VaR_pct),
+    formatHedgePct(asset.current_hedge_pct),
+    formatHedgePct(asset.target_hedge_pct),
+    asset.execution_state || 'N/A',
+    asset.today_action || 'N/A',
+    asset.circuit_breaker_status || 'N/A'
+  ]);
+
+  return [
+    '# Active Monitoring Daily',
+    '',
+    `- Generated at: ${snapshot.generated_at}.`,
+    `- Snapshot date: ${snapshot.snapshot_date}.`,
+    `- Decision timestamp: ${snapshot.decision_timestamp}.`,
+    `- Mode: ${snapshot.mode}.`,
+    '- Status: read-only research aid; no orders placed.',
+    '',
+    '## Operator Summary',
+    '',
+    '| Asset | Price | Damage | Alert | EWMA Daily | Historical VaR | Current Hedge | Target Hedge | Execution State | Today Action | Circuit Breaker |',
+    '| --- | ---: | --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- |',
+    ...rows.map(row => `| ${row.join(' | ')} |`),
+    '',
+    '## Asset Details',
+    '',
+    ...snapshot.assets.flatMap(asset => [
+      `### ${asset.asset}`,
+      '',
+      `- Asset: ${asset.asset}.`,
+      `- Current price: ${formatPrice(asset.spot_price)}.`,
+      `- Data as of: ${asset.data_as_of || 'N/A'}.`,
+      `- Market data source: ${asset.market_data_source || 'N/A'}.`,
+      `- Realized vol daily / annualized: ${formatPct(asset.realized_vol_daily_pct)} / ${formatPct(asset.realized_vol_annualized_pct)}.`,
+      `- EWMA daily / annualized: ${formatPct(asset.ewma_daily_pct)} / ${formatPct(asset.ewma_annualized_pct)}.`,
+      `- Historical VaR: ${formatPct(asset.historical_VaR_pct)}.`,
+      `- Damage state / alert state: ${asset.damage_state || 'N/A'} / ${asset.alert_state || 'N/A'}.`,
+      `- Current hedge / target hedge / delta: ${formatHedgePct(asset.current_hedge_pct)} / ${formatHedgePct(asset.target_hedge_pct)} / ${formatHedgePct(asset.executed_delta_recommendation_pct)}.`,
+      `- Execution state: ${asset.execution_state || 'N/A'}.`,
+      `- Today action: ${asset.today_action || 'N/A'}.`,
+      `- Selected option: ${asset.selected_option_instrument || 'N/A'}.`,
+      `- Expiry / DTE: ${asset.option_expiry || 'N/A'} / ${valueOrNa(asset.days_to_expiration)}.`,
+      `- Strike: ${formatPrice(asset.OTM05_target_strike)}.`,
+      `- Days since entry: ${valueOrNa(asset.days_since_entry)}.`,
+      `- Underlying entry / unrealized PnL: ${formatPrice(asset.underlying_entry_price)} / ${formatPrice(asset.underlying_unrealized_pnl)}.`,
+      `- Premium: ${formatPremium(asset)}.`,
+      `- Premium received: ${formatPrice(asset.premium_received)}.`,
+      `- Premium status / source: ${asset.premium_status || 'N/A'} / ${asset.option_premium_source || 'N/A'}.`,
+      `- Option bid / ask / mark / last: ${formatPrice(asset.option_bid)} / ${formatPrice(asset.option_ask)} / ${formatPrice(asset.option_mark_price)} / ${formatPrice(asset.option_last_price)}.`,
+      `- Option unrealized PnL approx: ${formatPrice(asset.option_unrealized_pnl_approx)}.`,
+      `- Hedge mark / unrealized PnL approx: ${formatPrice(asset.hedge_mark_price)} / ${formatPrice(asset.hedge_unrealized_pnl_approx)}.`,
+      `- Net unrealized PnL approx: ${formatPrice(asset.net_unrealized_pnl_approx)}.`,
+      `- Circuit breaker: ${asset.circuit_breaker_status || 'N/A'}.`,
+      ...reportWarningsMarkdown(asset),
+      ''
+    ]),
+    '## Snapshot Archive',
+    '',
+    `- Date folder: live/snapshots/${snapshot.snapshot_date}/.`,
+    `- Snapshot JSON: live/snapshots/${snapshot.output_basename}.json.`,
+    `- Snapshot markdown: live/snapshots/${snapshot.output_basename}.md.`,
+    '',
+    '## Notes',
+    '',
+    '- Missing fields are shown as N/A.',
+    '- This report consolidates existing live artifacts and snapshot fields only.',
+    '- Manual execution decisions remain outside this script.'
+  ].join('\n');
+}
+
+function warningsForAsset(asset) {
+  const warnings = [];
+  if (asset.stale_warning) {
+    warnings.push(`Stale data: source data_as_of=${asset.stale_warning.data_as_of}; snapshot_date=${asset.stale_warning.snapshot_date}.`);
+  }
+  if (Array.isArray(asset.option_warnings)) warnings.push(...asset.option_warnings);
+  if (Array.isArray(asset.circuit_breaker_reasons)) {
+    warnings.push(...asset.circuit_breaker_reasons.map(reason => `Circuit breaker reason: ${reason}`));
+  }
+  return dedupeWarnings(warnings);
+}
+
+function renderActiveAssetCard(asset) {
+  const warnings = warningsForAsset(asset);
+  return `<section class="card">
+  <h2>${escapeHtml(asset.asset)} <span class="pill ${stateClass(asset.alert_state)}">${escapeHtml(asset.alert_state || 'N/A')}</span></h2>
+  <div class="card-body">
+    <div class="subgrid">
+      <div class="block">
+        <h3>Market</h3>
+        ${htmlMetric('Current price', formatPrice(asset.spot_price))}
+        ${htmlMetric('Regime', asset.alert_state || 'N/A', stateClass(asset.alert_state))}
+        ${htmlMetric('Today action', asset.today_action || 'N/A')}
+        ${htmlMetric('Execution state', asset.execution_state || 'N/A', stateClass(asset.execution_state))}
+      </div>
+      <div class="block">
+        <h3>Hedge</h3>
+        ${htmlMetric('Target hedge', formatHedgePct(asset.target_hedge_pct))}
+        ${htmlMetric('Current hedge', formatHedgePct(asset.current_hedge_pct))}
+        ${htmlMetric('Delta', formatHedgePct(asset.executed_delta_recommendation_pct))}
+        ${htmlMetric('Circuit breaker', asset.circuit_breaker_status || 'N/A', stateClass(asset.circuit_breaker_status))}
+      </div>
+      <div class="block">
+        <h3>Position</h3>
+        ${htmlMetric('Days since entry', valueOrNa(asset.days_since_entry))}
+        ${htmlMetric('Days to expiry', valueOrNa(asset.days_to_expiration))}
+        ${htmlMetric('Cycle ID', asset.cycle_id || 'N/A')}
+        ${htmlMetric('Position status', asset.position_status || 'N/A')}
+      </div>
+      <div class="block">
+        <h3>Underlying</h3>
+        ${htmlMetric('Quantity', valueOrNa(asset.underlying_qty))}
+        ${htmlMetric('Entry price', formatPrice(asset.underlying_entry_price))}
+        ${htmlMetric('Unrealized PnL', formatPrice(asset.underlying_unrealized_pnl), pnlClass(asset.underlying_unrealized_pnl))}
+      </div>
+      <div class="block">
+        <h3>Short Call</h3>
+        ${htmlMetric('Symbol', asset.short_call_symbol || asset.selected_option_instrument || 'N/A')}
+        ${htmlMetric('Expiry', asset.short_call_expiry || asset.option_expiry || 'N/A')}
+        ${htmlMetric('Strike', formatPrice(asset.short_call_strike || asset.OTM05_target_strike))}
+        ${htmlMetric('Premium received', formatPrice(asset.premium_received))}
+        ${htmlMetric('Mark price', formatPrice(asset.option_mark_price))}
+        ${htmlMetric('Option PnL approx', formatPrice(asset.option_unrealized_pnl_approx), pnlClass(asset.option_unrealized_pnl_approx))}
+      </div>
+      <div class="block">
+        <h3>Warnings</h3>
+        ${htmlWarnings(warnings)}
+      </div>
+    </div>
+  </div>
+</section>`;
+}
+
+function renderActiveMonitoringHtml(snapshot) {
+  const warnings = snapshot.assets.flatMap(warningsForAsset);
+  const staleCount = snapshot.assets.filter(asset => asset.stale_warning).length;
+  const summaryItems = snapshot.assets.map(asset => `<div class="block">
+    <h3>${escapeHtml(asset.asset)}</h3>
+    ${htmlMetric('Regime', asset.alert_state || 'N/A', stateClass(asset.alert_state))}
+    ${htmlMetric('Hedge target', formatHedgePct(asset.target_hedge_pct))}
+    ${htmlMetric('Status', asset.circuit_breaker_status || 'N/A', stateClass(asset.circuit_breaker_status))}
+  </div>`).join('');
+
+  const body = [
+    '<div class="summary-bar">',
+    `<div class="block"><h3>Snapshot</h3>${htmlMetric('Date', snapshot.snapshot_date)}${htmlMetric('Decision', snapshot.decision_timestamp)}</div>`,
+    `<div class="block"><h3>Freshness</h3>${htmlMetric('Stale assets', staleCount, staleCount ? 'warn' : 'pos')}${htmlMetric('Mode', snapshot.mode)}</div>`,
+    `<div class="block"><h3>Warnings</h3>${htmlMetric('Count', warnings.length, warnings.length ? 'warn' : 'pos')}${htmlMetric('Read only', 'No orders placed')}</div>`,
+    `<div class="block"><h3>Venue</h3>${htmlMetric('Venue', snapshot.venue)}${htmlMetric('Timezone', snapshot.timezone)}</div>`,
+    '</div>',
+    '<div class="grid">',
+    ...snapshot.assets.map(renderActiveAssetCard),
+    '</div>',
+    '<section class="section"><h2>Summary Bar</h2><div class="section-body summary-bar">',
+    summaryItems,
+    '</div></section>'
+  ].join('\n');
+
+  return htmlShell('Active Monitoring Daily', `${snapshot.snapshot_date} | ${snapshot.decision_timestamp}`, body);
+}
+
+function reportWarningsMarkdown(asset) {
+  const warnings = [];
+  if (asset.stale_warning) {
+    warnings.push(`Stale data: source data_as_of=${asset.stale_warning.data_as_of}; snapshot_date=${asset.stale_warning.snapshot_date}.`);
+  }
+  if (Array.isArray(asset.option_warnings)) warnings.push(...asset.option_warnings);
+  if (Array.isArray(asset.circuit_breaker_reasons)) {
+    warnings.push(...asset.circuit_breaker_reasons.map(reason => `Circuit breaker reason: ${reason}`));
+  }
+  const uniqueWarnings = dedupeWarnings(warnings);
+  if (!uniqueWarnings.length) return ['- Warnings: N/A.'];
+  return uniqueWarnings.map(warning => `- Warning: ${warning}`);
+}
+
+function escapeHtml(raw) {
+  return String(raw === null || raw === undefined || raw === '' ? 'N/A' : raw)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function pnlClass(raw) {
+  const number = optionalNumber(raw);
+  if (number === null) return 'na';
+  if (number > 0) return 'pos';
+  if (number < 0) return 'neg';
+  return 'flat';
+}
+
+function stateClass(raw) {
+  const value = String(raw || '').toLowerCase();
+  if (value.includes('crisis')) return 'state-crisis';
+  if (value.includes('stress')) return 'state-stress';
+  if (value.includes('watch')) return 'state-watch';
+  if (value.includes('normal')) return 'state-normal';
+  if (value.includes('ok')) return 'state-normal';
+  if (value.includes('no_trade')) return 'state-watch';
+  return 'state-neutral';
+}
+
+function htmlValue(raw, className = '') {
+  return `<span class="${className}">${escapeHtml(raw)}</span>`;
+}
+
+function htmlMetric(label, valueText, className = '') {
+  return `<div class="metric"><span>${escapeHtml(label)}</span><b class="${className}">${escapeHtml(valueText)}</b></div>`;
+}
+
+function htmlWarnings(warnings) {
+  if (!warnings.length) return '<div class="warning-list muted">N/A</div>';
+  return `<div class="badge">WARN ${warnings.length}</div><ul class="warning-list">${warnings.map(warning => `<li>${escapeHtml(warning)}</li>`).join('')}</ul>`;
+}
+
+function htmlShell(title, subtitle, body) {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${escapeHtml(title)}</title>
+<style>
+:root {
+  --bg: #f4f6f8;
+  --panel: #ffffff;
+  --panel2: #f8fafc;
+  --grid: #c9d2dc;
+  --text: #111827;
+  --muted: #5c6670;
+  --accent: #1f4e79;
+  --green: #087a2f;
+  --red: #b00020;
+  --amber: #9a5a00;
+  --orange: #b85c00;
+  --blue: #1f5f99;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Consolas, "Lucida Console", Monaco, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.32;
+}
+.terminal {
+  padding: 12px;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--grid);
+  border-left: 5px solid var(--accent);
+  background: #ffffff;
+  padding: 9px 10px;
+  margin-bottom: 10px;
+}
+h1 {
+  margin: 0;
+  color: #111827;
+  font-size: 16px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+.subtitle { color: var(--muted); margin-top: 2px; }
+.stamp { text-align: right; color: var(--muted); white-space: nowrap; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.card, .section {
+  border: 1px solid var(--grid);
+  background: var(--panel);
+}
+.card h2, .section h2 {
+  margin: 0;
+  padding: 7px 9px;
+  color: #111827;
+  font-size: 13px;
+  background: #e9edf2;
+  border-bottom: 1px solid var(--grid);
+}
+.card-body { padding: 8px; display: grid; gap: 8px; }
+.subgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.block { border: 1px solid var(--grid); background: var(--panel2); padding: 7px; }
+.block h3 {
+  margin: 0 0 5px 0;
+  color: var(--accent);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.metric {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px dotted #d5dce4;
+  padding: 2px 0;
+}
+.metric span { color: var(--muted); }
+.metric b { color: var(--text); font-weight: 600; text-align: right; }
+.summary-bar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 10px 0; }
+.pill {
+  display: inline-block;
+  border: 1px solid var(--grid);
+  padding: 2px 6px;
+  background: #eef3f8;
+  color: var(--text);
+}
+.badge {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 2px 6px;
+  border: 1px solid #d19a2e;
+  background: #fff5d6;
+  color: var(--amber);
+  font-weight: 700;
+}
+.pos { color: var(--green) !important; }
+.neg { color: var(--red) !important; }
+.flat { color: var(--text) !important; }
+.na, .muted { color: var(--muted) !important; }
+.warn, .state-watch { color: var(--amber) !important; }
+.state-stress { color: var(--orange) !important; }
+.state-crisis { color: var(--red) !important; }
+.state-normal { color: var(--green) !important; }
+.state-neutral { color: var(--text) !important; }
+.warning-list { margin: 0; padding-left: 18px; color: var(--amber); }
+.warning-list li { margin: 2px 0; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td {
+  border-bottom: 1px solid #d8dee6;
+  padding: 5px 6px;
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  color: #111827;
+  background: #e9edf2;
+  border-bottom: 1px solid var(--accent);
+  text-transform: uppercase;
+  font-size: 11px;
+}
+tr:nth-child(even) td { background: #f8fafc; }
+.num { text-align: right; white-space: nowrap; }
+.table-wrap { overflow: auto; max-height: 75vh; }
+.section { margin-top: 10px; }
+.section-body { padding: 8px; }
+@media (max-width: 900px) {
+  .grid, .subgrid, .summary-bar { grid-template-columns: 1fr; }
+  .stamp { text-align: left; }
+  .topbar { align-items: flex-start; flex-direction: column; }
+}
+@page {
+  size: A4 landscape;
+  margin: 8mm;
+}
+@media print {
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body {
+    background: #fff;
+    color: #111;
+    font-size: 8.5px;
+    line-height: 1.18;
+  }
+  .terminal { padding: 0; }
+  .topbar {
+    border: 1px solid #888;
+    border-left: 4px solid var(--accent);
+    margin-bottom: 4px;
+    padding: 4px 6px;
+  }
+  h1 { font-size: 12px; }
+  .subtitle, .stamp, .metric span, .muted, .na { color: #555 !important; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+  .subgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+  .summary-bar { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 4px 0; }
+  .topbar, .card, .section, .block {
+    border-color: #999;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .card h2, .section h2, th {
+    border-color: #777;
+  }
+  .card h2, .section h2 {
+    padding: 3px 5px;
+    font-size: 10px;
+  }
+  .card-body, .section-body, .block {
+    padding: 4px;
+  }
+  .block h3 {
+    color: #111;
+    font-size: 8.5px;
+    margin-bottom: 2px;
+  }
+  .metric { padding: 1px 0; gap: 4px; }
+  .pill, .badge {
+    background: #fff7df;
+    border-color: #9a6a00;
+    color: #6f4b00;
+    padding: 1px 4px;
+  }
+  table { font-size: 7.5px; }
+  th, td {
+    padding: 2px 3px;
+    border-color: #ccc;
+  }
+  tr:nth-child(even) td { background: #f5f7fa; }
+  .pos, .state-normal { color: #087a2f !important; }
+  .neg, .state-crisis { color: #b00020 !important; }
+  .warn, .state-watch, .state-stress { color: #8a4b00 !important; }
+  th { position: static; }
+  .table-wrap { max-height: none; overflow: visible; }
+}
+</style>
+</head>
+<body>
+<main class="terminal">
+<div class="topbar">
+  <div><h1>${escapeHtml(title)}</h1><div class="subtitle">${escapeHtml(subtitle)}</div></div>
+  <div class="stamp">Generated locally<br>Offline static HTML</div>
+</div>
+${body}
+</main>
+</body>
+</html>`;
+}
+
 function value(raw) {
   return raw === null || raw === undefined ? '' : String(raw);
+}
+
+function valueOrNa(raw) {
+  return raw === null || raw === undefined || raw === '' ? 'N/A' : String(raw);
 }
 
 function formatNumber(raw, decimals = 2) {
@@ -733,8 +1328,343 @@ function optionWarningsMarkdown(asset) {
   return asset.option_warnings.map(warning => `- Option warning: ${warning}`);
 }
 
+function listJsonFiles(dir) {
+  if (!fs.existsSync(dir)) return [];
+  const files = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const entryPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...listJsonFiles(entryPath));
+    } else if (entry.isFile() && entry.name.endsWith('.json')) {
+      files.push(entryPath);
+    }
+  }
+  return files;
+}
+
+function loadArchivedSnapshots() {
+  const snapshotsByDate = new Map();
+  for (const filePath of listJsonFiles(SNAPSHOT_DIR)) {
+    let payload = null;
+    try {
+      payload = readJson(filePath);
+    } catch (error) {
+      continue;
+    }
+    if (!payload || !Array.isArray(payload.assets) || !payload.snapshot_date) continue;
+    const existing = snapshotsByDate.get(payload.snapshot_date);
+    const isDaily = String(payload.requested_mode || '').toLowerCase() === 'daily';
+    const existingIsDaily = existing && String(existing.snapshot.requested_mode || '').toLowerCase() === 'daily';
+    const generatedAt = new Date(payload.generated_at || 0).getTime();
+    const existingGeneratedAt = existing ? new Date(existing.snapshot.generated_at || 0).getTime() : -Infinity;
+    if (!existing || (isDaily && !existingIsDaily) || (isDaily === existingIsDaily && generatedAt >= existingGeneratedAt)) {
+      snapshotsByDate.set(payload.snapshot_date, {
+        snapshot: payload,
+        source: path.relative(REPO_ROOT, filePath)
+      });
+    }
+  }
+  return [...snapshotsByDate.values()].sort((a, b) => a.snapshot.snapshot_date.localeCompare(b.snapshot.snapshot_date));
+}
+
+function timelineWarnings(asset) {
+  const warnings = [];
+  if (asset.stale_warning) {
+    warnings.push(`Stale data: source=${asset.stale_warning.data_as_of}, snapshot=${asset.stale_warning.snapshot_date}`);
+  }
+  if (Array.isArray(asset.option_warnings)) warnings.push(...asset.option_warnings);
+  if (Array.isArray(asset.circuit_breaker_reasons)) {
+    warnings.push(...asset.circuit_breaker_reasons.map(reason => `Circuit breaker: ${reason}`));
+  }
+  return dedupeWarnings(warnings);
+}
+
+function tableSafe(value) {
+  const raw = value === null || value === undefined || value === '' ? 'N/A' : String(value);
+  return raw.replace(/\|/g, '/').replace(/\r?\n/g, ' ');
+}
+
+function regimeHistory(rows, asset) {
+  return rows
+    .filter(row => row.asset === asset)
+    .map(row => `${row.date}: ${row.regime}`)
+    .join('; ') || 'N/A';
+}
+
+function hedgeTargetChanges(rows) {
+  const changes = [];
+  for (const asset of ASSETS.map(config => config.asset)) {
+    let prior = null;
+    for (const row of rows.filter(item => item.asset === asset)) {
+      if (prior !== null && row.target_hedge_pct !== prior) {
+        changes.push(`${row.date} ${asset}: ${formatHedgePct(prior)} -> ${formatHedgePct(row.target_hedge_pct)}`);
+      }
+      prior = row.target_hedge_pct;
+    }
+  }
+  return changes.length ? changes.join('; ') : 'N/A';
+}
+
+function staleFallbackDates(rows) {
+  return [...new Set(rows
+    .filter(row => row.warnings.some(warning => warning.toLowerCase().includes('stale') || warning.toLowerCase().includes('fallback')))
+    .map(row => row.date))]
+    .sort();
+}
+
+function staleFallbackSummaryMarkdown(rows) {
+  const dates = staleFallbackDates(rows);
+  if (!dates.length) return ['- No stale/fallback days detected.'];
+  return [
+    '- Stale/fallback days:',
+    ...dates.map(date => `  - ${date}`)
+  ];
+}
+
+function staleFallbackSummaryHtml(rows) {
+  const dates = staleFallbackDates(rows);
+  if (!dates.length) return '<div class="pos">No stale/fallback days detected</div>';
+  return `<div class="warn">Stale/fallback days:</div><ul class="warning-list">${dates.map(date => `<li>${escapeHtml(date)}</li>`).join('')}</ul>`;
+}
+
+function buildTimelineRows(archives) {
+  const rows = [];
+  for (const archive of archives) {
+    for (const asset of archive.snapshot.assets) {
+      rows.push({
+        date: archive.snapshot.snapshot_date,
+        asset: asset.asset,
+        current_price: optionalNumber(asset.current_spot_price, asset.spot_price),
+        regime: asset.alert_state || asset.damage_state || null,
+        target_hedge_pct: optionalNumber(asset.target_hedge_pct),
+        current_hedge_pct: optionalNumber(asset.current_hedge_pct),
+        today_action: asset.today_action || null,
+        execution_state: asset.execution_state || null,
+        option_expiry: asset.short_call_expiry || asset.option_expiry || null,
+        dte: optionalNumber(asset.days_to_expiry, asset.days_to_expiration),
+        strike: optionalNumber(asset.short_call_strike, asset.OTM05_target_strike),
+        premium_status: asset.premium_status || null,
+        premium_source: asset.option_premium_source || null,
+        underlying_unrealized_pnl: optionalNumber(asset.underlying_unrealized_pnl),
+        option_unrealized_pnl_approx: optionalNumber(asset.option_unrealized_pnl_approx, asset.option_mtm_pnl),
+        net_unrealized_pnl_approx: optionalNumber(asset.net_unrealized_pnl_approx),
+        warnings: timelineWarnings(asset),
+        source: archive.source
+      });
+    }
+  }
+  return rows.sort((a, b) => `${a.date}:${a.asset}`.localeCompare(`${b.date}:${b.asset}`));
+}
+
+function markdownTable(headers, rows) {
+  return [
+    `| ${headers.join(' | ')} |`,
+    `| ${headers.map(() => '---').join(' | ')} |`,
+    ...rows.map(row => `| ${row.map(tableSafe).join(' | ')} |`)
+  ];
+}
+
+function renderTimelineAssetTable(rows, asset) {
+  const assetRows = rows.filter(row => row.asset === asset);
+  if (!assetRows.length) return [`### ${asset}`, '', 'No archived rows.', ''];
+  return [
+    `### ${asset}`,
+    '',
+    ...markdownTable(
+      ['Date', 'Price', 'Regime', 'Target', 'Current', 'Action', 'Exec', 'DTE', 'Strike', 'Option PnL', 'Net PnL', 'Warnings'],
+      assetRows.map(row => [
+        row.date,
+        formatPrice(row.current_price),
+        row.regime || 'N/A',
+        formatHedgePct(row.target_hedge_pct),
+        formatHedgePct(row.current_hedge_pct),
+        row.today_action || 'N/A',
+        row.execution_state || 'N/A',
+        valueOrNa(row.dte),
+        formatPrice(row.strike),
+        formatPrice(row.option_unrealized_pnl_approx),
+        formatPrice(row.net_unrealized_pnl_approx),
+        row.warnings.length ? row.warnings.join('; ') : 'N/A'
+      ])
+    ),
+    ''
+  ];
+}
+
+function timelineCsvRows(rows) {
+  return rows.map(row => ({
+    date: row.date,
+    asset: row.asset,
+    current_price: row.current_price,
+    regime: row.regime,
+    target_hedge_pct: row.target_hedge_pct,
+    current_hedge_pct: row.current_hedge_pct,
+    today_action: row.today_action,
+    execution_state: row.execution_state,
+    option_expiry: row.option_expiry,
+    dte: row.dte,
+    strike: row.strike,
+    premium_status: row.premium_status,
+    premium_source: row.premium_source,
+    underlying_unrealized_pnl: row.underlying_unrealized_pnl,
+    option_unrealized_pnl_approx: row.option_unrealized_pnl_approx,
+    net_unrealized_pnl_approx: row.net_unrealized_pnl_approx,
+    warnings: row.warnings.join('; '),
+    source: row.source
+  }));
+}
+
+function writeTextWithFallback(filePath, content) {
+  try {
+    fs.writeFileSync(filePath, content, 'utf8');
+    return filePath;
+  } catch (error) {
+    if (error && (error.code === 'EBUSY' || error.code === 'EPERM')) {
+      const fallbackPath = filePath.replace(/(\.[^.]+)$/, '.next$1');
+      fs.writeFileSync(fallbackPath, content, 'utf8');
+      console.warn(`Could not write locked file ${path.relative(REPO_ROOT, filePath)}; wrote ${path.relative(REPO_ROOT, fallbackPath)} instead.`);
+      return fallbackPath;
+    }
+    throw error;
+  }
+}
+
+function renderPositionTimeline() {
+  const archives = loadArchivedSnapshots();
+  const rows = buildTimelineRows(archives);
+  const dates = [...new Set(rows.map(row => row.date))].sort();
+
+  return [
+    '# Live Position Timeline',
+    '',
+    `- Generated at: ${new Date().toISOString()}.`,
+    '- Source: archived live snapshots and position artifacts only.',
+    '- Status: read-only accounting view; no orders placed.',
+    '',
+    '## Summary',
+    '',
+    `- Number of archived days: ${dates.length}.`,
+    `- First snapshot date: ${dates[0] || 'N/A'}.`,
+    `- Latest snapshot date: ${dates[dates.length - 1] || 'N/A'}.`,
+    `- Spreadsheet view: live/LIVE_POSITION_TIMELINE.csv.`,
+    `- BTC regime history: ${regimeHistory(rows, 'BTC')}.`,
+    `- ETH regime history: ${regimeHistory(rows, 'ETH')}.`,
+    `- Hedge target changes: ${hedgeTargetChanges(rows)}.`,
+    ...staleFallbackSummaryMarkdown(rows),
+    '',
+    '## Daily Overview',
+    '',
+    ...markdownTable(
+      ['Date', 'Asset', 'Price', 'Regime', 'Target', 'Current', 'Exec', 'DTE', 'Option PnL', 'Net PnL'],
+      rows.map(row => [
+        row.date,
+        row.asset,
+        formatPrice(row.current_price),
+        row.regime || 'N/A',
+        formatHedgePct(row.target_hedge_pct),
+        formatHedgePct(row.current_hedge_pct),
+        row.execution_state || 'N/A',
+        valueOrNa(row.dte),
+        formatPrice(row.option_unrealized_pnl_approx),
+        formatPrice(row.net_unrealized_pnl_approx)
+      ])
+    ),
+    '',
+    '## By Asset',
+    '',
+    ...ASSETS.flatMap(assetConfig => renderTimelineAssetTable(rows, assetConfig.asset)),
+    '## Premium Source Detail',
+    '',
+    ...markdownTable(
+      ['Date', 'Asset', 'Expiry', 'Strike', 'Premium Status', 'Premium Source'],
+      rows.map(row => [
+        row.date,
+        row.asset,
+        row.option_expiry || 'N/A',
+        formatPrice(row.strike),
+        row.premium_status || 'N/A',
+        row.premium_source || 'N/A'
+      ])
+    ),
+    '',
+    '## Notes',
+    '',
+    '- Approximate PnL is populated only when the required accounting entry fields and market marks are available.',
+    '- Option marks come from archived live position monitoring when available; no theoretical option model is used.',
+    '- Missing fields remain N/A.'
+  ].join('\n');
+}
+
+function renderTimelineHtml() {
+  const archives = loadArchivedSnapshots();
+  const rows = buildTimelineRows(archives);
+  const dates = [...new Set(rows.map(row => row.date))].sort();
+  const body = [
+    '<section class="section"><h2>Summary</h2><div class="section-body summary-bar">',
+    `<div class="block"><h3>Archive</h3>${htmlMetric('Archived days', dates.length)}${htmlMetric('First date', dates[0] || 'N/A')}${htmlMetric('Latest date', dates[dates.length - 1] || 'N/A')}</div>`,
+    `<div class="block"><h3>BTC Regime</h3><div>${escapeHtml(regimeHistory(rows, 'BTC'))}</div></div>`,
+    `<div class="block"><h3>ETH Regime</h3><div>${escapeHtml(regimeHistory(rows, 'ETH'))}</div></div>`,
+    `<div class="block"><h3>Changes</h3>${htmlMetric('Hedge target changes', hedgeTargetChanges(rows))}${staleFallbackSummaryHtml(rows)}</div>`,
+    '</div></section>',
+    '<section class="section"><h2>Daily Position Timeline</h2><div class="section-body table-wrap">',
+    '<table>',
+    '<thead><tr><th>Date</th><th>Asset</th><th class="num">Price</th><th>Regime</th><th class="num">Target</th><th class="num">Current</th><th>Today Action</th><th>Execution</th><th>Expiry</th><th class="num">DTE</th><th class="num">Strike</th><th>Premium Status/Source</th><th class="num">Underlying PnL</th><th class="num">Option PnL</th><th class="num">Net PnL</th><th>Warnings</th></tr></thead>',
+    '<tbody>',
+    ...rows.map(row => `<tr>
+      <td>${escapeHtml(row.date)}</td>
+      <td>${escapeHtml(row.asset)}</td>
+      <td class="num">${escapeHtml(formatPrice(row.current_price))}</td>
+      <td class="${stateClass(row.regime)}">${escapeHtml(row.regime || 'N/A')}</td>
+      <td class="num">${escapeHtml(formatHedgePct(row.target_hedge_pct))}</td>
+      <td class="num">${escapeHtml(formatHedgePct(row.current_hedge_pct))}</td>
+      <td>${escapeHtml(row.today_action || 'N/A')}</td>
+      <td class="${stateClass(row.execution_state)}">${escapeHtml(row.execution_state || 'N/A')}</td>
+      <td>${escapeHtml(row.option_expiry || 'N/A')}</td>
+      <td class="num">${escapeHtml(valueOrNa(row.dte))}</td>
+      <td class="num">${escapeHtml(formatPrice(row.strike))}</td>
+      <td>${escapeHtml(`${row.premium_status || 'N/A'} / ${row.premium_source || 'N/A'}`)}</td>
+      <td class="num ${pnlClass(row.underlying_unrealized_pnl)}">${escapeHtml(formatPrice(row.underlying_unrealized_pnl))}</td>
+      <td class="num ${pnlClass(row.option_unrealized_pnl_approx)}">${escapeHtml(formatPrice(row.option_unrealized_pnl_approx))}</td>
+      <td class="num ${pnlClass(row.net_unrealized_pnl_approx)}">${escapeHtml(formatPrice(row.net_unrealized_pnl_approx))}</td>
+      <td class="${row.warnings.length ? 'warn' : 'muted'}">${escapeHtml(row.warnings.length ? row.warnings.join('; ') : 'N/A')}</td>
+    </tr>`),
+    '</tbody></table></div></section>'
+  ].join('\n');
+  return htmlShell('Live Position Timeline', `${dates[0] || 'N/A'} to ${dates[dates.length - 1] || 'N/A'}`, body);
+}
+
+function writePositionTimeline() {
+  const timeline = renderPositionTimeline();
+  const timelinePath = writeTextWithFallback(LIVE_POSITION_TIMELINE_PATH, `${timeline}\n`);
+  writeTextWithFallback(LIVE_POSITION_TIMELINE_HTML_PATH, `${renderTimelineHtml()}\n`);
+  const archives = loadArchivedSnapshots();
+  const rows = buildTimelineRows(archives);
+  writeTextWithFallback(LIVE_POSITION_TIMELINE_CSV_PATH, `${objectsToCsv(timelineCsvRows(rows), [
+    'date',
+    'asset',
+    'current_price',
+    'regime',
+    'target_hedge_pct',
+    'current_hedge_pct',
+    'today_action',
+    'execution_state',
+    'option_expiry',
+    'dte',
+    'strike',
+    'premium_status',
+    'premium_source',
+    'underlying_unrealized_pnl',
+    'option_unrealized_pnl_approx',
+    'net_unrealized_pnl_approx',
+    'warnings',
+    'source'
+  ])}\n`, 'utf8');
+  return timelinePath;
+}
+
 function ensureLiveFiles() {
   fs.mkdirSync(SNAPSHOT_DIR, { recursive: true });
+  fs.mkdirSync(REPORTS_DIR, { recursive: true });
 
   const readmePath = path.join(LIVE_DIR, 'README.md');
   if (!fs.existsSync(readmePath)) {
@@ -766,7 +1696,127 @@ function writeSnapshot(snapshot) {
   const mdPath = path.join(SNAPSHOT_DIR, `${baseName}.md`);
   fs.writeFileSync(jsonPath, `${JSON.stringify(snapshot, null, 2)}\n`);
   fs.writeFileSync(mdPath, `${renderMarkdown(snapshot)}\n`);
-  return { jsonPath, mdPath };
+  const activeReportPath = snapshot.requested_mode === 'daily'
+    ? writeActiveDailyReport(snapshot)
+    : null;
+  const archive = writeVersionedDailySnapshot(snapshot, { jsonPath, mdPath, activeReportPath });
+  return { jsonPath, mdPath, activeReportPath, archive };
+}
+
+function writeActiveDailyReport(snapshot) {
+  const report = renderActiveMonitoringReport(snapshot);
+  fs.writeFileSync(ACTIVE_DAILY_REPORT_PATH, `${report}\n`, 'utf8');
+  fs.writeFileSync(ACTIVE_DAILY_REPORT_HTML_PATH, `${renderActiveMonitoringHtml(snapshot)}\n`, 'utf8');
+  return ACTIVE_DAILY_REPORT_PATH;
+}
+
+function copyIfExists(sourcePath, targetPath, manifest, label, snapshotDate) {
+  if (!fs.existsSync(sourcePath)) {
+    manifest.warnings.push(`Missing ${label}: ${path.relative(REPO_ROOT, sourcePath)}.`);
+    return;
+  }
+  fs.copyFileSync(sourcePath, targetPath);
+  manifest.files.push({
+    label,
+    source: path.relative(REPO_ROOT, sourcePath),
+    archived_as: path.relative(REPO_ROOT, targetPath)
+  });
+  warnIfArtifactDateMismatch(sourcePath, manifest, label, snapshotDate);
+}
+
+function warnIfArtifactDateMismatch(sourcePath, manifest, label, snapshotDate) {
+  if (!snapshotDate || path.extname(sourcePath).toLowerCase() !== '.json') return;
+  let payload = null;
+  try {
+    payload = JSON.parse(fs.readFileSync(sourcePath, 'utf8'));
+  } catch (error) {
+    manifest.warnings.push(`Could not inspect ${label} for stale data: ${error.message}.`);
+    return;
+  }
+
+  const dates = new Set();
+  if (payload && payload.data_as_of) dates.add(payload.data_as_of);
+  if (payload && payload.snapshot_date) dates.add(payload.snapshot_date);
+  if (payload && Array.isArray(payload.rows)) {
+    for (const row of payload.rows) {
+      if (row && row.data_as_of) dates.add(row.data_as_of);
+      if (row && row.snapshot_date) dates.add(row.snapshot_date);
+      if (row && row.date) dates.add(row.date);
+    }
+  }
+  const observedDates = [...dates].filter(Boolean);
+  const staleDates = observedDates.filter(date => date !== snapshotDate);
+  if (staleDates.length) {
+    manifest.warnings.push(`${label} has data date(s) ${[...new Set(staleDates)].join(', ')}; snapshot_date is ${snapshotDate}.`);
+  }
+}
+
+function writeVersionedDailySnapshot(snapshot, outputs) {
+  const dailyDir = path.join(SNAPSHOT_DIR, snapshot.snapshot_date);
+  fs.mkdirSync(dailyDir, { recursive: true });
+
+  const manifest = {
+    generated_at: new Date().toISOString(),
+    snapshot_date: snapshot.snapshot_date,
+    mode: snapshot.mode,
+    output_basename: snapshot.output_basename,
+    files: [],
+    warnings: []
+  };
+
+  copyIfExists(outputs.jsonPath, path.join(dailyDir, `${snapshot.output_basename}.json`), manifest, 'snapshot_json', snapshot.snapshot_date);
+  copyIfExists(outputs.mdPath, path.join(dailyDir, `${snapshot.output_basename}.md`), manifest, 'snapshot_markdown', snapshot.snapshot_date);
+  if (outputs.activeReportPath) {
+    copyIfExists(outputs.activeReportPath, path.join(dailyDir, 'ACTIVE_MONITORING_DAILY.md'), manifest, 'active_monitoring_daily_report', snapshot.snapshot_date);
+    copyIfExists(ACTIVE_DAILY_REPORT_HTML_PATH, path.join(dailyDir, 'ACTIVE_MONITORING_DAILY.html'), manifest, 'active_monitoring_daily_html', snapshot.snapshot_date);
+  }
+
+  const artifactPaths = [
+    ['btc_live_metrics', path.join(LIVE_DIR, 'data', 'btc_live_metrics.json')],
+    ['eth_live_metrics', path.join(LIVE_DIR, 'data', 'eth_live_metrics.json')],
+    ['live_monitoring_signals', LIVE_MONITORING_SIGNALS_PATH],
+    ['live_option_discovery', LIVE_OPTION_DISCOVERY_PATH],
+    ['live_position_monitoring', LIVE_POSITION_MONITORING_PATH],
+    ['position_register', POSITION_REGISTER_PATH]
+  ];
+
+  for (const [label, sourcePath] of artifactPaths) {
+    copyIfExists(sourcePath, path.join(dailyDir, path.basename(sourcePath)), manifest, label, snapshot.snapshot_date);
+  }
+
+  const manifestPath = path.join(dailyDir, 'manifest.json');
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  return { dailyDir, manifestPath, manifest };
+}
+
+function archiveTimeline(timelinePath, archive) {
+  if (!timelinePath || !archive || !archive.dailyDir || !fs.existsSync(timelinePath)) return;
+  const targetPath = path.join(archive.dailyDir, path.basename(timelinePath));
+  fs.copyFileSync(timelinePath, targetPath);
+  archive.manifest.files.push({
+    label: 'live_position_timeline',
+    source: path.relative(REPO_ROOT, timelinePath),
+    archived_as: path.relative(REPO_ROOT, targetPath)
+  });
+  if (fs.existsSync(LIVE_POSITION_TIMELINE_CSV_PATH)) {
+    const csvTargetPath = path.join(archive.dailyDir, path.basename(LIVE_POSITION_TIMELINE_CSV_PATH));
+    fs.copyFileSync(LIVE_POSITION_TIMELINE_CSV_PATH, csvTargetPath);
+    archive.manifest.files.push({
+      label: 'live_position_timeline_csv',
+      source: path.relative(REPO_ROOT, LIVE_POSITION_TIMELINE_CSV_PATH),
+      archived_as: path.relative(REPO_ROOT, csvTargetPath)
+    });
+  }
+  if (fs.existsSync(LIVE_POSITION_TIMELINE_HTML_PATH)) {
+    const htmlTargetPath = path.join(archive.dailyDir, path.basename(LIVE_POSITION_TIMELINE_HTML_PATH));
+    fs.copyFileSync(LIVE_POSITION_TIMELINE_HTML_PATH, htmlTargetPath);
+    archive.manifest.files.push({
+      label: 'live_position_timeline_html',
+      source: path.relative(REPO_ROOT, LIVE_POSITION_TIMELINE_HTML_PATH),
+      archived_as: path.relative(REPO_ROOT, htmlTargetPath)
+    });
+  }
+  fs.writeFileSync(archive.manifestPath, `${JSON.stringify(archive.manifest, null, 2)}\n`, 'utf8');
 }
 
 function main() {
@@ -805,6 +1855,8 @@ function main() {
   };
 
   const outputs = writeSnapshot(snapshot);
+  const timelinePath = writePositionTimeline();
+  archiveTimeline(timelinePath, outputs.archive);
 
   console.log('Live research snapshot generated');
   console.log(`Mode: ${snapshot.mode}`);
@@ -815,6 +1867,16 @@ function main() {
   }
   console.log(`JSON: ${path.relative(REPO_ROOT, outputs.jsonPath)}`);
   console.log(`MD: ${path.relative(REPO_ROOT, outputs.mdPath)}`);
+  if (outputs.activeReportPath) {
+    console.log(`Active report: ${path.relative(REPO_ROOT, outputs.activeReportPath)}`);
+    console.log(`Active report HTML: ${path.relative(REPO_ROOT, ACTIVE_DAILY_REPORT_HTML_PATH)}`);
+  }
+  console.log(`Position timeline: ${path.relative(REPO_ROOT, timelinePath)}`);
+  console.log(`Position timeline HTML: ${path.relative(REPO_ROOT, LIVE_POSITION_TIMELINE_HTML_PATH)}`);
+  console.log(`Daily archive: ${path.relative(REPO_ROOT, outputs.archive.dailyDir)}`);
+  if (outputs.archive.manifest.warnings.length) {
+    console.log(`Archive warnings: ${outputs.archive.manifest.warnings.join('; ')}`);
+  }
 }
 
 function outputBasename(snapshotDate, requestedMode, generatedTime) {

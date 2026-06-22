@@ -34,8 +34,23 @@ set SNAPSHOT_PATH=live\snapshots\%SNAPSHOT_DATE%_daily_monitoring_snapshot.md
 echo ========================================
 echo Daily monitoring complete
 echo ========================================
+echo Active report:
+echo live\ACTIVE_MONITORING_DAILY.md
+echo.
+echo Active HTML report:
+echo live\reports\ACTIVE_MONITORING_DAILY.html
+echo.
+echo Position timeline:
+echo live\LIVE_POSITION_TIMELINE.md
+echo.
+echo Position timeline HTML:
+echo live\reports\LIVE_POSITION_TIMELINE.html
+echo.
 echo Final snapshot:
 echo %SNAPSHOT_PATH%
+echo.
+echo Versioned daily archive:
+echo live\snapshots\%SNAPSHOT_DATE%\
 exit /b 0
 
 :fail
