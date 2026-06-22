@@ -27,6 +27,7 @@ The live pilot separates opening research from active monitoring.
 - It never performs option discovery.
 - It monitors the actual registered instruments.
 - It generates the daily monitoring snapshot.
+- It generates the recommended static HTML operator reports under `live/reports/`.
 
 ### ACTIVE_MONITORING_MANUAL
 
@@ -168,6 +169,27 @@ Current live snapshots use mode-specific names:
 - Manual monitoring: `YYYY-MM-DD_HHMM_NY_manual_monitoring_snapshot.*`.
 
 Legacy `*_live_snapshot.*` files may exist from earlier pilot runs, but the current workflow does not generate new files with that naming convention.
+
+## Operator Reports
+
+The preferred daily operator interface is the static HTML report set:
+
+```text
+live/reports/ACTIVE_MONITORING_DAILY.html
+live/reports/LIVE_POSITION_TIMELINE.html
+```
+
+These files are generated locally by the daily monitoring workflow, require no web server, and are fully offline. They are also archived into the matching `live/snapshots/YYYY-MM-DD/` folder.
+
+The markdown reports and CSV export remain available as auxiliary artifacts:
+
+```text
+live/ACTIVE_MONITORING_DAILY.md
+live/LIVE_POSITION_TIMELINE.md
+live/LIVE_POSITION_TIMELINE.csv
+```
+
+The HTML reports are intended for the daily one-minute operator review. Markdown and CSV are retained for compatibility, audit, and spreadsheet workflows.
 
 ## Daily Automation Wrapper
 
