@@ -262,5 +262,67 @@ Racional:
 
 O beneficio preliminar sobreviveu a variacao de intensidade e a aproximacao mais realista de hedge via underlying-overlay. A camada reduziu drawdown, VaR e volatilidade versus unhedged nos artefatos testados, e apresentou retorno agregado superior ao unhedged na metodologia simplificada. A validacao operacional sugere que o resultado nao depende exclusivamente de execucao perfeita, embora latencia importe.
 
+A melhora de retorno agregado nao implica melhora de retorno em todos os anos individuais. Alguns anos, incluindo 2020 e 2025 em cenarios selecionados, sacrificaram retorno, enquanto outros anos tiveram comportamento misto. A leitura correta e que a camada parece capturar periodos estruturais de risco elevado, nao que ela melhora todos os periodos isoladamente.
+
 **Impacto:**
-A hipotese de hedge parcial permanece suficientemente promissora para justificar Phase 4: Realistic Hedge Economics. Antes de qualquer conclusao operacional, o projeto deve modelar funding, basis, slippage, margin requirements, liquidity constraints, collateral requirements e selecao de instrumento, incluindo perpetual, future e option overlay. Esta decisao nao define politica final de hedge e nao sugere execucao real.
+A hipotese de hedge parcial permanece suficientemente promissora para justificar Phase 4: Realistic Hedge Economics. A proxima fase deve separar Phase 4A Economic Assumptions, Phase 4B Execution Assumptions e Phase 4C Economic Simulation. Antes de qualquer conclusao operacional, o projeto deve modelar funding, basis, slippage, margin requirements, liquidity constraints, collateral requirements, execution latency, partial fills e selecao de instrumento, incluindo perpetual, future e option overlay. Esta decisao nao define politica final de hedge e nao sugere execucao real.
+
+---
+
+### [2026-06-21] Separar T0 discovery de active monitoring
+
+**Descricao:**
+O piloto live/paper passou a separar explicitamente o fluxo de abertura de ciclo (`T0_DISCOVERY`) dos fluxos de acompanhamento (`ACTIVE_MONITORING_DAILY` e `ACTIVE_MONITORING_MANUAL`).
+
+Decisao:
+
+- `T0_DISCOVERY` pode executar option discovery e selecionar instrumentos para nova abertura.
+- `ACTIVE_MONITORING_DAILY` e `ACTIVE_MONITORING_MANUAL` nao executam option discovery.
+- Active monitoring deve acompanhar os instrumentos reais registrados para o ciclo ativo.
+
+**Racional:**
+Depois que a posicao esta aberta, selecionar automaticamente uma nova opcao pode contaminar DTE, strike, premium, risco de exercicio e leitura operacional do ciclo. O acompanhamento deve usar a posicao realmente aberta.
+
+**Impacto:**
+O workflow live permanece research-grade e read-only, mas a operacao manual fica separada entre descoberta de nova posicao e monitoramento de posicao ativa.
+
+---
+
+### [2026-06-21] Tratar Position Register como estado operacional local
+
+**Descricao:**
+O arquivo `live/position_register.json` passa a ser a fonte local de verdade para posicoes ativas usadas no active monitoring.
+
+Decisao:
+
+- `live/position_register.json` e estado operacional local e mutavel.
+- O arquivo deve conter apenas posicoes `ACTIVE`.
+- O arquivo e ignorado pelo Git.
+- `live/position_register.example.json` e o template versionado.
+- O Position Register nao representa historico completo de ciclos ou posicoes fechadas.
+
+**Racional:**
+O piloto precisa de uma fonte simples e auditavel para saber quais instrumentos monitorar sem projetar prematuramente um historico completo de ciclos.
+
+**Impacto:**
+O active monitoring pode ser executado com seguranca contra os instrumentos reais registrados, enquanto historico, retencao e trilha operacional de longo prazo permanecem decisoes futuras.
+
+---
+
+### [2026-06-22] Adicionar wrapper idempotente para Windows Task Scheduler
+
+**Descricao:**
+O projeto adicionou um wrapper Windows para facilitar a execucao diaria automatizada do active monitoring.
+
+Decisao:
+
+- `run_live_monitoring_daily_auto.bat` e o wrapper para Task Scheduler.
+- O wrapper e idempotente por data de Nova York: se o snapshot diario ja existir, ele registra no log e sai com sucesso.
+- `run_live_monitoring_daily_auto_check.bat` valida pre-condicoes sem gerar snapshots ou alterar `live/data/`.
+- Logs do wrapper ficam sob `logs/live_monitoring/`.
+
+**Racional:**
+A automacao diaria deve evitar snapshots duplicados e reduzir risco operacional, mantendo a logica de monitoring concentrada nos scripts ja existentes.
+
+**Impacto:**
+A execucao diaria pode ser testada e agendada com menor friccao operacional, sem alterar metodologia, hedge logic, monitoring logic ou assumptions de pesquisa.

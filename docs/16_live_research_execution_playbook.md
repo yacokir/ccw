@@ -6,6 +6,39 @@ This document defines a research-grade live execution playbook for the Dynamic H
 
 It is intended to guide initial live/manual testing only. It is not production execution, not an automated trading system, and not a validated economic model. The procedure translates current research assumptions into an auditable operating routine while Phase 4 Realistic Hedge Economics remains unresolved.
 
+## Live Workflow Modes
+
+The live pilot separates opening research from active monitoring.
+
+### T0_DISCOVERY
+
+`T0_DISCOVERY` is used only before opening a new covered-call cycle.
+
+- It may run live option discovery.
+- It may select the weekly OTM05 option instrument.
+- It may generate a T0 discovery snapshot.
+- After manual execution, the operator initializes or updates the local Position Register.
+
+### ACTIVE_MONITORING_DAILY
+
+`ACTIVE_MONITORING_DAILY` is used for the once-daily operating check.
+
+- It uses the local Position Register.
+- It never performs option discovery.
+- It monitors the actual registered instruments.
+- It generates the daily monitoring snapshot.
+
+### ACTIVE_MONITORING_MANUAL
+
+`ACTIVE_MONITORING_MANUAL` is used for ad hoc checks.
+
+- It uses the local Position Register.
+- It never performs option discovery.
+- It monitors the actual registered instruments.
+- It may be run on demand outside the daily decision time.
+
+After T0, active monitoring must not automatically select a new option. The registered option instrument is the operational source of truth for the active cycle.
+
 ## Frozen Execution Assumptions
 
 - Venue: Bybit.
@@ -105,6 +138,60 @@ Phase 3.5B/3.5C adds an incremental read-only refresh helper, `src/scripts/refre
 Phase 3.5D adds `src/scripts/build_live_monitoring_signals.js`, which applies the existing v0.4b monitoring thresholds to the live price-history proxy and writes same-day `damage_state` and `alert_state` under `live/data/`. This remains a research-grade monitoring aid and does not recalibrate thresholds, refresh options, or add execution logic.
 
 Phase 3.5E adds read-only live option discovery for T0 support. The option discovery layer selects the nearest available weekly call around the OTM05 target strike from public option-chain data, records any available public premium fields, and leaves premium null with warnings when unavailable. It does not place orders or validate executable pricing.
+
+## Position Register
+
+The active live pilot uses:
+
+```text
+live/position_register.json
+```
+
+This file is local operational state. It is ignored by Git, mutable by the operator, and should contain only currently `ACTIVE` positions required for daily or manual monitoring.
+
+It is not a historical position database and does not define retention, audit, or closed-cycle storage. Those topics remain future work.
+
+The versioned template is:
+
+```text
+live/position_register.example.json
+```
+
+The template documents the expected fields only. It should not contain pilot-specific position data.
+
+## Snapshot Naming
+
+Current live snapshots use mode-specific names:
+
+- T0 discovery: `YYYY-MM-DD_t0_discovery_snapshot.*`.
+- Daily monitoring: `YYYY-MM-DD_daily_monitoring_snapshot.*`.
+- Manual monitoring: `YYYY-MM-DD_HHMM_NY_manual_monitoring_snapshot.*`.
+
+Legacy `*_live_snapshot.*` files may exist from earlier pilot runs, but the current workflow does not generate new files with that naming convention.
+
+## Daily Automation Wrapper
+
+The optional Windows Task Scheduler wrapper is:
+
+```text
+run_live_monitoring_daily_auto.bat
+```
+
+It calls the existing daily monitoring workflow only when the current New York date does not already have a daily monitoring snapshot. If the daily snapshot already exists, the wrapper logs that fact and exits successfully without running monitoring again.
+
+Wrapper logs are written under:
+
+```text
+logs/live_monitoring/
+```
+
+The dry operational check is:
+
+```text
+run_live_monitoring_daily_auto_check.bat
+```
+
+The check verifies required files and JavaScript syntax, reports the expected daily snapshot path, and does not execute monitoring, generate snapshots, or update `live/data/`.
 
 ## Hysteresis And Churn Control
 

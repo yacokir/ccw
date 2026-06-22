@@ -74,6 +74,23 @@ Responsável por interpretar os resultados.
 
 ---
 
+### 3.4 Live Research Operations Layer
+
+The Live Research Operations Layer is an auxiliary research/pilot layer outside production execution.
+
+**Characteristics:**
+- Read-only workflow support.
+- Manual/paper trading support.
+- Snapshot generation.
+- Operational logging.
+- Active position monitoring.
+- Does not place orders.
+- Does not replace production execution controls.
+
+This layer supports the current live pilot by translating research outputs into auditable manual operating artifacts while preserving the separation between research, monitoring, and actual trade execution.
+
+---
+
 ## 4. Data Flow
 
 O fluxo de dados entre as camadas é unidirecional:
@@ -132,7 +149,18 @@ The earlier proportional formula is retained only as a simplified proxy:
 hedged_return = ccw_return * (1 - hedge_ratio)
 ```
 
-The current primary research candidate is `stress30_crisis40`, with `stress25_crisis50` retained as a conservative benchmark. These are research artifacts only. Realistic hedge economics, including funding, basis, slippage, margin, liquidity, collateral, execution assumptions, and instrument selection, remain future work.
+The current primary research candidate is `stress30_crisis40`, with `stress25_crisis50` retained as a conservative benchmark. The evidence suggests the hedge overlay is capturing structural periods of elevated risk rather than only exploiting perfect timing assumptions, but aggregate improvement does not imply improvement in every individual year.
+
+At the architecture level, the project has evolved from covered-call backtesting toward a Dynamic Covered Call Risk Management Framework:
+
+```text
+Covered Call
++ Daily Risk Engine
++ Regime Detection
++ Adaptive Hedge Overlay
+```
+
+These are research artifacts only. Realistic hedge economics, including funding, basis, slippage, margin, liquidity, collateral, execution assumptions, partial fills, latency sensitivity, and instrument selection, remain future work.
 
 ---
 

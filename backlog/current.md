@@ -386,6 +386,23 @@ Status: future research.
 
 ---
 
+## 12. Phase 3.5 Live Workflow
+
+Status: live pilot workflow support complete for current research needs.
+
+- T0 discovery split completed.
+- Active daily monitoring split completed.
+- Active manual monitoring split completed.
+- Position Register operational workflow completed.
+- Daily scheduler wrapper completed.
+
+Future work:
+
+- Historical position/cycle storage.
+- Long-term operational audit trail.
+
+---
+
 ## 11. Risk & Hedging Roadmap
 
 The risk and hedging roadmap separates the implemented fixed hedge frontier from future adaptive and discretionary risk-management layers. The strategic objective is to preserve the BTC CCW return engine while reducing tail-risk destruction and catastrophic crisis damage. It is not to minimize volatility, market-neutralize the strategy, or eliminate BTC exposure.
