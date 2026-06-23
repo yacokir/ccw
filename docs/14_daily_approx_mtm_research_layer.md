@@ -115,12 +115,25 @@ The `underlying_return` is reconstructed from the `underlying_price` already pre
 Current findings:
 
 - The preliminary hedge benefit survived the move from v02 proportional proxy to v03 underlying-overlay.
+- Current evidence suggests the hedge overlay is capturing structural periods of elevated risk rather than only exploiting near-perfect timing assumptions.
+- In the current research-grade methodology, tested configurations reduced drawdown, VaR, and volatility, and aggregate return was superior to unhedged.
+- Aggregate return improvement does not imply return improvement in every individual year. Selected scenarios sacrificed return in 2020 and 2025, while other years showed mixed behavior.
 - `stress30_crisis40` is the current primary research candidate.
 - `stress25_crisis50` is retained as a conservative benchmark inherited from v01.
 - Operational robustness testing showed that `A_immediate`, `B_delay_1_valid_mtm_day`, `D_confirmation`, and `F_delay_confirmation` remain useful scenarios for realistic economics.
 - `C_delay_2_valid_mtm_days` remained superior to unhedged in the research artifacts, but showed material deterioration and should be treated as an operational latency limit.
+- Latency matters and should be modeled explicitly in future hedge implementation research.
 
 These results are research-grade only. They do not establish hedge viability because funding, basis, slippage, margin, liquidity, collateral, instrument selection, liquidation risk, and execution mechanics remain excluded.
+
+The Daily MTM layer has therefore evolved from a valuation experiment into the research backbone supporting regime detection and adaptive hedge studies:
+
+```text
+Daily MTM
+-> Passive Monitoring
+-> Hedge Simulation
+-> Realistic Hedge Economics
+```
 
 ## Limitations
 
@@ -136,6 +149,8 @@ The current layer is approximate and exploratory:
 - Passive monitoring states are not hedge instructions and should not be treated as final operational risk policy.
 - Hedge simulation outputs are research approximations and do not yet model realistic hedge economics or instrument-specific PnL.
 
+This historical Daily MTM research layer is separate from the live pilot accounting reconstruction. Current live reports may use Bybit read-only account data, spot executions, registered positions, and public marks to reconstruct current underlying entry price, underlying PnL, hedge PnL, option PnL, and net PnL. That live accounting view is an operational monitoring aid and does not change the historical Daily MTM methodology described here.
+
 ## Roadmap
 
 Future work should proceed in this order:
@@ -148,8 +163,10 @@ Future work should proceed in this order:
 6. Preserve Passive Hedge Monitoring `v0.4b` as the current research baseline for damage versus alert state.
 7. Preserve Hedge Simulation v03 underlying-overlay as the reference research methodology.
 8. Carry `stress30_crisis40` as the primary candidate and `stress25_crisis50` as the conservative benchmark.
-9. Validate realistic hedge economics, including funding, basis, slippage, liquidity, margin, collateral, and instrument selection.
-10. Simulate intracycle hedge-frequency alternatives.
-11. Add latency sensitivity, execution assumptions, and hedge implementation research.
-12. Add event-driven or crisis-trigger research only after simpler daily-risk behavior is understood.
-13. Consider external historical option-mark providers, such as Tardis, for official marks, greeks, or fuller option-chain snapshots.
+9. Phase 4A: define economic assumptions, including perpetual versus futures, funding, basis, and margin requirements.
+10. Phase 4B: define execution assumptions, including execution latency, partial fills, liquidity constraints, and collateral requirements.
+11. Phase 4C: simulate CCW plus Dynamic Hedge Overlay with realistic costs.
+12. Simulate intracycle hedge-frequency alternatives.
+13. Add latency sensitivity, execution assumptions, and hedge implementation research.
+14. Add event-driven or crisis-trigger research only after simpler daily-risk behavior is understood.
+15. Consider external historical option-mark providers, such as Tardis, for official marks, greeks, or fuller option-chain snapshots.

@@ -6,6 +6,8 @@ This document defines a research-grade live execution playbook for the Dynamic H
 
 It is intended to guide initial live/manual testing only. It is not production execution, not an automated trading system, and not a validated economic model. The procedure translates current research assumptions into an auditable operating routine while Phase 4 Realistic Hedge Economics remains unresolved.
 
+The current live pilot is read-only from the system side. It may retrieve account, market, position, execution, and order-history data, but it does not place orders, cancel orders, modify orders, transfer funds, or withdraw funds.
+
 ## Live Workflow Modes
 
 The live pilot separates opening research from active monitoring.
@@ -23,7 +25,8 @@ The live pilot separates opening research from active monitoring.
 
 `ACTIVE_MONITORING_DAILY` is used for the once-daily operating check.
 
-- It uses the local Position Register.
+- It uses Bybit read-only account synchronization when available.
+- It falls back to the local Position Register when account data is unavailable.
 - It never performs option discovery.
 - It monitors the actual registered instruments.
 - It generates the daily monitoring snapshot.
@@ -33,7 +36,8 @@ The live pilot separates opening research from active monitoring.
 
 `ACTIVE_MONITORING_MANUAL` is used for ad hoc checks.
 
-- It uses the local Position Register.
+- It uses Bybit read-only account synchronization when available.
+- It falls back to the local Position Register when account data is unavailable.
 - It never performs option discovery.
 - It monitors the actual registered instruments.
 - It may be run on demand outside the daily decision time.
@@ -140,6 +144,96 @@ Phase 3.5D adds `src/scripts/build_live_monitoring_signals.js`, which applies th
 
 Phase 3.5E adds read-only live option discovery for T0 support. The option discovery layer selects the nearest available weekly call around the OTM05 target strike from public option-chain data, records any available public premium fields, and leaves premium null with warnings when unavailable. It does not place orders or validate executable pricing.
 
+## Configuration
+
+Live account synchronization is configured from the local project `.env` file when present:
+
+```text
+BYBIT_ENV=demo
+BYBIT_API_KEY=
+BYBIT_API_SECRET=
+BYBIT_ACCOUNT_DIAGNOSTICS=false
+BYBIT_RECV_WINDOW=5000
+```
+
+Supported `BYBIT_ENV` values are:
+
+- `mainnet`
+- `demo`
+- `testnet`
+
+Configuration loading order is:
+
+```text
+OS environment variables
+-> .env
+-> script defaults
+```
+
+Existing OS environment variables are never overwritten by `.env`. The `.env` file is local operational configuration and must not contain committed secrets.
+
+## Bybit Read-Only Account Synchronization
+
+Active monitoring can synchronize account state from Bybit V5 authenticated read-only endpoints. The sync layer retrieves:
+
+- Wallet balances.
+- Spot balances.
+- Perpetual positions.
+- Option positions.
+- Executions.
+- Order history.
+
+The current account-sync metadata is carried into `live/data/live_position_monitoring.json`, daily/manual snapshots, and the operator reports. It includes the account-sync environment, base URL, availability, timestamp, and warnings.
+
+If credentials are missing, permissions are insufficient, or Bybit is unavailable, the workflow emits warnings and continues from local Position Register values. This fallback is intentional and should not stop monitoring, report generation, or snapshot generation.
+
+The current Demo Trading environment uses:
+
+```text
+BYBIT_ENV=demo
+base_url=https://api-demo.bybit.com
+```
+
+## Live Accounting Reconstruction
+
+The live accounting layer reconstructs current approximate PnL from synchronized account data and public marks. It is operational monitoring, not a production ledger.
+
+For each active BTC or ETH position, the system attempts to reconstruct:
+
+- `underlying_entry_price`
+- `underlying_entry_ts`
+- `underlying_cost_basis`
+- `underlying_market_value`
+- `underlying_unrealized_pnl`
+- `option_unrealized_pnl`
+- `hedge_unrealized_pnl`
+- `net_unrealized_pnl`
+
+Underlying cost basis is reconstructed from synced spot buy executions using weighted average acquisition cost:
+
+```text
+average_entry_price = sum(fill_price * fill_qty) / sum(fill_qty)
+```
+
+The first implementation is deliberately simple and auditable. It assumes:
+
+- Buy fills only.
+- No inventory depletion.
+- No partial-disposal accounting.
+- No multiple-lot inventory accounting.
+
+If spot executions are unavailable, the workflow falls back to existing Position Register values. If neither account data nor local values can provide an entry price, the report preserves `N/A` and emits the existing warning.
+
+Approximate current net unrealized PnL is:
+
+```text
+underlying_unrealized_pnl
++ option_unrealized_pnl
++ hedge_unrealized_pnl
+```
+
+The optional accounting fields in `live/position_register.json` are persistence/fallback fields only. They should not be interpreted as a full historical ledger.
+
 ## Position Register
 
 The active live pilot uses:
@@ -149,6 +243,8 @@ live/position_register.json
 ```
 
 This file is local operational state. It is ignored by Git, mutable by the operator, and should contain only currently `ACTIVE` positions required for daily or manual monitoring.
+
+When Bybit account synchronization is available, the account API is the preferred source for balances, positions, executions, and order-history-derived accounting fields. The Position Register remains the fallback source and the place where optional accounting persistence fields may be stored.
 
 It is not a historical position database and does not define retention, audit, or closed-cycle storage. Those topics remain future work.
 
@@ -190,6 +286,26 @@ live/LIVE_POSITION_TIMELINE.csv
 ```
 
 The HTML reports are intended for the daily one-minute operator review. Markdown and CSV are retained for compatibility, audit, and spreadsheet workflows.
+
+Current reports expose both monitoring state and live accounting context, including:
+
+- Underlying entry price.
+- Underlying PnL.
+- Option PnL.
+- Hedge PnL.
+- Net PnL.
+- Account-sync environment.
+- Account-sync availability.
+- Account-sync base URL.
+- Account-sync timestamp.
+
+Older archived snapshots and timeline rows may show:
+
+```text
+Underlying entry price unavailable; underlying and net PnL are not currently calculable.
+```
+
+Those rows are historical artifacts generated before cost-basis reconstruction existed, or during runs where required account data was unavailable. They should not be treated as current errors unless the latest monitoring artifact shows the same warning.
 
 ## Daily Automation Wrapper
 
@@ -274,5 +390,6 @@ This playbook is research-grade only and has material unresolved limitations:
 - No margin stress model.
 - No proof of economic superiority.
 - Phase 4 Realistic Hedge Economics remains unresolved.
+- Live accounting reconstruction is approximate and currently uses simple weighted-average spot buy cost basis without lot depletion or partial-disposal accounting.
 
 The current procedure is suitable for controlled manual observation and audit logging. It should not be treated as a production hedge policy or as proof that Dynamic Hedge Overlay improves live after-cost performance.
