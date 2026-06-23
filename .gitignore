@@ -28,3 +28,11 @@ pirulo.js
 # Local live operational state
 live/position_register.json
 .env
+
+_chat_upload/
+_chat_upload.zip
+chat_context_*.zip
+context_part_*.txt
+cotras.txt
+logs/
+test_scheduler_hello.bat
