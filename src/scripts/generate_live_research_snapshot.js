@@ -137,6 +137,11 @@ function decisionTimestamp(date, args) {
   return `${parts.year}-${parts.month}-${parts.day} ${args.decisionTime} ${args.timezone}`;
 }
 
+function localTimestamp(date, timezone) {
+  const parts = datePartsInTimezone(date, timezone);
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second} ${timezone}`;
+}
+
 function localTimeCompact(date, timezone) {
   const parts = datePartsInTimezone(date, timezone);
   return `${parts.hour}${parts.minute}`;
@@ -737,10 +742,8 @@ function renderMarkdown(snapshot) {
   return [
     '# Live Research Snapshot',
     '',
-    `- Mode: ${snapshot.mode}.`,
+    ...snapshotMetadataMarkdown(snapshot),
     `- Venue: ${snapshot.venue}.`,
-    `- Decision timestamp: ${snapshot.decision_timestamp}.`,
-    `- Generated at: ${snapshot.generated_at}.`,
     `- Status: research-grade, read-only, no orders placed.`,
     '',
     '## Asset Summary',
@@ -857,10 +860,7 @@ function renderActiveMonitoringReport(snapshot) {
   return [
     '# Active Monitoring Daily',
     '',
-    `- Generated at: ${snapshot.generated_at}.`,
-    `- Snapshot date: ${snapshot.snapshot_date}.`,
-    `- Decision timestamp: ${snapshot.decision_timestamp}.`,
-    `- Mode: ${snapshot.mode}.`,
+    ...snapshotMetadataMarkdown(snapshot),
     '- Status: read-only research aid; no orders placed.',
     '',
     '## Operator Summary',
@@ -916,6 +916,31 @@ function renderActiveMonitoringReport(snapshot) {
     '- This report consolidates existing live artifacts and snapshot fields only.',
     '- Manual execution decisions remain outside this script.'
   ].join('\n');
+}
+
+function accountSyncLastSyncFromAssets(assets) {
+  const values = [...new Set((assets || [])
+    .map(asset => asset && asset.account_sync && asset.account_sync.last_sync)
+    .filter(Boolean))];
+  return values.length ? values.join('; ') : null;
+}
+
+function snapshotMetadataMarkdown(snapshot) {
+  return [
+    `- Snapshot date: ${snapshot.snapshot_date || 'N/A'}.`,
+    `- Decision timestamp: ${snapshot.decision_timestamp || 'N/A'}.`,
+    `- Generated at: ${snapshot.generated_at_local || snapshot.generated_at || 'N/A'}.`,
+    `- Account sync last sync: ${snapshot.account_sync_last_sync || 'N/A'}.`,
+    `- Run mode: ${snapshot.run_mode || snapshot.mode || 'N/A'}.`
+  ];
+}
+
+function snapshotMetadataHtmlBlocks(snapshot) {
+  return [
+    `<div class="block"><h3>Run Metadata</h3>${htmlMetric('Snapshot date', snapshot.snapshot_date || 'N/A')}${htmlMetric('Run mode', snapshot.run_mode || snapshot.mode || 'N/A')}</div>`,
+    `<div class="block"><h3>Execution</h3>${htmlMetric('Decision timestamp', snapshot.decision_timestamp || 'N/A')}${htmlMetric('Generated at', snapshot.generated_at_local || snapshot.generated_at || 'N/A')}</div>`,
+    `<div class="block"><h3>Account Sync</h3>${htmlMetric('Last sync', snapshot.account_sync_last_sync || 'N/A')}${htmlMetric('Timezone', snapshot.timezone || 'N/A')}</div>`
+  ];
 }
 
 function warningsForAsset(asset) {
@@ -994,8 +1019,8 @@ function renderActiveMonitoringHtml(snapshot) {
 
   const body = [
     '<div class="summary-bar">',
-    `<div class="block"><h3>Snapshot</h3>${htmlMetric('Date', snapshot.snapshot_date)}${htmlMetric('Decision', snapshot.decision_timestamp)}</div>`,
-    `<div class="block"><h3>Freshness</h3>${htmlMetric('Stale assets', staleCount, staleCount ? 'warn' : 'pos')}${htmlMetric('Mode', snapshot.mode)}</div>`,
+    ...snapshotMetadataHtmlBlocks(snapshot),
+    `<div class="block"><h3>Freshness</h3>${htmlMetric('Stale assets', staleCount, staleCount ? 'warn' : 'pos')}${htmlMetric('Warnings', warnings.length, warnings.length ? 'warn' : 'pos')}</div>`,
     `<div class="block"><h3>Warnings</h3>${htmlMetric('Count', warnings.length, warnings.length ? 'warn' : 'pos')}${htmlMetric('Read only', 'No orders placed')}</div>`,
     `<div class="block"><h3>Venue</h3>${htmlMetric('Venue', snapshot.venue)}${htmlMetric('Timezone', snapshot.timezone)}</div>`,
     '</div>',
@@ -1544,6 +1569,20 @@ function timelineCsvRows(rows) {
   }));
 }
 
+function timelineMetadata(archives, generatedAt = new Date()) {
+  const latest = archives.length ? archives[archives.length - 1].snapshot : null;
+  const timezone = latest && latest.timezone ? latest.timezone : 'America/New_York';
+  return {
+    snapshot_date: latest ? latest.snapshot_date : null,
+    decision_timestamp: latest ? latest.decision_timestamp : null,
+    generated_at: generatedAt.toISOString(),
+    generated_at_local: localTimestamp(generatedAt, timezone),
+    account_sync_last_sync: latest ? latest.account_sync_last_sync || accountSyncLastSyncFromAssets(latest.assets) : null,
+    run_mode: latest ? latest.run_mode || latest.mode : null,
+    timezone
+  };
+}
+
 function writeTextWithFallback(filePath, content) {
   try {
     fs.writeFileSync(filePath, content, 'utf8');
@@ -1563,11 +1602,12 @@ function renderPositionTimeline() {
   const archives = loadArchivedSnapshots();
   const rows = buildTimelineRows(archives);
   const dates = [...new Set(rows.map(row => row.date))].sort();
+  const metadata = timelineMetadata(archives);
 
   return [
     '# Live Position Timeline',
     '',
-    `- Generated at: ${new Date().toISOString()}.`,
+    ...snapshotMetadataMarkdown(metadata),
     '- Source: archived live snapshots and position artifacts only.',
     '- Status: read-only accounting view; no orders placed.',
     '',
@@ -1629,7 +1669,11 @@ function renderTimelineHtml() {
   const archives = loadArchivedSnapshots();
   const rows = buildTimelineRows(archives);
   const dates = [...new Set(rows.map(row => row.date))].sort();
+  const metadata = timelineMetadata(archives);
   const body = [
+    '<section class="section"><h2>Execution Metadata</h2><div class="section-body summary-bar">',
+    ...snapshotMetadataHtmlBlocks(metadata),
+    '</div></section>',
     '<section class="section"><h2>Summary</h2><div class="section-body summary-bar">',
     `<div class="block"><h3>Archive</h3>${htmlMetric('Archived days', dates.length)}${htmlMetric('First date', dates[0] || 'N/A')}${htmlMetric('Latest date', dates[dates.length - 1] || 'N/A')}</div>`,
     `<div class="block"><h3>BTC Regime</h3><div>${escapeHtml(regimeHistory(rows, 'BTC'))}</div></div>`,
@@ -1864,17 +1908,22 @@ function main() {
   if ((args.mode === 'daily' || args.mode === 'manual') && positionRegister.positions.size === 0) {
     throw new Error('Active monitoring requires at least one ACTIVE Position Register entry in live/position_register.json.');
   }
+  const assets = ASSETS.map(asset => buildAssetSnapshot(asset, args, now, snapshotDate, liveMonitoringSignals, liveOptionDiscovery, positionRegister, livePositionMonitoring));
+  const runMode = modeLabel(args.mode);
   const snapshot = {
     generated_at: now.toISOString(),
+    generated_at_local: localTimestamp(now, args.timezone),
     snapshot_date: snapshotDate,
     generated_time: generatedTime,
     output_basename: outputBasename(snapshotDate, args.mode, generatedTime),
-    mode: modeLabel(args.mode),
+    mode: runMode,
+    run_mode: runMode,
     requested_mode: args.mode,
     venue: args.venue,
     decision_time: args.decisionTime,
     timezone: args.timezone,
     decision_timestamp: decisionTimestamp(now, args),
+    account_sync_last_sync: accountSyncLastSyncFromAssets(assets),
     assumptions: {
       hedge_states: HEDGE_BY_STATE,
       target_position_logic: 'delta = target hedge - current hedge',
@@ -1882,7 +1931,7 @@ function main() {
       normal_exit_rule: 'close only after 2 consecutive normal days',
       read_only: true
     },
-    assets: ASSETS.map(asset => buildAssetSnapshot(asset, args, now, snapshotDate, liveMonitoringSignals, liveOptionDiscovery, positionRegister, livePositionMonitoring))
+    assets
   };
 
   const outputs = writeSnapshot(snapshot);
