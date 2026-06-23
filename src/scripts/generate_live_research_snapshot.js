@@ -11,6 +11,7 @@ const {
   roundNumber,
   sampleStdDev
 } = require('./btc_deep_risk_utils');
+const { logCcwEnvStartup } = require('./ccw_env_diagnostics');
 
 const LIVE_DIR = path.join(REPO_ROOT, 'live');
 const SNAPSHOT_DIR = path.join(LIVE_DIR, 'snapshots');
@@ -234,12 +235,15 @@ function normalizePositionRegisterRow(position) {
 }
 
 function loadLivePositionMonitoring(snapshotDate) {
-  if (!fs.existsSync(LIVE_POSITION_MONITORING_PATH)) return new Map();
+  if (!fs.existsSync(LIVE_POSITION_MONITORING_PATH)) return { rows: new Map(), accountSync: null };
   const payload = readJson(LIVE_POSITION_MONITORING_PATH);
   const rows = Array.isArray(payload.rows) ? payload.rows : [];
-  return new Map(rows
-    .filter(row => row.asset && row.data_as_of === snapshotDate)
-    .map(row => [row.asset, row]));
+  return {
+    rows: new Map(rows
+      .filter(row => row.asset && row.data_as_of === snapshotDate)
+      .map(row => [row.asset, row])),
+    accountSync: payload.account_sync || null
+  };
 }
 
 function latestRowOnOrBefore(rows, date) {
@@ -361,8 +365,9 @@ function accountingFields(positionRow, positionMonitoringRow, spotPrice, snapsho
   const hedgeQty = optionalNumber(positionRow && positionRow.hedge_qty);
   const hedgeEntryPrice = optionalNumber(positionRow && positionRow.hedge_entry_price);
   const hedgeMarkPrice = optionalNumber(positionMonitoringRow && positionMonitoringRow.hedge_mark_price);
-  const accumulatedFees = optionalNumber(positionRow && positionRow.accumulated_fees) || 0;
-
+  const underlyingMarketValue = underlyingQty === null || currentSpotPrice === null
+    ? null
+    : roundNumber(underlyingQty * currentSpotPrice);
   const underlyingUnrealizedPnl = underlyingQty === null || underlyingEntryPrice === null || currentSpotPrice === null
     ? null
     : roundNumber((currentSpotPrice - underlyingEntryPrice) * underlyingQty);
@@ -386,6 +391,9 @@ function accountingFields(positionRow, positionMonitoringRow, spotPrice, snapsho
     current_spot_price: roundNumber(currentSpotPrice),
     underlying_entry_price: underlyingEntryPrice,
     underlying_entry_timestamp: positionRow ? positionRow.underlying_entry_timestamp || null : null,
+    underlying_entry_ts: positionRow ? positionRow.underlying_entry_ts || null : null,
+    underlying_cost_basis: positionRow ? positionRow.underlying_cost_basis || null : null,
+    underlying_market_value: underlyingMarketValue,
     underlying_unrealized_pnl: underlyingUnrealizedPnl,
     premium_received: shortCallQty === null || shortCallEntryPremium === null ? null : roundNumber(Math.abs(shortCallQty) * shortCallEntryPremium),
     short_call_symbol: positionRow ? firstValue(positionRow.short_call_symbol, positionRow.option_instrument) : null,
@@ -397,10 +405,11 @@ function accountingFields(positionRow, positionMonitoringRow, spotPrice, snapsho
     option_mark_price: roundNumber(optionMarkPrice),
     option_unrealized_pnl_approx: optionUnrealizedPnl,
     hedge_entry_timestamp: positionRow ? positionRow.hedge_entry_timestamp || null : null,
+    hedge_cost_basis: positionRow ? positionRow.hedge_cost_basis || null : null,
     hedge_mark_price: roundNumber(hedgeMarkPrice),
     hedge_unrealized_pnl_approx: hedgeUnrealizedPnl,
     accumulated_fees: optionalNumber(positionRow && positionRow.accumulated_fees),
-    net_unrealized_pnl_approx: sumIfComplete(underlyingUnrealizedPnl, optionUnrealizedPnl, hedgeUnrealizedPnl, -accumulatedFees),
+    net_unrealized_pnl_approx: sumIfComplete(underlyingUnrealizedPnl, optionUnrealizedPnl, hedgeUnrealizedPnl),
     days_since_entry: entryTimestamp ? daysBetween(String(entryTimestamp).slice(0, 10), snapshotDate) : null,
     days_to_expiry: expiry ? daysBetween(snapshotDate, expiry) : null,
     accounting_warnings: warnings
@@ -531,7 +540,8 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoring
     : signalSource;
   const parsedInstrument = parseInstrument(historicalRow && historicalRow.instrument_name);
   const positionRow = monitoringMode ? positionRegister.positions.get(assetConfig.asset) || null : null;
-  const positionMonitoringRow = monitoringMode ? livePositionMonitoring.get(assetConfig.asset) || null : null;
+  const positionMonitoringRow = monitoringMode ? livePositionMonitoring.rows.get(assetConfig.asset) || null : null;
+  const accountSync = monitoringMode ? livePositionMonitoring.accountSync || null : null;
   const selectedOptionRow = monitoringMode ? null : liveOptionRow;
   const optionExpiry = positionRow ? positionRow.option_expiry : selectedOptionRow ? selectedOptionRow.selected_expiry : parsedInstrument.expiry;
   const optionStrike = positionRow ? optionalNumber(positionRow.option_strike) : selectedOptionRow ? optionalNumber(selectedOptionRow.selected_strike) : parsedInstrument.strike;
@@ -545,6 +555,7 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoring
   const optionWarnings = [
     ...(selectedOptionRow && Array.isArray(selectedOptionRow.warnings) ? selectedOptionRow.warnings : []),
     ...(positionMonitoringRow && Array.isArray(positionMonitoringRow.warnings) ? positionMonitoringRow.warnings : []),
+    ...(accountSync && Array.isArray(accountSync.warnings) ? accountSync.warnings : []),
     ...(monitoringMode && !positionRow ? ['Active monitoring requires an ACTIVE entry in live/position_register.json.'] : []),
     ...(monitoringMode && positionRow && positionMonitoringRow && positionMonitoringRow.option_instrument !== positionRow.option_instrument
       ? [`Registered option instrument mismatch: register=${positionRow.option_instrument}; monitoring=${positionMonitoringRow.option_instrument}.`]
@@ -623,6 +634,15 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoring
     damage_state: damageState,
     alert_state: alertState,
     position_status: positionRow ? positionRow.position_status : null,
+    account_sync: positionMonitoringRow && positionMonitoringRow.account_sync ? positionMonitoringRow.account_sync : accountSync ? {
+      data_source: accountSync.data_source,
+      last_sync: accountSync.last_sync,
+      environment: accountSync.environment,
+      base_url: accountSync.base_url,
+      available: Boolean(accountSync.available),
+      read_only: true,
+      testnet: Boolean(accountSync.testnet)
+    } : null,
     option_expiry: optionExpiry,
     days_to_expiration: accounting.days_to_expiry ?? (positionRow ? daysBetween(snapshotDate, optionExpiry) : selectedOptionRow ? optionalNumber(liveOptionRow.days_to_expiration) : null),
     days_to_expiry: accounting.days_to_expiry,
@@ -634,7 +654,10 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoring
     underlying_qty: positionRow ? optionalNumber(positionRow.underlying_qty) : null,
     underlying_entry_price: accounting.underlying_entry_price,
     underlying_entry_timestamp: accounting.underlying_entry_timestamp,
+    underlying_entry_ts: accounting.underlying_entry_ts,
+    underlying_cost_basis: accounting.underlying_cost_basis,
     current_spot_price: accounting.current_spot_price,
+    underlying_market_value: accounting.underlying_market_value,
     underlying_unrealized_pnl: accounting.underlying_unrealized_pnl,
     short_call_symbol: accounting.short_call_symbol,
     short_call_qty: accounting.short_call_qty,
@@ -649,6 +672,7 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoring
     hedge_qty: positionRow ? optionalNumber(positionRow.hedge_qty) : null,
     hedge_entry_price: positionRow ? optionalNumber(positionRow.hedge_entry_price) : null,
     hedge_entry_timestamp: accounting.hedge_entry_timestamp,
+    hedge_cost_basis: accounting.hedge_cost_basis,
     distance_to_strike_pct: spotPrice === null || optionStrike === null || spotPrice === 0 ? null : roundNumber((optionStrike / spotPrice - 1) * 100),
     observed_option_premium: roundNumber(optionPremium),
     option_data_source: positionMonitoringRow ? path.relative(REPO_ROOT, LIVE_POSITION_MONITORING_PATH) : selectedOptionRow ? path.relative(REPO_ROOT, LIVE_OPTION_DISCOVERY_PATH) : 'historical_daily_mtm',
@@ -680,6 +704,7 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoring
       hysteresis.hysteresisNote,
       liveMetrics ? `Live market data source: ${path.relative(REPO_ROOT, assetConfig.liveMetricsPath)}.` : 'Live market data unavailable for snapshot date; using historical Daily MTM fallback.',
       monitoringMode ? `Active monitoring uses Position Register source: ${positionRegister.source || 'missing'}.` : selectedOptionRow ? `Live option discovery source: ${path.relative(REPO_ROOT, LIVE_OPTION_DISCOVERY_PATH)}.` : 'Live option discovery unavailable for snapshot date; using historical option fallback if present.',
+      accountSync ? `Account sync source: ${accountSync.data_source || 'N/A'}; env=${accountSync.environment || 'N/A'}; base_url=${accountSync.base_url || 'N/A'}; available=${Boolean(accountSync.available)}; last_sync=${accountSync.last_sync || 'N/A'}.` : 'Account sync metadata unavailable.',
       monitoringSource ? `Monitoring source: ${monitoringSource}.` : 'No monitoring signal source available for this asset.',
       sources.length ? `Daily MTM source count: ${sources.length}.` : 'No Daily MTM source available.'
     ].join(' '),
@@ -731,6 +756,7 @@ function renderMarkdown(snapshot) {
       '',
       ...staleWarningMarkdown(asset),
       `Spot: ${formatPrice(asset.spot_price)}`,
+      `Account sync: ${asset.account_sync ? `${asset.account_sync.data_source || 'N/A'} / ${asset.account_sync.environment || 'N/A'} / ${asset.account_sync.base_url || 'N/A'} / ${asset.account_sync.last_sync || 'N/A'} / available=${String(Boolean(asset.account_sync.available))}` : 'N/A'}`,
       '',
       'Returns',
       '',
@@ -852,6 +878,9 @@ function renderActiveMonitoringReport(snapshot) {
       `- Current price: ${formatPrice(asset.spot_price)}.`,
       `- Data as of: ${asset.data_as_of || 'N/A'}.`,
       `- Market data source: ${asset.market_data_source || 'N/A'}.`,
+      `- Account sync source: ${asset.account_sync ? asset.account_sync.data_source : 'N/A'}.`,
+      `- Account sync env / base URL: ${asset.account_sync ? asset.account_sync.environment || 'N/A' : 'N/A'} / ${asset.account_sync ? asset.account_sync.base_url || 'N/A' : 'N/A'}.`,
+      `- Account sync last sync / available: ${asset.account_sync ? asset.account_sync.last_sync || 'N/A' : 'N/A'} / ${asset.account_sync ? String(Boolean(asset.account_sync.available)) : 'N/A'}.`,
       `- Realized vol daily / annualized: ${formatPct(asset.realized_vol_daily_pct)} / ${formatPct(asset.realized_vol_annualized_pct)}.`,
       `- EWMA daily / annualized: ${formatPct(asset.ewma_daily_pct)} / ${formatPct(asset.ewma_annualized_pct)}.`,
       `- Historical VaR: ${formatPct(asset.historical_VaR_pct)}.`,
@@ -927,6 +956,7 @@ function renderActiveAssetCard(asset) {
         ${htmlMetric('Days to expiry', valueOrNa(asset.days_to_expiration))}
         ${htmlMetric('Cycle ID', asset.cycle_id || 'N/A')}
         ${htmlMetric('Position status', asset.position_status || 'N/A')}
+        ${htmlMetric('Account sync', asset.account_sync ? `${asset.account_sync.environment || 'N/A'} / ${asset.account_sync.available ? 'available' : 'fallback'}` : 'N/A', asset.account_sync && asset.account_sync.available ? 'pos' : 'warn')}
       </div>
       <div class="block">
         <h3>Underlying</h3>
@@ -1820,6 +1850,7 @@ function archiveTimeline(timelinePath, archive) {
 }
 
 function main() {
+  logCcwEnvStartup('generate_live_research_snapshot.js');
   const args = parseArgs(process.argv.slice(2));
   assertArgs(args);
 

@@ -1,6 +1,15 @@
 {
   "version": "0.1",
-  "description": "Template for the local research-grade Position Register. Copy to live/position_register.json and keep only ACTIVE positions for current live/manual monitoring.",
+  "description": "Template for the local research-grade Position Register. Copy to live/position_register.json and keep only ACTIVE positions for current live/manual monitoring. Optional Bybit account sync fields are read-only metadata populated from environment-configured API credentials.",
+  "account_sync": {
+    "data_source": "BYBIT_ACCOUNT_API",
+    "last_sync": null,
+    "environment": "mainnet",
+    "base_url": "https://api.bybit.com",
+    "testnet": false,
+    "read_only": true,
+    "warnings": []
+  },
   "positions": [
     {
       "cycle_id": "YYYY-MM-DD_weekly_otm05_bybit",
@@ -10,7 +19,9 @@
       "asset": "BTC",
       "underlying_qty": 0,
       "underlying_entry_price": null,
+      "underlying_entry_ts": null,
       "underlying_entry_timestamp": null,
+      "underlying_cost_basis": null,
       "short_call_symbol": "BTC-DDMMMYY-STRIKE-C-USDT",
       "short_call_qty": 0,
       "short_call_expiry": "YYYY-MM-DD",
@@ -26,7 +37,17 @@
       "hedge_qty": 0,
       "hedge_entry_price": null,
       "hedge_entry_timestamp": null,
+      "hedge_cost_basis": null,
       "accumulated_fees": null,
+      "account_sync": {
+        "data_source": "BYBIT_ACCOUNT_API",
+        "last_sync": null,
+        "environment": "mainnet",
+        "base_url": "https://api.bybit.com",
+        "matched_spot": false,
+        "matched_option_position": false,
+        "matched_perpetual_position": false
+      },
       "notes": "Local active position entry. Do not use this file as historical storage."
     },
     {
@@ -37,7 +58,9 @@
       "asset": "ETH",
       "underlying_qty": 0,
       "underlying_entry_price": null,
+      "underlying_entry_ts": null,
       "underlying_entry_timestamp": null,
+      "underlying_cost_basis": null,
       "short_call_symbol": "ETH-DDMMMYY-STRIKE-C-USDT",
       "short_call_qty": 0,
       "short_call_expiry": "YYYY-MM-DD",
@@ -53,7 +76,17 @@
       "hedge_qty": 0,
       "hedge_entry_price": null,
       "hedge_entry_timestamp": null,
+      "hedge_cost_basis": null,
       "accumulated_fees": null,
+      "account_sync": {
+        "data_source": "BYBIT_ACCOUNT_API",
+        "last_sync": null,
+        "environment": "mainnet",
+        "base_url": "https://api.bybit.com",
+        "matched_spot": false,
+        "matched_option_position": false,
+        "matched_perpetual_position": false
+      },
       "notes": "Local active position entry. Do not use this file as historical storage."
     }
   ]

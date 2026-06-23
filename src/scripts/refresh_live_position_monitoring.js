@@ -7,6 +7,11 @@ const {
   optionalNumber,
   roundNumber
 } = require('./btc_deep_risk_utils');
+const {
+  fetchBybitAccountSync,
+  mergeAccountSyncIntoRegister
+} = require('./bybit_account_sync');
+const { logCcwEnvStartup } = require('./ccw_env_diagnostics');
 
 const LIVE_DIR = path.join(REPO_ROOT, 'live');
 const LIVE_DATA_DIR = path.join(LIVE_DIR, 'data');
@@ -120,6 +125,13 @@ function underlyingPnl(position, spotPrice) {
   return roundNumber((spot - entry) * qty);
 }
 
+function underlyingMarketValue(position, spotPrice) {
+  const qty = optionalNumber(position.underlying_qty);
+  const spot = optionalNumber(spotPrice);
+  if (qty === null || spot === null) return null;
+  return roundNumber(qty * spot);
+}
+
 function hedgePnl(position, markPrice) {
   const qty = optionalNumber(position.hedge_qty);
   const entry = optionalNumber(position.hedge_entry_price);
@@ -147,11 +159,14 @@ function normalizeTicker(row) {
   };
 }
 
-function loadActivePositions() {
+function loadPositionRegister() {
   if (!fs.existsSync(POSITION_REGISTER_PATH)) {
     throw new Error(`Missing Position Register: ${path.relative(REPO_ROOT, POSITION_REGISTER_PATH)}`);
   }
-  const register = readJson(POSITION_REGISTER_PATH);
+  return readJson(POSITION_REGISTER_PATH);
+}
+
+function activePositionsFromRegister(register) {
   const positions = Array.isArray(register.positions) ? register.positions : [];
   const active = positions
     .map(normalizePosition)
@@ -160,6 +175,18 @@ function loadActivePositions() {
     throw new Error('Position Register has no ACTIVE positions. Active monitoring requires a registered open cycle.');
   }
   return active;
+}
+
+async function loadSyncedRegister() {
+  const register = loadPositionRegister();
+  const accountSync = await fetchBybitAccountSync();
+  if (!accountSync.available) {
+    return { register, accountSync };
+  }
+
+  const syncedRegister = mergeAccountSyncIntoRegister(register, accountSync);
+  fs.writeFileSync(POSITION_REGISTER_PATH, `${JSON.stringify(syncedRegister, null, 2)}\n`, 'utf8');
+  return { register: syncedRegister, accountSync };
 }
 
 function loadCurrentSpot(asset, snapshotDate) {
@@ -173,8 +200,9 @@ function loadCurrentSpot(asset, snapshotDate) {
   };
 }
 
-async function monitorPosition(position, snapshotDate) {
+async function monitorPosition(position, snapshotDate, accountSync) {
   const warnings = [];
+  const syncMeta = position.account_sync || null;
   const instrument = position.short_call_symbol;
   let tickerResult = { endpoint: null, row: null };
   let hedgeTickerResult = { endpoint: null, row: null };
@@ -204,8 +232,12 @@ async function monitorPosition(position, snapshotDate) {
   if (currentSpot.price === null) warnings.push('Current spot price is unavailable; underlying PnL is N/A.');
   if (optionalNumber(position.underlying_entry_price) === null) warnings.push('Underlying entry price unavailable; underlying and net PnL are not currently calculable.');
   if (optionalNumber(ticker.option_mark_price) === null) warnings.push('Option mark price is unavailable; option PnL is N/A.');
+  if (accountSync && Array.isArray(accountSync.warnings)) warnings.push(...accountSync.warnings);
+  if (accountSync && accountSync.available && syncMeta && !syncMeta.matched_option_position) warnings.push('Bybit account sync did not find the registered option position; preserving local option fields.');
+  if (accountSync && accountSync.available && syncMeta && position.hedge_instrument && !syncMeta.matched_perpetual_position) warnings.push('Bybit account sync did not find the registered perpetual hedge; preserving local hedge fields.');
 
   const underlyingUnrealizedPnl = underlyingPnl(position, currentSpot.price);
+  const underlyingValue = underlyingMarketValue(position, currentSpot.price);
   const optionUnrealizedPnl = optionMtmPnl(position, ticker.option_mark_price);
   const hedgeUnrealizedPnl = hedgePnl(position, hedgeMarkPrice);
 
@@ -215,12 +247,27 @@ async function monitorPosition(position, snapshotDate) {
     data_as_of: snapshotDate,
     generated_at: new Date().toISOString(),
     monitoring_source: 'position_register_bybit_public_option_ticker',
+    account_sync: accountSync ? {
+      data_source: accountSync.metadata.data_source,
+      last_sync: accountSync.metadata.last_sync,
+      environment: accountSync.metadata.environment,
+      base_url: accountSync.metadata.base_url,
+      available: Boolean(accountSync.available),
+      read_only: true,
+      testnet: Boolean(accountSync.metadata.testnet),
+      matched_spot: syncMeta ? Boolean(syncMeta.matched_spot) : false,
+      matched_option_position: syncMeta ? Boolean(syncMeta.matched_option_position) : false,
+      matched_perpetual_position: syncMeta ? Boolean(syncMeta.matched_perpetual_position) : false
+    } : null,
     venue: 'Bybit',
     position_status: position.position_status || null,
     underlying_qty: optionalNumber(position.underlying_qty),
     underlying_entry_price: optionalNumber(position.underlying_entry_price),
     underlying_entry_timestamp: position.underlying_entry_timestamp || null,
+    underlying_entry_ts: position.underlying_entry_ts || null,
+    underlying_cost_basis: position.underlying_cost_basis || null,
     current_spot_price: roundNumber(currentSpot.price),
+    underlying_market_value: underlyingValue,
     underlying_unrealized_pnl: underlyingUnrealizedPnl,
     short_call_symbol: instrument || null,
     short_call_qty: optionalNumber(position.short_call_qty),
@@ -242,6 +289,7 @@ async function monitorPosition(position, snapshotDate) {
     hedge_qty: optionalNumber(position.hedge_qty),
     hedge_entry_price: optionalNumber(position.hedge_entry_price),
     hedge_entry_timestamp: position.hedge_entry_timestamp || null,
+    hedge_cost_basis: position.hedge_cost_basis || null,
     hedge_mark_price: roundNumber(hedgeMarkPrice),
     hedge_unrealized_pnl_approx: hedgeUnrealizedPnl,
     accumulated_fees: optionalNumber(position.accumulated_fees),
@@ -258,7 +306,7 @@ async function monitorPosition(position, snapshotDate) {
     },
     option_mtm_pnl: optionUnrealizedPnl,
     option_unrealized_pnl_approx: optionUnrealizedPnl,
-    net_unrealized_pnl_approx: sumIfComplete(underlyingUnrealizedPnl, optionUnrealizedPnl, hedgeUnrealizedPnl, -(optionalNumber(position.accumulated_fees) || 0)),
+    net_unrealized_pnl_approx: sumIfComplete(underlyingUnrealizedPnl, optionUnrealizedPnl, hedgeUnrealizedPnl),
     warnings,
     notes: position.notes || '',
     endpoints: {
@@ -274,13 +322,15 @@ async function monitorPosition(position, snapshotDate) {
 }
 
 async function main() {
+  logCcwEnvStartup('refresh_live_position_monitoring.js');
   const snapshotDate = nyDate();
   fs.mkdirSync(LIVE_DATA_DIR, { recursive: true });
-  const activePositions = loadActivePositions();
+  const { register, accountSync } = await loadSyncedRegister();
+  const activePositions = activePositionsFromRegister(register);
   const rows = [];
 
   for (const position of activePositions) {
-    const row = await monitorPosition(position, snapshotDate);
+    const row = await monitorPosition(position, snapshotDate, accountSync);
     rows.push(row);
     console.log(`${row.asset}: monitored ${row.option_instrument || 'missing_option'} mark=${row.option_mark_price === null ? 'null' : row.option_mark_price}`);
   }
@@ -289,6 +339,17 @@ async function main() {
     generated_at: new Date().toISOString(),
     data_as_of: snapshotDate,
     position_register: path.relative(REPO_ROOT, POSITION_REGISTER_PATH),
+    account_sync: accountSync ? {
+      ...accountSync.metadata,
+      available: Boolean(accountSync.available),
+      warnings: accountSync.warnings,
+      wallet_balances: accountSync.wallet_balances,
+      spot_holdings: accountSync.spot_holdings,
+      perpetual_positions: accountSync.perpetual_positions,
+      option_positions: accountSync.option_positions,
+      executions: accountSync.executions,
+      orders: accountSync.orders
+    } : null,
     rows
   };
   fs.writeFileSync(OUTPUT_JSON, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
