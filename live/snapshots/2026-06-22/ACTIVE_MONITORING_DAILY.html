@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Active Monitoring Daily</title>
+<style>
+:root {
+  --bg: #f4f6f8;
+  --panel: #ffffff;
+  --panel2: #f8fafc;
+  --grid: #c9d2dc;
+  --text: #111827;
+  --muted: #5c6670;
+  --accent: #1f4e79;
+  --green: #087a2f;
+  --red: #b00020;
+  --amber: #9a5a00;
+  --orange: #b85c00;
+  --blue: #1f5f99;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Consolas, "Lucida Console", Monaco, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.32;
+}
+.terminal {
+  padding: 12px;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--grid);
+  border-left: 5px solid var(--accent);
+  background: #ffffff;
+  padding: 9px 10px;
+  margin-bottom: 10px;
+}
+h1 {
+  margin: 0;
+  color: #111827;
+  font-size: 16px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+.subtitle { color: var(--muted); margin-top: 2px; }
+.stamp { text-align: right; color: var(--muted); white-space: nowrap; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.card, .section {
+  border: 1px solid var(--grid);
+  background: var(--panel);
+}
+.card h2, .section h2 {
+  margin: 0;
+  padding: 7px 9px;
+  color: #111827;
+  font-size: 13px;
+  background: #e9edf2;
+  border-bottom: 1px solid var(--grid);
+}
+.card-body { padding: 8px; display: grid; gap: 8px; }
+.subgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.block { border: 1px solid var(--grid); background: var(--panel2); padding: 7px; }
+.block h3 {
+  margin: 0 0 5px 0;
+  color: var(--accent);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.metric {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px dotted #d5dce4;
+  padding: 2px 0;
+}
+.metric span { color: var(--muted); }
+.metric b { color: var(--text); font-weight: 600; text-align: right; }
+.summary-bar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 10px 0; }
+.pill {
+  display: inline-block;
+  border: 1px solid var(--grid);
+  padding: 2px 6px;
+  background: #eef3f8;
+  color: var(--text);
+}
+.badge {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 2px 6px;
+  border: 1px solid #d19a2e;
+  background: #fff5d6;
+  color: var(--amber);
+  font-weight: 700;
+}
+.pos { color: var(--green) !important; }
+.neg { color: var(--red) !important; }
+.flat { color: var(--text) !important; }
+.na, .muted { color: var(--muted) !important; }
+.warn, .state-watch { color: var(--amber) !important; }
+.state-stress { color: var(--orange) !important; }
+.state-crisis { color: var(--red) !important; }
+.state-normal { color: var(--green) !important; }
+.state-neutral { color: var(--text) !important; }
+.warning-list { margin: 0; padding-left: 18px; color: var(--amber); }
+.warning-list li { margin: 2px 0; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td {
+  border-bottom: 1px solid #d8dee6;
+  padding: 5px 6px;
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  color: #111827;
+  background: #e9edf2;
+  border-bottom: 1px solid var(--accent);
+  text-transform: uppercase;
+  font-size: 11px;
+}
+tr:nth-child(even) td { background: #f8fafc; }
+.num { text-align: right; white-space: nowrap; }
+.table-wrap { overflow: auto; max-height: 75vh; }
+.section { margin-top: 10px; }
+.section-body { padding: 8px; }
+@media (max-width: 900px) {
+  .grid, .subgrid, .summary-bar { grid-template-columns: 1fr; }
+  .stamp { text-align: left; }
+  .topbar { align-items: flex-start; flex-direction: column; }
+}
+@page {
+  size: A4 landscape;
+  margin: 8mm;
+}
+@media print {
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body {
+    background: #fff;
+    color: #111;
+    font-size: 8.5px;
+    line-height: 1.18;
+  }
+  .terminal { padding: 0; }
+  .topbar {
+    border: 1px solid #888;
+    border-left: 4px solid var(--accent);
+    margin-bottom: 4px;
+    padding: 4px 6px;
+  }
+  h1 { font-size: 12px; }
+  .subtitle, .stamp, .metric span, .muted, .na { color: #555 !important; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+  .subgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+  .summary-bar { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 4px 0; }
+  .topbar, .card, .section, .block {
+    border-color: #999;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .card h2, .section h2, th {
+    border-color: #777;
+  }
+  .card h2, .section h2 {
+    padding: 3px 5px;
+    font-size: 10px;
+  }
+  .card-body, .section-body, .block {
+    padding: 4px;
+  }
+  .block h3 {
+    color: #111;
+    font-size: 8.5px;
+    margin-bottom: 2px;
+  }
+  .metric { padding: 1px 0; gap: 4px; }
+  .pill, .badge {
+    background: #fff7df;
+    border-color: #9a6a00;
+    color: #6f4b00;
+    padding: 1px 4px;
+  }
+  table { font-size: 7.5px; }
+  th, td {
+    padding: 2px 3px;
+    border-color: #ccc;
+  }
+  tr:nth-child(even) td { background: #f5f7fa; }
+  .pos, .state-normal { color: #087a2f !important; }
+  .neg, .state-crisis { color: #b00020 !important; }
+  .warn, .state-watch, .state-stress { color: #8a4b00 !important; }
+  th { position: static; }
+  .table-wrap { max-height: none; overflow: visible; }
+}
+</style>
+</head>
+<body>
+<main class="terminal">
+<div class="topbar">
+  <div><h1>Active Monitoring Daily</h1><div class="subtitle">2026-06-22 | 2026-06-22 10:00 America/New_York</div></div>
+  <div class="stamp">Generated locally<br>Offline static HTML</div>
+</div>
+<div class="summary-bar">
+<div class="block"><h3>Snapshot</h3><div class="metric"><span>Date</span><b class="">2026-06-22</b></div><div class="metric"><span>Decision</span><b class="">2026-06-22 10:00 America/New_York</b></div></div>
+<div class="block"><h3>Freshness</h3><div class="metric"><span>Stale assets</span><b class="pos">0</b></div><div class="metric"><span>Mode</span><b class="">ACTIVE_MONITORING_DAILY</b></div></div>
+<div class="block"><h3>Warnings</h3><div class="metric"><span>Count</span><b class="warn">2</b></div><div class="metric"><span>Read only</span><b class="">No orders placed</b></div></div>
+<div class="block"><h3>Venue</h3><div class="metric"><span>Venue</span><b class="">Bybit</b></div><div class="metric"><span>Timezone</span><b class="">America/New_York</b></div></div>
+</div>
+<div class="grid">
+<section class="card">
+  <h2>BTC <span class="pill state-watch">watch</span></h2>
+  <div class="card-body">
+    <div class="subgrid">
+      <div class="block">
+        <h3>Market</h3>
+        <div class="metric"><span>Current price</span><b class="">64,629.40</b></div>
+        <div class="metric"><span>Regime</span><b class="state-watch">watch</b></div>
+        <div class="metric"><span>Today action</span><b class="">NO ACTION</b></div>
+        <div class="metric"><span>Execution state</span><b class="state-neutral">NO_HEDGE</b></div>
+      </div>
+      <div class="block">
+        <h3>Hedge</h3>
+        <div class="metric"><span>Target hedge</span><b class="">0%</b></div>
+        <div class="metric"><span>Current hedge</span><b class="">0%</b></div>
+        <div class="metric"><span>Delta</span><b class="">0%</b></div>
+        <div class="metric"><span>Circuit breaker</span><b class="state-normal">OK</b></div>
+      </div>
+      <div class="block">
+        <h3>Position</h3>
+        <div class="metric"><span>Days since entry</span><b class="">4</b></div>
+        <div class="metric"><span>Days to expiry</span><b class="">4</b></div>
+        <div class="metric"><span>Cycle ID</span><b class="">2026-06-18_weekly_otm05_bybit</b></div>
+        <div class="metric"><span>Position status</span><b class="">ACTIVE</b></div>
+      </div>
+      <div class="block">
+        <h3>Underlying</h3>
+        <div class="metric"><span>Quantity</span><b class="">1.5</b></div>
+        <div class="metric"><span>Entry price</span><b class="">N/A</b></div>
+        <div class="metric"><span>Unrealized PnL</span><b class="na">N/A</b></div>
+      </div>
+      <div class="block">
+        <h3>Short Call</h3>
+        <div class="metric"><span>Symbol</span><b class="">BTC-26JUN26-66000-C-USDT</b></div>
+        <div class="metric"><span>Expiry</span><b class="">2026-06-26</b></div>
+        <div class="metric"><span>Strike</span><b class="">66,000.00</b></div>
+        <div class="metric"><span>Premium received</span><b class="">442.50</b></div>
+        <div class="metric"><span>Mark price</span><b class="">392.91</b></div>
+        <div class="metric"><span>Option PnL approx</span><b class="neg">-146.86</b></div>
+      </div>
+      <div class="block">
+        <h3>Warnings</h3>
+        <div class="badge">WARN 1</div><ul class="warning-list"><li>Underlying entry price unavailable; underlying and net PnL are not currently calculable.</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="card">
+  <h2>ETH <span class="pill state-stress">stress</span></h2>
+  <div class="card-body">
+    <div class="subgrid">
+      <div class="block">
+        <h3>Market</h3>
+        <div class="metric"><span>Current price</span><b class="">1,744.96</b></div>
+        <div class="metric"><span>Regime</span><b class="state-stress">stress</b></div>
+        <div class="metric"><span>Today action</span><b class="">NO ACTION</b></div>
+        <div class="metric"><span>Execution state</span><b class="state-neutral">HEDGE_30</b></div>
+      </div>
+      <div class="block">
+        <h3>Hedge</h3>
+        <div class="metric"><span>Target hedge</span><b class="">30%</b></div>
+        <div class="metric"><span>Current hedge</span><b class="">30%</b></div>
+        <div class="metric"><span>Delta</span><b class="">0%</b></div>
+        <div class="metric"><span>Circuit breaker</span><b class="state-normal">OK</b></div>
+      </div>
+      <div class="block">
+        <h3>Position</h3>
+        <div class="metric"><span>Days since entry</span><b class="">4</b></div>
+        <div class="metric"><span>Days to expiry</span><b class="">4</b></div>
+        <div class="metric"><span>Cycle ID</span><b class="">2026-06-18_weekly_otm05_bybit</b></div>
+        <div class="metric"><span>Position status</span><b class="">ACTIVE</b></div>
+      </div>
+      <div class="block">
+        <h3>Underlying</h3>
+        <div class="metric"><span>Quantity</span><b class="">30</b></div>
+        <div class="metric"><span>Entry price</span><b class="">N/A</b></div>
+        <div class="metric"><span>Unrealized PnL</span><b class="na">N/A</b></div>
+      </div>
+      <div class="block">
+        <h3>Short Call</h3>
+        <div class="metric"><span>Symbol</span><b class="">ETH-26JUN26-1775-C-USDT</b></div>
+        <div class="metric"><span>Expiry</span><b class="">2026-06-26</b></div>
+        <div class="metric"><span>Strike</span><b class="">1,775.00</b></div>
+        <div class="metric"><span>Premium received</span><b class="">507.00</b></div>
+        <div class="metric"><span>Mark price</span><b class="">20.34</b></div>
+        <div class="metric"><span>Option PnL approx</span><b class="neg">-103.23</b></div>
+      </div>
+      <div class="block">
+        <h3>Warnings</h3>
+        <div class="badge">WARN 1</div><ul class="warning-list"><li>Underlying entry price unavailable; underlying and net PnL are not currently calculable.</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+<section class="section"><h2>Summary Bar</h2><div class="section-body summary-bar">
+<div class="block">
+    <h3>BTC</h3>
+    <div class="metric"><span>Regime</span><b class="state-watch">watch</b></div>
+    <div class="metric"><span>Hedge target</span><b class="">0%</b></div>
+    <div class="metric"><span>Status</span><b class="state-normal">OK</b></div>
+  </div><div class="block">
+    <h3>ETH</h3>
+    <div class="metric"><span>Regime</span><b class="state-stress">stress</b></div>
+    <div class="metric"><span>Hedge target</span><b class="">30%</b></div>
+    <div class="metric"><span>Status</span><b class="state-normal">OK</b></div>
+  </div>
+</div></section>
+</main>
+</body>
+</html>

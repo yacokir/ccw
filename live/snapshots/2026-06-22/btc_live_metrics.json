@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-06-22T18:10:33.244Z",
+  "asset": "BTC",
+  "source": "bybit_public_linear_ticker_and_daily_kline",
+  "venue": "Bybit",
+  "symbol": "BTCUSDT",
+  "endpoints": {
+    "ticker": "https://api.bybit.com/v5/market/tickers?category=linear&symbol=BTCUSDT",
+    "daily_kline": "https://api.bybit.com/v5/market/kline?category=linear&symbol=BTCUSDT&interval=D&limit=120"
+  },
+  "timestamp": "2026-06-22T18:10:33.189Z",
+  "data_as_of": "2026-06-22",
+  "snapshot_date": "2026-06-22",
+  "current_price": 64629.4,
+  "return_7d_pct": -2.500935,
+  "return_30d_pct": -15.747305,
+  "return_90d_pct": -8.350882,
+  "realized_vol_30d_pct": 2.239745,
+  "realized_vol_daily_pct": 2.239745,
+  "EWMA_pct": 2.044014,
+  "ewma_daily_pct": 2.044014,
+  "historical_VaR_pct": -4.191523,
+  "observation_count": 120,
+  "history_start_date": "2026-02-23",
+  "history_end_date": "2026-06-22",
+  "methodology": {
+    "price": "Bybit public v5 market ticker, linear USDT perpetual symbol.",
+    "history": "Bybit public v5 daily kline, linear USDT perpetual symbol, latest 120 candles requested.",
+    "returns": "Current public price compared with recent public daily close history at 7d, 30d, and 90d lookbacks.",
+    "realizedVol": "Sample standard deviation of adjacent spot returns in the last 30 calendar days; large gaps are not bridged.",
+    "ewma": "Recursive EWMA over adjacent spot returns with lambda = 0.94; large gaps are not bridged.",
+    "historicalVaR": "Empirical 5th percentile over the latest 30 adjacent spot returns ending on the snapshot date."
+  },
+  "validation": {
+    "kline_observation_count": 120,
+    "combined_observation_count": 120,
+    "max_daily_gap_days": 3,
+    "required_var_observations": 30,
+    "metrics_may_be_null_when_recent_history_is_unavailable": true
+  }
+}

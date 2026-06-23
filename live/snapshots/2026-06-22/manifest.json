@@ -1,0 +1,76 @@
+{
+  "generated_at": "2026-06-22T18:16:13.442Z",
+  "snapshot_date": "2026-06-22",
+  "mode": "ACTIVE_MONITORING_DAILY",
+  "output_basename": "2026-06-22_daily_monitoring_snapshot",
+  "files": [
+    {
+      "label": "snapshot_json",
+      "source": "live\\snapshots\\2026-06-22_daily_monitoring_snapshot.json",
+      "archived_as": "live\\snapshots\\2026-06-22\\2026-06-22_daily_monitoring_snapshot.json"
+    },
+    {
+      "label": "snapshot_markdown",
+      "source": "live\\snapshots\\2026-06-22_daily_monitoring_snapshot.md",
+      "archived_as": "live\\snapshots\\2026-06-22\\2026-06-22_daily_monitoring_snapshot.md"
+    },
+    {
+      "label": "active_monitoring_daily_report",
+      "source": "live\\ACTIVE_MONITORING_DAILY.md",
+      "archived_as": "live\\snapshots\\2026-06-22\\ACTIVE_MONITORING_DAILY.md"
+    },
+    {
+      "label": "active_monitoring_daily_html",
+      "source": "live\\reports\\ACTIVE_MONITORING_DAILY.html",
+      "archived_as": "live\\snapshots\\2026-06-22\\ACTIVE_MONITORING_DAILY.html"
+    },
+    {
+      "label": "btc_live_metrics",
+      "source": "live\\data\\btc_live_metrics.json",
+      "archived_as": "live\\snapshots\\2026-06-22\\btc_live_metrics.json"
+    },
+    {
+      "label": "eth_live_metrics",
+      "source": "live\\data\\eth_live_metrics.json",
+      "archived_as": "live\\snapshots\\2026-06-22\\eth_live_metrics.json"
+    },
+    {
+      "label": "live_monitoring_signals",
+      "source": "live\\data\\live_monitoring_signals.json",
+      "archived_as": "live\\snapshots\\2026-06-22\\live_monitoring_signals.json"
+    },
+    {
+      "label": "live_option_discovery",
+      "source": "live\\data\\live_option_discovery.json",
+      "archived_as": "live\\snapshots\\2026-06-22\\live_option_discovery.json"
+    },
+    {
+      "label": "live_position_monitoring",
+      "source": "live\\data\\live_position_monitoring.json",
+      "archived_as": "live\\snapshots\\2026-06-22\\live_position_monitoring.json"
+    },
+    {
+      "label": "position_register",
+      "source": "live\\position_register.json",
+      "archived_as": "live\\snapshots\\2026-06-22\\position_register.json"
+    },
+    {
+      "label": "live_position_timeline",
+      "source": "live\\LIVE_POSITION_TIMELINE.md",
+      "archived_as": "live\\snapshots\\2026-06-22\\LIVE_POSITION_TIMELINE.md"
+    },
+    {
+      "label": "live_position_timeline_csv",
+      "source": "live\\LIVE_POSITION_TIMELINE.csv",
+      "archived_as": "live\\snapshots\\2026-06-22\\LIVE_POSITION_TIMELINE.csv"
+    },
+    {
+      "label": "live_position_timeline_html",
+      "source": "live\\reports\\LIVE_POSITION_TIMELINE.html",
+      "archived_as": "live\\snapshots\\2026-06-22\\LIVE_POSITION_TIMELINE.html"
+    }
+  ],
+  "warnings": [
+    "live_option_discovery has data date(s) 2026-06-21; snapshot_date is 2026-06-22."
+  ]
+}

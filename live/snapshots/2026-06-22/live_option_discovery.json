@@ -1,0 +1,73 @@
+{
+  "generated_at": "2026-06-21T21:06:16.465Z",
+  "rows": [
+    {
+      "asset": "BTC",
+      "venue": "Bybit",
+      "source": "bybit_public_option_instruments_and_ticker",
+      "generated_at": "2026-06-21T21:06:14.590Z",
+      "data_as_of": "2026-06-21",
+      "underlying_price": 63778.3,
+      "target_moneyness": 1.05,
+      "target_strike_raw": 66967.215,
+      "selected_expiry": "2026-06-26",
+      "selected_instrument": "BTC-26JUN26-67000-C-USDT",
+      "selected_strike": 67000,
+      "selection_reference_date": "2026-06-21",
+      "days_to_expiration": 5,
+      "selection_method": "fallback_nearest_later_weekly_expiry",
+      "expiry_window_min_days": 6,
+      "expiry_window_max_days": 9,
+      "bybit_server_date": "2026-06-21",
+      "observed_premium": 152.5,
+      "premium_source": "bybit_bid_ask_mid",
+      "option_bid": 150,
+      "option_ask": 155,
+      "option_mark_price": 152.046344,
+      "option_last_price": 150,
+      "warnings": [
+        "No option expiry found inside the target 6-9 day weekly window.",
+        "Used nearest later weekly Friday expiry as fallback."
+      ],
+      "endpoints": {
+        "instruments": "https://api.bybit.com/v5/market/instruments-info?category=option&baseCoin=BTC&limit=1000",
+        "ticker": "https://api.bybit.com/v5/market/tickers?category=option&symbol=BTC-26JUN26-67000-C-USDT",
+        "deribit_instruments": null
+      }
+    },
+    {
+      "asset": "ETH",
+      "venue": "Bybit",
+      "source": "bybit_public_option_instruments_and_ticker",
+      "generated_at": "2026-06-21T21:06:16.464Z",
+      "data_as_of": "2026-06-21",
+      "underlying_price": 1719.81,
+      "target_moneyness": 1.05,
+      "target_strike_raw": 1805.8005,
+      "selected_expiry": "2026-06-26",
+      "selected_instrument": "ETH-26JUN26-1800-C-USDT",
+      "selected_strike": 1800,
+      "selection_reference_date": "2026-06-21",
+      "days_to_expiration": 5,
+      "selection_method": "fallback_nearest_later_weekly_expiry",
+      "expiry_window_min_days": 6,
+      "expiry_window_max_days": 9,
+      "bybit_server_date": "2026-06-21",
+      "observed_premium": 13.45,
+      "premium_source": "bybit_bid_ask_mid",
+      "option_bid": 13.4,
+      "option_ask": 13.5,
+      "option_mark_price": 13.443943,
+      "option_last_price": 13.5,
+      "warnings": [
+        "No option expiry found inside the target 6-9 day weekly window.",
+        "Used nearest later weekly Friday expiry as fallback."
+      ],
+      "endpoints": {
+        "instruments": "https://api.bybit.com/v5/market/instruments-info?category=option&baseCoin=ETH&limit=1000",
+        "ticker": "https://api.bybit.com/v5/market/tickers?category=option&symbol=ETH-26JUN26-1800-C-USDT",
+        "deribit_instruments": null
+      }
+    }
+  ]
+}

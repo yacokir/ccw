@@ -1,0 +1,131 @@
+{
+  "generated_at": "2026-06-22T18:10:35.173Z",
+  "data_as_of": "2026-06-22",
+  "position_register": "live\\position_register.json",
+  "rows": [
+    {
+      "asset": "BTC",
+      "cycle_id": "2026-06-18_weekly_otm05_bybit",
+      "data_as_of": "2026-06-22",
+      "generated_at": "2026-06-22T18:10:34.482Z",
+      "monitoring_source": "position_register_bybit_public_option_ticker",
+      "venue": "Bybit",
+      "position_status": "ACTIVE",
+      "underlying_qty": 1.5,
+      "underlying_entry_price": null,
+      "underlying_entry_timestamp": "2026-06-18 10:00 America/New_York",
+      "current_spot_price": 64629.4,
+      "underlying_unrealized_pnl": null,
+      "short_call_symbol": "BTC-26JUN26-66000-C-USDT",
+      "short_call_qty": -1.5,
+      "short_call_expiry": "2026-06-26",
+      "short_call_strike": 66000,
+      "short_call_entry_premium": 295,
+      "short_call_entry_timestamp": "2026-06-18 10:00 America/New_York",
+      "option_instrument": "BTC-26JUN26-66000-C-USDT",
+      "option_expiry": "2026-06-26",
+      "days_to_expiration": 4,
+      "days_since_entry": 4,
+      "option_strike": 66000,
+      "option_qty": -1.5,
+      "option_entry_premium": 295,
+      "premium_received": 442.5,
+      "hedge_instrument": "BTCUSDT",
+      "hedge_qty": 0,
+      "hedge_entry_price": null,
+      "hedge_entry_timestamp": "2026-06-18 10:00 America/New_York",
+      "hedge_mark_price": null,
+      "hedge_unrealized_pnl_approx": null,
+      "accumulated_fees": null,
+      "option_bid": 395,
+      "option_ask": 400,
+      "option_mark_price": 392.909868,
+      "option_last_price": 385,
+      "implied_volatility": 0.353,
+      "greeks": {
+        "delta": 0.284363,
+        "gamma": 0.00015,
+        "vega": 21.704952,
+        "theta": -107.127728
+      },
+      "option_mtm_pnl": -146.864802,
+      "option_unrealized_pnl_approx": -146.864802,
+      "net_unrealized_pnl_approx": null,
+      "warnings": [
+        "Underlying entry price unavailable; underlying and net PnL are not currently calculable."
+      ],
+      "notes": "Pilot live/paper position register entry from manual Bybit execution.",
+      "endpoints": {
+        "option_ticker": "https://api.bybit.com/v5/market/tickers?category=option&symbol=BTC-26JUN26-66000-C-USDT",
+        "hedge_ticker": null
+      },
+      "sources": {
+        "current_spot_price": "live\\data\\btc_live_metrics.json",
+        "option_mark_price": "https://api.bybit.com/v5/market/tickers?category=option&symbol=BTC-26JUN26-66000-C-USDT",
+        "hedge_mark_price": null
+      }
+    },
+    {
+      "asset": "ETH",
+      "cycle_id": "2026-06-18_weekly_otm05_bybit",
+      "data_as_of": "2026-06-22",
+      "generated_at": "2026-06-22T18:10:35.173Z",
+      "monitoring_source": "position_register_bybit_public_option_ticker",
+      "venue": "Bybit",
+      "position_status": "ACTIVE",
+      "underlying_qty": 30,
+      "underlying_entry_price": null,
+      "underlying_entry_timestamp": "2026-06-18 10:00 America/New_York",
+      "current_spot_price": 1744.96,
+      "underlying_unrealized_pnl": null,
+      "short_call_symbol": "ETH-26JUN26-1775-C-USDT",
+      "short_call_qty": -30,
+      "short_call_expiry": "2026-06-26",
+      "short_call_strike": 1775,
+      "short_call_entry_premium": 16.9,
+      "short_call_entry_timestamp": "2026-06-18 10:00 America/New_York",
+      "option_instrument": "ETH-26JUN26-1775-C-USDT",
+      "option_expiry": "2026-06-26",
+      "days_to_expiration": 4,
+      "days_since_entry": 4,
+      "option_strike": 1775,
+      "option_qty": -30,
+      "option_entry_premium": 16.9,
+      "premium_received": 507,
+      "hedge_instrument": "ETHUSDT",
+      "hedge_qty": -9,
+      "hedge_entry_price": 1696.07,
+      "hedge_entry_timestamp": "2026-06-18 10:00 America/New_York",
+      "hedge_mark_price": 1745.08,
+      "hedge_unrealized_pnl_approx": -441.09,
+      "accumulated_fees": null,
+      "option_bid": 20.4,
+      "option_ask": 20.5,
+      "option_mark_price": 20.340878,
+      "option_last_price": 20.5,
+      "implied_volatility": 0.4674,
+      "greeks": {
+        "delta": 0.373588,
+        "gamma": 0.004687,
+        "vega": 0.654869,
+        "theta": -4.278852
+      },
+      "option_mtm_pnl": -103.226328,
+      "option_unrealized_pnl_approx": -103.226328,
+      "net_unrealized_pnl_approx": null,
+      "warnings": [
+        "Underlying entry price unavailable; underlying and net PnL are not currently calculable."
+      ],
+      "notes": "Pilot live/paper position register entry from manual Bybit execution.",
+      "endpoints": {
+        "option_ticker": "https://api.bybit.com/v5/market/tickers?category=option&symbol=ETH-26JUN26-1775-C-USDT",
+        "hedge_ticker": "https://api.bybit.com/v5/market/tickers?category=linear&symbol=ETHUSDT"
+      },
+      "sources": {
+        "current_spot_price": "live\\data\\eth_live_metrics.json",
+        "option_mark_price": "https://api.bybit.com/v5/market/tickers?category=option&symbol=ETH-26JUN26-1775-C-USDT",
+        "hedge_mark_price": "https://api.bybit.com/v5/market/tickers?category=linear&symbol=ETHUSDT"
+      }
+    }
+  ]
+}
