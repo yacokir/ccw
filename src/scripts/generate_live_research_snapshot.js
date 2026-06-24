@@ -829,6 +829,13 @@ function renderMarkdown(snapshot) {
       `- Hedge mark price: ${formatPrice(asset.hedge_mark_price)}.`,
       `- Hedge unrealized PnL approx: ${formatPrice(asset.hedge_unrealized_pnl_approx)}.`,
       `- Net unrealized PnL approx: ${formatPrice(asset.net_unrealized_pnl_approx)}.`,
+      '',
+      'PnL Summary',
+      '',
+      `- Underlying PnL: ${formatPrice(asset.underlying_unrealized_pnl)}.`,
+      `- Option PnL: ${formatPrice(asset.option_unrealized_pnl_approx)}.`,
+      `- Hedge PnL: ${formatPrice(asset.hedge_unrealized_pnl_approx)}.`,
+      `- Net PnL: ${formatPrice(asset.net_unrealized_pnl_approx)}.`,
       ...optionWarningsMarkdown(asset),
       `- Normal counter: ${value(asset.normal_counter)}.`,
       `- Comments: ${asset.comments}`,
@@ -900,6 +907,7 @@ function renderActiveMonitoringReport(snapshot) {
       `- Option unrealized PnL approx: ${formatPrice(asset.option_unrealized_pnl_approx)}.`,
       `- Hedge mark / unrealized PnL approx: ${formatPrice(asset.hedge_mark_price)} / ${formatPrice(asset.hedge_unrealized_pnl_approx)}.`,
       `- Net unrealized PnL approx: ${formatPrice(asset.net_unrealized_pnl_approx)}.`,
+      `- PnL summary: underlying ${formatPrice(asset.underlying_unrealized_pnl)} / option ${formatPrice(asset.option_unrealized_pnl_approx)} / hedge ${formatPrice(asset.hedge_unrealized_pnl_approx)} / net ${formatPrice(asset.net_unrealized_pnl_approx)}.`,
       `- Circuit breaker: ${asset.circuit_breaker_status || 'N/A'}.`,
       ...reportWarningsMarkdown(asset),
       ''
@@ -956,7 +964,6 @@ function warningsForAsset(asset) {
 }
 
 function renderActiveAssetCard(asset) {
-  const warnings = warningsForAsset(asset);
   return `<section class="card">
   <h2>${escapeHtml(asset.asset)} <span class="pill ${stateClass(asset.alert_state)}">${escapeHtml(asset.alert_state || 'N/A')}</span></h2>
   <div class="card-body">
@@ -999,12 +1006,33 @@ function renderActiveAssetCard(asset) {
         ${htmlMetric('Option PnL approx', formatPrice(asset.option_unrealized_pnl_approx), pnlClass(asset.option_unrealized_pnl_approx))}
       </div>
       <div class="block">
-        <h3>Warnings</h3>
-        ${htmlWarnings(warnings)}
+        <h3>Hedge Accounting</h3>
+        ${htmlMetric('Hedge quantity', valueOrNa(asset.hedge_qty))}
+        ${htmlMetric('Entry price', formatPrice(asset.hedge_entry_price))}
+        ${htmlMetric('Mark price', formatPrice(asset.hedge_mark_price))}
+        ${htmlMetric('Hedge PnL', formatPrice(asset.hedge_unrealized_pnl_approx), pnlClass(asset.hedge_unrealized_pnl_approx))}
+        ${htmlMetric('Source', asset.source_files && asset.source_files.position_monitoring ? asset.source_files.position_monitoring : 'N/A')}
+      </div>
+      <div class="block">
+        <h3>PnL Summary</h3>
+        ${htmlMetric('Underlying PnL', formatPrice(asset.underlying_unrealized_pnl), pnlClass(asset.underlying_unrealized_pnl))}
+        ${htmlMetric('Option PnL', formatPrice(asset.option_unrealized_pnl_approx), pnlClass(asset.option_unrealized_pnl_approx))}
+        ${htmlMetric('Hedge PnL', formatPrice(asset.hedge_unrealized_pnl_approx), pnlClass(asset.hedge_unrealized_pnl_approx))}
+        ${htmlMetric('Net PnL', formatPrice(asset.net_unrealized_pnl_approx), pnlClass(asset.net_unrealized_pnl_approx))}
       </div>
     </div>
   </div>
 </section>`;
+}
+
+function renderGroupedWarningsSection(snapshot) {
+  const groups = snapshot.assets
+    .map(asset => ({ asset: asset.asset, warnings: warningsForAsset(asset) }))
+    .filter(group => group.warnings.length);
+  const body = groups.length
+    ? groups.map(group => `<div class="block"><h3>${escapeHtml(group.asset)}</h3>${htmlWarnings(group.warnings)}</div>`).join('\n')
+    : '<div class="block"><h3>Warnings</h3><div class="warning-list muted">N/A</div></div>';
+  return `<section class="section"><h2>Warnings</h2><div class="section-body summary-bar">${body}</div></section>`;
 }
 
 function renderActiveMonitoringHtml(snapshot) {
@@ -1027,6 +1055,7 @@ function renderActiveMonitoringHtml(snapshot) {
     '<div class="grid">',
     ...snapshot.assets.map(renderActiveAssetCard),
     '</div>',
+    renderGroupedWarningsSection(snapshot),
     '<section class="section"><h2>Summary Bar</h2><div class="section-body summary-bar">',
     summaryItems,
     '</div></section>'
@@ -1502,6 +1531,7 @@ function buildTimelineRows(archives) {
         premium_source: asset.option_premium_source || null,
         underlying_unrealized_pnl: optionalNumber(asset.underlying_unrealized_pnl),
         option_unrealized_pnl_approx: optionalNumber(asset.option_unrealized_pnl_approx, asset.option_mtm_pnl),
+        hedge_unrealized_pnl_approx: optionalNumber(asset.hedge_unrealized_pnl_approx),
         net_unrealized_pnl_approx: optionalNumber(asset.net_unrealized_pnl_approx),
         warnings: timelineWarnings(asset),
         source: archive.source
@@ -1526,7 +1556,7 @@ function renderTimelineAssetTable(rows, asset) {
     `### ${asset}`,
     '',
     ...markdownTable(
-      ['Date', 'Price', 'Regime', 'Target', 'Current', 'Action', 'Exec', 'DTE', 'Strike', 'Option PnL', 'Net PnL', 'Warnings'],
+      ['Date', 'Price', 'Regime', 'Target', 'Current', 'Action', 'Exec', 'DTE', 'Strike', 'Option PnL', 'Hedge PnL', 'Net PnL', 'Warnings'],
       assetRows.map(row => [
         row.date,
         formatPrice(row.current_price),
@@ -1538,6 +1568,7 @@ function renderTimelineAssetTable(rows, asset) {
         valueOrNa(row.dte),
         formatPrice(row.strike),
         formatPrice(row.option_unrealized_pnl_approx),
+        formatPrice(row.hedge_unrealized_pnl_approx),
         formatPrice(row.net_unrealized_pnl_approx),
         row.warnings.length ? row.warnings.join('; ') : 'N/A'
       ])
@@ -1563,6 +1594,7 @@ function timelineCsvRows(rows) {
     premium_source: row.premium_source,
     underlying_unrealized_pnl: row.underlying_unrealized_pnl,
     option_unrealized_pnl_approx: row.option_unrealized_pnl_approx,
+    hedge_unrealized_pnl_approx: row.hedge_unrealized_pnl_approx,
     net_unrealized_pnl_approx: row.net_unrealized_pnl_approx,
     warnings: row.warnings.join('; '),
     source: row.source
@@ -1625,7 +1657,7 @@ function renderPositionTimeline() {
     '## Daily Overview',
     '',
     ...markdownTable(
-      ['Date', 'Asset', 'Price', 'Regime', 'Target', 'Current', 'Exec', 'DTE', 'Option PnL', 'Net PnL'],
+      ['Date', 'Asset', 'Price', 'Regime', 'Target', 'Current', 'Exec', 'DTE', 'Underlying PnL', 'Option PnL', 'Hedge PnL', 'Net PnL'],
       rows.map(row => [
         row.date,
         row.asset,
@@ -1635,7 +1667,9 @@ function renderPositionTimeline() {
         formatHedgePct(row.current_hedge_pct),
         row.execution_state || 'N/A',
         valueOrNa(row.dte),
+        formatPrice(row.underlying_unrealized_pnl),
         formatPrice(row.option_unrealized_pnl_approx),
+        formatPrice(row.hedge_unrealized_pnl_approx),
         formatPrice(row.net_unrealized_pnl_approx)
       ])
     ),
@@ -1682,7 +1716,7 @@ function renderTimelineHtml() {
     '</div></section>',
     '<section class="section"><h2>Daily Position Timeline</h2><div class="section-body table-wrap">',
     '<table>',
-    '<thead><tr><th>Date</th><th>Asset</th><th class="num">Price</th><th>Regime</th><th class="num">Target</th><th class="num">Current</th><th>Today Action</th><th>Execution</th><th>Expiry</th><th class="num">DTE</th><th class="num">Strike</th><th>Premium Status/Source</th><th class="num">Underlying PnL</th><th class="num">Option PnL</th><th class="num">Net PnL</th><th>Warnings</th></tr></thead>',
+    '<thead><tr><th>Date</th><th>Asset</th><th class="num">Price</th><th>Regime</th><th class="num">Target</th><th class="num">Current</th><th>Today Action</th><th>Execution</th><th>Expiry</th><th class="num">DTE</th><th class="num">Strike</th><th>Premium Status/Source</th><th class="num">Underlying PnL</th><th class="num">Option PnL</th><th class="num">Hedge PnL</th><th class="num">Net PnL</th><th>Warnings</th></tr></thead>',
     '<tbody>',
     ...rows.map(row => `<tr>
       <td>${escapeHtml(row.date)}</td>
@@ -1699,6 +1733,7 @@ function renderTimelineHtml() {
       <td>${escapeHtml(`${row.premium_status || 'N/A'} / ${row.premium_source || 'N/A'}`)}</td>
       <td class="num ${pnlClass(row.underlying_unrealized_pnl)}">${escapeHtml(formatPrice(row.underlying_unrealized_pnl))}</td>
       <td class="num ${pnlClass(row.option_unrealized_pnl_approx)}">${escapeHtml(formatPrice(row.option_unrealized_pnl_approx))}</td>
+      <td class="num ${pnlClass(row.hedge_unrealized_pnl_approx)}">${escapeHtml(formatPrice(row.hedge_unrealized_pnl_approx))}</td>
       <td class="num ${pnlClass(row.net_unrealized_pnl_approx)}">${escapeHtml(formatPrice(row.net_unrealized_pnl_approx))}</td>
       <td class="${row.warnings.length ? 'warn' : 'muted'}">${escapeHtml(row.warnings.length ? row.warnings.join('; ') : 'N/A')}</td>
     </tr>`),
@@ -1729,6 +1764,7 @@ function writePositionTimeline() {
     'premium_source',
     'underlying_unrealized_pnl',
     'option_unrealized_pnl_approx',
+    'hedge_unrealized_pnl_approx',
     'net_unrealized_pnl_approx',
     'warnings',
     'source'
