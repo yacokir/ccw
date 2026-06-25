@@ -1,0 +1,91 @@
+{
+  "metadata": {
+    "track": "Track B - Execution Laboratory",
+    "report": "sprint_0e_final_report",
+    "generatedAt": "2026-06-25T19:18:32.161Z",
+    "environment": "Demo",
+    "readOnlyReport": true,
+    "trackAInteraction": false,
+    "ordersSentByReport": false,
+    "positionsModifiedByReport": false
+  },
+  "objective": "Validate minimum covered call execution feasibility.",
+  "result": "SUCCESS",
+  "finalConclusion": "0.01 BTC covered call is operationally feasible on Bybit Demo.",
+  "underlying": {
+    "asset": "BTC",
+    "walletBalance": 0.010989,
+    "validatedNetCoverage": true,
+    "finding": "Spot buy of 0.011 BTC produced net BTC >= 0.01 after BTC-denominated spot fee."
+  },
+  "shortCall": {
+    "symbol": "BTC-26JUN26-62500-C-USDT",
+    "side": "Sell",
+    "quantity": 0.01,
+    "averageOptionPrice": 10,
+    "status": "Open",
+    "source": "execution_lab/output/option_sale_probe.json"
+  },
+  "walletState": {
+    "BTC": 0.010989,
+    "USDT": 1346.2639,
+    "ETH": 0,
+    "USDC": 0
+  },
+  "accountState": {
+    "accountEquity": 1994.54930259,
+    "availableBalance": 1314.57010566,
+    "marginBalance": 1344.26065931,
+    "initialMargin": 29.69055364,
+    "maintenanceMargin": 18.99377265,
+    "marginUtilization": 0.01488585,
+    "positionsCount": 1,
+    "openOrdersCount": 0
+  },
+  "positions": [
+    {
+      "category": "option",
+      "symbol": "BTC-26JUN26-62500-C-USDT",
+      "side": "Sell",
+      "size": 0.01,
+      "avgPrice": 10,
+      "positionIM": 29.73479902,
+      "positionMM": 19.0220775
+    }
+  ],
+  "openOrders": [],
+  "operationalFindings": [
+    "Bybit Demo accepted a minimum BTC covered-call structure with BTC wallet coverage greater than 0.01 and short call quantity 0.01.",
+    "Spot BTC fee was charged in BTC, reducing net received BTC below requested gross quantity.",
+    "Buying exactly 0.01 BTC produced 0.00999 BTC net in an earlier test; 0.011 BTC provided sufficient net coverage.",
+    "The short call position was detected in the account with size 0.01 and avgPrice 10.",
+    "Open orders were zero after the acceptance test."
+  ],
+  "bugsFound": [
+    "Spot fill classification initially depended too heavily on immediate execution-list/order-history availability.",
+    "The first option order attempt used an orderLinkId longer than Bybit's 36-character limit.",
+    "Baseline cleaning initially reduced excess assets but did not restore USDT to the target when USDT was below 2000."
+  ],
+  "bugsFixed": [
+    "Separated order submission, fill detection, BTC balance delta, execution success, and coverage sufficiency.",
+    "Shortened option-sale orderLinkId prefix for future option order attempts.",
+    "Extended baseline clean to add missing USDT and reconcile back to the 2000 USDT target."
+  ],
+  "lessonsLearned": [
+    "Minimum option quantity is 0.01 and can be represented by the selected weekly call.",
+    "Spot purchase sizing must account for BTC-denominated fees.",
+    "Execution probes need delayed/secondary evidence from wallet deltas and position detection, not only immediate fill lists.",
+    "Position detection is essential because option acceptance may be visible as an open short option position even when the local probe path sees later safety guards."
+  ],
+  "researchConclusions": [
+    "Minimum covered call acceptance is operationally feasible in Bybit Demo.",
+    "This does not prove production viability, margin robustness, expiry behavior, settlement behavior, assignment mechanics, close workflow, or roll workflow.",
+    "Track B should now move from acceptance testing toward lifecycle research only after documenting close/settlement safeguards."
+  ],
+  "sources": {
+    "capitalSnapshotCommand": "node src\\execution_lab\\bybit_capital_snapshot.js",
+    "capitalSnapshotOutput": "USDT equity: 1346.21798806; USDT available: 1346.2639; Positions: 1; Open orders: 0",
+    "optionSaleProbe": "execution_lab/output/option_sale_probe.json",
+    "firstExecutionProbe": "execution_lab/output/first_execution_probe.json"
+  }
+}

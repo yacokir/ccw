@@ -1,0 +1,11 @@
+{
+  "environment": "demo",
+  "baseUrl": "https://api-demo.bybit.com",
+  "apiKey": "",
+  "apiSecret": "",
+  "recvWindow": 5000,
+  "accountType": "UNIFIED",
+  "categories": ["spot", "linear", "option"],
+  "recentFillLimit": 20,
+  "openOrderLimit": 50
+}

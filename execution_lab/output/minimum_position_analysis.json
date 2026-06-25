@@ -1,0 +1,103 @@
+{
+  "metadata": {
+    "track": "Track B - Execution Laboratory",
+    "sprint": "0D.1",
+    "probe": "bybit_instrument_specs",
+    "generatedAt": "2026-06-25T15:26:52.112Z",
+    "environment": "demo",
+    "baseUrl": "https://api-demo.bybit.com",
+    "accountType": "UNIFIED",
+    "configSource": "src\\execution_lab\\execution_lab_config.json",
+    "readOnly": true,
+    "getRequestsOnly": true,
+    "postRequestsSent": false,
+    "orderMutationEndpointsCalled": false,
+    "fundsMutationEndpointsCalled": false,
+    "trackAInteraction": false
+  },
+  "summary": {
+    "btcOptionsFound": 720,
+    "activeBtcOptionsFound": 720,
+    "btcReferencePrice": 59293.4,
+    "labCapitalUsdt": 2000,
+    "operationalBufferRate": 0.05,
+    "minimumOptionQty": 0.01,
+    "qtyStep": 0.01,
+    "tickSize": 5,
+    "minimumCoveredCallBtc": 0.01,
+    "minimumTheoreticalCapital": 592.93,
+    "minimumOperationalCapitalApprox": 622.58
+  },
+  "scenarios": [
+    {
+      "underlyingQuantity": 0.01,
+      "approximateNotional": 592.93,
+      "optionQuantity": 0.01,
+      "optionQuantityCompatible": true,
+      "theoreticalCapitalRequirement": 592.93,
+      "estimatedCapitalRequirement": 622.58,
+      "capitalRemaining": 1377.42,
+      "labCapitalUsdt": 2000,
+      "feasible": "YES",
+      "observations": [
+        "Capital estimate uses underlying notional plus a simple 5% operational buffer only.",
+        "Option margin, fees, spread, liquidity, settlement, and hidden venue checks are not validated."
+      ]
+    },
+    {
+      "underlyingQuantity": 0.02,
+      "approximateNotional": 1185.87,
+      "optionQuantity": 0.02,
+      "optionQuantityCompatible": true,
+      "theoreticalCapitalRequirement": 1185.87,
+      "estimatedCapitalRequirement": 1245.16,
+      "capitalRemaining": 754.84,
+      "labCapitalUsdt": 2000,
+      "feasible": "YES",
+      "observations": [
+        "Capital estimate uses underlying notional plus a simple 5% operational buffer only.",
+        "Option margin, fees, spread, liquidity, settlement, and hidden venue checks are not validated."
+      ]
+    },
+    {
+      "underlyingQuantity": 0.05,
+      "approximateNotional": 2964.67,
+      "optionQuantity": 0.05,
+      "optionQuantityCompatible": true,
+      "theoreticalCapitalRequirement": 2964.67,
+      "estimatedCapitalRequirement": 3112.9,
+      "capitalRemaining": -1112.9,
+      "labCapitalUsdt": 2000,
+      "feasible": "NO",
+      "observations": [
+        "Estimated operational requirement exceeds the 2,000 USDT lab capital assumption.",
+        "Capital estimate uses underlying notional plus a simple 5% operational buffer only.",
+        "Option margin, fees, spread, liquidity, settlement, and hidden venue checks are not validated."
+      ]
+    },
+    {
+      "underlyingQuantity": 0.1,
+      "approximateNotional": 5929.34,
+      "optionQuantity": 0.1,
+      "optionQuantityCompatible": true,
+      "theoreticalCapitalRequirement": 5929.34,
+      "estimatedCapitalRequirement": 6225.81,
+      "capitalRemaining": -4225.81,
+      "labCapitalUsdt": 2000,
+      "feasible": "NO",
+      "observations": [
+        "Estimated operational requirement exceeds the 2,000 USDT lab capital assumption.",
+        "Capital estimate uses underlying notional plus a simple 5% operational buffer only.",
+        "Option margin, fees, spread, liquidity, settlement, and hidden venue checks are not validated."
+      ]
+    }
+  ],
+  "limitations": [
+    "Instrument metadata is observable exchange metadata only and does not prove order acceptance.",
+    "Capital estimates use BTC notional plus a simple 5% operational buffer and do not model option margin.",
+    "Fees, bid/ask spread, slippage, liquidity, exercise/settlement behavior, and hidden account constraints are not included.",
+    "Covered-call feasibility assumes option quantity maps directly to BTC underlying quantity; this must be validated before any execution research.",
+    "This script is non-production and sends no order or fund-adjustment requests."
+  ],
+  "warnings": []
+}

@@ -1,0 +1,275 @@
+{
+  "metadata": {
+    "track": "Track B - Execution Laboratory",
+    "sprint": "0E",
+    "probe": "bybit_first_execution_probe",
+    "generatedAt": "2026-06-25T18:39:18.670Z",
+    "environment": "demo",
+    "baseUrl": "https://api-demo.bybit.com",
+    "accountType": "UNIFIED",
+    "configSource": "src\\execution_lab\\execution_lab_config.json",
+    "execute": true,
+    "safetyGuard": "--execute provided; demo-only order placement enabled",
+    "readOnly": false,
+    "postRequestsSent": true,
+    "orderMutationEndpointsCalled": true,
+    "fundsMutationEndpointsCalled": false,
+    "trackAInteraction": false
+  },
+  "testPlan": {
+    "targetUnderlying": "+0.01 BTC",
+    "targetBuyQty": 0.011,
+    "targetOptionQty": 0.01,
+    "targetOption": "-0.01 BTC Weekly OTM05 Call",
+    "nextFriday": "2026-06-26",
+    "targetStrike": 62411.06,
+    "continuousAutomation": false,
+    "retries": false,
+    "scheduler": false
+  },
+  "initialSnapshot": {
+    "label": "initial",
+    "capturedAt": "2026-06-25T18:39:21.060Z",
+    "account": {
+      "accountEquity": 1996.864,
+      "totalWalletBalance": 1996.864,
+      "availableBalance": 1996.864,
+      "marginBalance": 1996.864,
+      "initialMargin": 0,
+      "maintenanceMargin": 0,
+      "marginUtilization": 0,
+      "usdtEquity": 2000,
+      "usdtWalletBalance": 2000,
+      "btcEquity": null,
+      "btcWalletBalance": null,
+      "positionsCount": 0,
+      "openOrdersCount": 0
+    },
+    "wallet": [
+      {
+        "accountType": "UNIFIED",
+        "coin": "USDT",
+        "walletBalance": 2000,
+        "equity": 2000,
+        "usdValue": 1996.864,
+        "free": null,
+        "locked": 0,
+        "availableToWithdraw": null,
+        "collateralSwitch": true,
+        "marginCollateral": true
+      }
+    ],
+    "positions": [],
+    "openOrders": []
+  },
+  "underlyingPurchase": {
+    "status": "EXECUTION_SUCCESS_COVERAGE_SUFFICIENT",
+    "orderId": "2245435441799236864",
+    "orderLinkId": "ccw-0e-btc-buy-1782412763095-bb368e",
+    "request": {
+      "category": "spot",
+      "symbol": "BTCUSDT",
+      "side": "Buy",
+      "orderType": "Market",
+      "qty": "0.011",
+      "marketUnit": "baseCoin",
+      "orderLinkId": "ccw-0e-btc-buy-1782412763095-bb368e"
+    },
+    "response": {
+      "retCode": 0,
+      "retMsg": "OK",
+      "result": {
+        "orderId": "2245435441799236864",
+        "orderLinkId": "ccw-0e-btc-buy-1782412763095-bb368e"
+      },
+      "retExtInfo": {},
+      "time": 1782412763749
+    },
+    "fills": [],
+    "averagePrice": null,
+    "executedQty": 0,
+    "btcWalletBalanceAfter": 0.010989,
+    "btcWalletBalanceDelta": 0.010989,
+    "observedBtcWalletBalanceBefore": null,
+    "error": null,
+    "requestedQty": 0.011,
+    "orderHistory": [],
+    "btcWalletBalanceBefore": 0,
+    "usdtWalletBalanceBefore": 2000,
+    "usdtWalletBalanceAfter": 1346.1699,
+    "usdtWalletBalanceDelta": -653.8301,
+    "fillSummary": {
+      "execQty": 0,
+      "execValue": 0,
+      "avgPrice": null,
+      "fees": 0,
+      "feesByCurrency": {}
+    },
+    "executionValue": 0,
+    "fees": {},
+    "btcNetReceived": 0.010989,
+    "orderSubmitted": true,
+    "orderFilled": false,
+    "btcBalanceIncreased": true,
+    "usdtBalanceDecreased": true,
+    "executionSuccess": true,
+    "coverageSufficient": true
+  },
+  "afterUnderlyingSnapshot": {
+    "label": "after_underlying",
+    "capturedAt": "2026-06-25T18:39:26.214Z",
+    "account": {
+      "accountEquity": 1996.33655321,
+      "totalWalletBalance": 1344.1439143,
+      "availableBalance": 1344.1439143,
+      "marginBalance": 1344.1439143,
+      "initialMargin": 0,
+      "maintenanceMargin": 0,
+      "marginUtilization": 0,
+      "usdtEquity": 1346.1699,
+      "usdtWalletBalance": 1346.1699,
+      "btcEquity": 0.010989,
+      "btcWalletBalance": 0.010989,
+      "positionsCount": 0,
+      "openOrdersCount": 0
+    },
+    "wallet": [
+      {
+        "accountType": "UNIFIED",
+        "coin": "BTC",
+        "walletBalance": 0.010989,
+        "equity": 0.010989,
+        "usdValue": 652.19263891,
+        "free": null,
+        "locked": 0,
+        "availableToWithdraw": null,
+        "collateralSwitch": false,
+        "marginCollateral": true
+      },
+      {
+        "accountType": "UNIFIED",
+        "coin": "USDT",
+        "walletBalance": 1346.1699,
+        "equity": 1346.1699,
+        "usdValue": 1344.1439143,
+        "free": null,
+        "locked": 0,
+        "availableToWithdraw": null,
+        "collateralSwitch": true,
+        "marginCollateral": true
+      }
+    ],
+    "positions": [],
+    "openOrders": []
+  },
+  "optionSelection": {
+    "targetExpiry": "2026-06-26",
+    "targetStrike": 62411.06,
+    "optionsFound": 722,
+    "candidatesFound": 67,
+    "selected": {
+      "symbol": "BTC-26JUN26-62500-C-USDT",
+      "expiry": "2026-06-26",
+      "strike": 62500,
+      "optionType": "Call",
+      "status": "Trading",
+      "baseCoin": "BTC",
+      "quoteCoin": "USDT",
+      "settleCoin": "USDT",
+      "minOrderQty": 0.01,
+      "qtyStep": 0.01,
+      "tickSize": 5,
+      "minPrice": 5,
+      "maxPrice": 1110000,
+      "lotSizeFilter": {
+        "maxOrderQty": "500",
+        "minOrderQty": "0.01",
+        "qtyStep": "0.01"
+      },
+      "priceFilter": {
+        "minPrice": "5",
+        "maxPrice": "1110000",
+        "tickSize": "5"
+      }
+    },
+    "fallbackUsed": false
+  },
+  "optionSale": {
+    "status": "FAILED",
+    "orderId": null,
+    "orderLinkId": null,
+    "request": null,
+    "response": null,
+    "fills": [],
+    "premium": null,
+    "executedQty": null,
+    "shortPosition": null,
+    "error": {
+      "message": "Bybit retCode 10001 from POST https://api-demo.bybit.com/v5/order/create: orderLinkId's length can not exceed 36.",
+      "payload": {
+        "retCode": 10001,
+        "retMsg": "orderLinkId's length can not exceed 36.",
+        "result": {},
+        "retExtInfo": {},
+        "time": 1782412766845
+      }
+    }
+  },
+  "finalSnapshot": {
+    "label": "final_after_option_failure",
+    "capturedAt": "2026-06-25T18:39:28.603Z",
+    "account": {
+      "accountEquity": 1996.33655321,
+      "totalWalletBalance": 1344.1439143,
+      "availableBalance": 1344.1439143,
+      "marginBalance": 1344.1439143,
+      "initialMargin": 0,
+      "maintenanceMargin": 0,
+      "marginUtilization": 0,
+      "usdtEquity": 1346.1699,
+      "usdtWalletBalance": 1346.1699,
+      "btcEquity": 0.010989,
+      "btcWalletBalance": 0.010989,
+      "positionsCount": 0,
+      "openOrdersCount": 0
+    },
+    "wallet": [
+      {
+        "accountType": "UNIFIED",
+        "coin": "BTC",
+        "walletBalance": 0.010989,
+        "equity": 0.010989,
+        "usdValue": 652.19263891,
+        "free": null,
+        "locked": 0,
+        "availableToWithdraw": null,
+        "collateralSwitch": false,
+        "marginCollateral": true
+      },
+      {
+        "accountType": "UNIFIED",
+        "coin": "USDT",
+        "walletBalance": 1346.1699,
+        "equity": 1346.1699,
+        "usdValue": 1344.1439143,
+        "free": null,
+        "locked": 0,
+        "availableToWithdraw": null,
+        "collateralSwitch": true,
+        "marginCollateral": true
+      }
+    ],
+    "positions": [],
+    "openOrders": []
+  },
+  "warnings": [],
+  "limitations": [
+    "Default mode is read-only and does not empirically test order acceptance.",
+    "Execute mode is Demo-only but places real Demo orders and intentionally does not manage or unwind positions.",
+    "The script is fail-fast and has no retries; transient API or matching-engine behavior may require manual review.",
+    "Spot BTC is confirmed through wallet BTC balance because spot holdings are not represented like derivatives positions.",
+    "Spot buy execution and covered-call coverage are tracked separately because fees may be charged in BTC.",
+    "Option premium is estimated from execution-list execValue when available.",
+    "No Track A files, live monitoring workflows, strategy automation, schedulers, or continuous loops are used."
+  ]
+}

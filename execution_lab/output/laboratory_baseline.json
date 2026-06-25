@@ -1,0 +1,175 @@
+{
+  "metadata": {
+    "track": "Track B - Execution Laboratory",
+    "probe": "bybit_demo_funds_probe",
+    "generatedAt": "2026-06-25T18:24:46.423Z",
+    "environment": "demo",
+    "baseUrl": "https://api-demo.bybit.com",
+    "accountType": "UNIFIED",
+    "configSource": "src\\execution_lab\\execution_lab_config.json",
+    "trackAInteraction": false,
+    "orderEndpointsCalled": false
+  },
+  "mode": "baseline-clean",
+  "requestedReduction": null,
+  "targetUsdt": null,
+  "confirmTargetReduction": false,
+  "plannedReduction": null,
+  "hardLimits": {
+    "defaultCoin": "USDT",
+    "baselineCoins": [
+      "BTC",
+      "ETH",
+      "USDC",
+      "USDT"
+    ],
+    "maxTestReductionUsdt": 10,
+    "minTargetUsdt": 500,
+    "maxTargetUsdt": 50000,
+    "adjustType": 1,
+    "baselineAddAdjustType": 0,
+    "onlyAddsUsdtWhenBelowBaseline": true
+  },
+  "postCalled": true,
+  "beforeWallet": [
+    {
+      "accountType": "UNIFIED",
+      "coin": "USDT",
+      "walletBalance": "749.2545",
+      "equity": "749.2545",
+      "usdValue": "748.10514359"
+    }
+  ],
+  "afterWallet": [
+    {
+      "accountType": "UNIFIED",
+      "coin": "USDT",
+      "walletBalance": "2000",
+      "equity": "2000",
+      "usdValue": "1996.864"
+    }
+  ],
+  "beforeState": {
+    "account": {
+      "totalEquity": 748.10514359,
+      "totalWalletBalance": 748.10514359,
+      "totalAvailableBalance": 748.10514359,
+      "totalMarginBalance": 748.10514359,
+      "totalInitialMargin": 0,
+      "totalMaintenanceMargin": 0,
+      "marginUsed": 0,
+      "positionsCount": 0,
+      "openOrdersCount": 0
+    },
+    "balances": {
+      "BTC": 0,
+      "ETH": 0,
+      "USDC": 0,
+      "USDT": 749.2545
+    },
+    "wallet": [
+      {
+        "accountType": "UNIFIED",
+        "coin": "USDT",
+        "walletBalance": "749.2545",
+        "equity": "749.2545",
+        "usdValue": "748.10514359"
+      }
+    ],
+    "positions": [],
+    "openOrders": []
+  },
+  "finalState": {
+    "account": {
+      "totalEquity": 1996.864,
+      "totalWalletBalance": 1996.864,
+      "totalAvailableBalance": 1996.864,
+      "totalMarginBalance": 1996.864,
+      "totalInitialMargin": 0,
+      "totalMaintenanceMargin": 0,
+      "marginUsed": 0,
+      "positionsCount": 0,
+      "openOrdersCount": 0
+    },
+    "balances": {
+      "BTC": 0,
+      "ETH": 0,
+      "USDC": 0,
+      "USDT": 2000
+    },
+    "wallet": [
+      {
+        "accountType": "UNIFIED",
+        "coin": "USDT",
+        "walletBalance": "2000",
+        "equity": "2000",
+        "usdValue": "1996.864"
+      }
+    ],
+    "positions": [],
+    "openOrders": []
+  },
+  "plannedBaselineReductions": [
+    {
+      "coin": "USDT",
+      "amount": 0.2545,
+      "amountStr": "0.2545",
+      "current": 2000.2545,
+      "target": 2000,
+      "phase": "post-addition-reconcile"
+    }
+  ],
+  "plannedBaselineAdditions": [
+    {
+      "coin": "USDT",
+      "amount": 1251,
+      "amountStr": "1251",
+      "current": 749.2545,
+      "target": 2000
+    }
+  ],
+  "baselineTargets": {
+    "BTC": 0,
+    "ETH": 0,
+    "USDC": 0,
+    "USDT": 2000
+  },
+  "baselineClean": true,
+  "warnings": [],
+  "apiResponse": {
+    "addition": {
+      "retCode": 0,
+      "retMsg": "",
+      "result": {
+        "resultCode": "0",
+        "utaDemoApplyMoneyConfig": [
+          {
+            "coin": "USDT",
+            "amountStr": "1251"
+          }
+        ],
+        "orderStatus": "SUCCESS",
+        "retMsg": ""
+      },
+      "retExtInfo": {},
+      "time": 1782411889577
+    },
+    "postAdditionReduction": {
+      "retCode": 0,
+      "retMsg": "",
+      "result": {
+        "resultCode": "0",
+        "utaDemoApplyMoneyConfig": [
+          {
+            "coin": "USDT",
+            "amountStr": "0.2545"
+          }
+        ],
+        "orderStatus": "SUCCESS",
+        "retMsg": ""
+      },
+      "retExtInfo": {},
+      "time": 1782411892017
+    }
+  }
+}

@@ -1,0 +1,212 @@
+{
+  "metadata": {
+    "track": "Track B - Execution Laboratory",
+    "sprint": "0E",
+    "probe": "bybit_option_sale_probe",
+    "generatedAt": "2026-06-25T19:16:05.033Z",
+    "environment": "demo",
+    "baseUrl": "https://api-demo.bybit.com",
+    "accountType": "UNIFIED",
+    "configSource": "src\\execution_lab\\execution_lab_config.json",
+    "execute": true,
+    "readOnly": false,
+    "safetyGuard": "--execute provided; demo-only option sale enabled",
+    "trackAInteraction": false,
+    "btcPurchaseAttempted": false,
+    "baselineCleanupAttempted": false
+  },
+  "precheck": {
+    "targetOptionQty": 0.01,
+    "btcWalletBalance": 0.010989,
+    "btcSufficient": true
+  },
+  "optionSelection": {
+    "targetExpiry": "2026-06-26",
+    "targetStrike": 62238.96,
+    "optionsFound": 722,
+    "candidatesFound": 67,
+    "selected": {
+      "symbol": "BTC-26JUN26-62500-C-USDT",
+      "expiry": "2026-06-26",
+      "strike": 62500,
+      "optionType": "Call",
+      "status": "Trading",
+      "baseCoin": "BTC",
+      "quoteCoin": "USDT",
+      "settleCoin": "USDT",
+      "minOrderQty": 0.01,
+      "qtyStep": 0.01,
+      "tickSize": 5,
+      "minPrice": 5,
+      "maxPrice": 1110000,
+      "lotSizeFilter": {
+        "maxOrderQty": "500",
+        "minOrderQty": "0.01",
+        "qtyStep": "0.01"
+      },
+      "priceFilter": {
+        "minPrice": "5",
+        "maxPrice": "1110000",
+        "tickSize": "5"
+      }
+    },
+    "fallbackUsed": false
+  },
+  "flags": {
+    "OPTION_PRECHECK_PASSED": true,
+    "OPTION_ORDER_SUBMITTED": false,
+    "OPTION_ORDER_ACCEPTED": false,
+    "OPTION_ORDER_FILLED": true,
+    "OPTION_EXECUTION_SUCCESS": true,
+    "EXISTING_SHORT_CALL_FOUND": true
+  },
+  "optionSale": {
+    "endpoint": "/v5/order/create",
+    "status": "EXISTING_SHORT_CALL_FOUND",
+    "orderId": null,
+    "orderLinkId": null,
+    "orderStatus": "AlreadyOpen",
+    "request": null,
+    "response": null,
+    "orderHistory": [],
+    "fills": [],
+    "premium": null,
+    "executedQty": null,
+    "error": null,
+    "shortPosition": {
+      "category": "option",
+      "symbol": "BTC-26JUN26-62500-C-USDT",
+      "side": "Sell",
+      "size": 0.01,
+      "avgPrice": 10,
+      "markPrice": 5.58061275,
+      "positionValue": -0.05580612,
+      "unrealisedPnl": 0.04419387,
+      "positionIM": 29.73479902,
+      "positionMM": 19.0220775
+    }
+  },
+  "initialSnapshot": {
+    "label": "initial_option_sale_only",
+    "capturedAt": "2026-06-25T19:16:07.350Z",
+    "account": {
+      "accountEquity": 1994.54930259,
+      "totalWalletBalance": 1344.26065931,
+      "availableBalance": 1314.57010566,
+      "marginBalance": 1344.26065931,
+      "initialMargin": 29.69055364,
+      "maintenanceMargin": 18.99377265,
+      "marginUtilization": 0.01488585,
+      "usdtEquity": 1346.20809387,
+      "usdtWalletBalance": 1346.2639,
+      "btcEquity": 0.010989,
+      "btcWalletBalance": 0.010989,
+      "positionsCount": 1,
+      "openOrdersCount": 0
+    },
+    "wallet": [
+      {
+        "accountType": "UNIFIED",
+        "coin": "BTC",
+        "walletBalance": 0.010989,
+        "equity": 0.010989,
+        "usdValue": 650.34436636,
+        "free": null,
+        "locked": 0,
+        "availableToWithdraw": null,
+        "collateralSwitch": false,
+        "marginCollateral": true
+      },
+      {
+        "accountType": "UNIFIED",
+        "coin": "USDT",
+        "walletBalance": 1346.2639,
+        "equity": 1346.20809387,
+        "usdValue": 1344.20493622,
+        "free": null,
+        "locked": 0,
+        "availableToWithdraw": null,
+        "collateralSwitch": true,
+        "marginCollateral": true
+      }
+    ],
+    "positions": [
+      {
+        "category": "option",
+        "symbol": "BTC-26JUN26-62500-C-USDT",
+        "side": "Sell",
+        "size": 0.01,
+        "avgPrice": 10,
+        "markPrice": 5.58061275,
+        "positionValue": -0.05580612,
+        "unrealisedPnl": 0.04419387,
+        "positionIM": 29.73479902,
+        "positionMM": 19.0220775
+      }
+    ],
+    "openOrders": []
+  },
+  "finalSnapshot": {
+    "label": "final_option_sale_only",
+    "capturedAt": "2026-06-25T19:16:11.466Z",
+    "account": {
+      "accountEquity": 1994.49755841,
+      "totalWalletBalance": 1344.2014237,
+      "availableBalance": 1314.51049554,
+      "marginBalance": 1344.2014237,
+      "initialMargin": 29.69092816,
+      "maintenanceMargin": 18.9946592,
+      "marginUtilization": 0.01488642,
+      "usdtEquity": 1346.20744638,
+      "usdtWalletBalance": 1346.2639,
+      "btcEquity": 0.010989,
+      "btcWalletBalance": 0.010989,
+      "positionsCount": 1,
+      "openOrdersCount": 0
+    },
+    "wallet": [
+      {
+        "accountType": "UNIFIED",
+        "coin": "BTC",
+        "walletBalance": 0.010989,
+        "equity": 0.010989,
+        "usdValue": 650.35250184,
+        "free": null,
+        "locked": 0,
+        "availableToWithdraw": null,
+        "collateralSwitch": false,
+        "marginCollateral": true
+      },
+      {
+        "accountType": "UNIFIED",
+        "coin": "USDT",
+        "walletBalance": 1346.2639,
+        "equity": 1346.20744638,
+        "usdValue": 1344.14505657,
+        "free": null,
+        "locked": 0,
+        "availableToWithdraw": null,
+        "collateralSwitch": true,
+        "marginCollateral": true
+      }
+    ],
+    "positions": [
+      {
+        "category": "option",
+        "symbol": "BTC-26JUN26-62500-C-USDT",
+        "side": "Sell",
+        "size": 0.01,
+        "avgPrice": 10,
+        "markPrice": 5.64536179,
+        "positionValue": -0.05645361,
+        "unrealisedPnl": 0.04354638,
+        "positionIM": 29.73648445,
+        "positionMM": 19.02380367
+      }
+    ],
+    "openOrders": []
+  },
+  "warnings": [
+    "Existing short call position found for BTC-26JUN26-62500-C-USDT; no duplicate option order sent."
+  ]
+}
