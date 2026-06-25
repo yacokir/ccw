@@ -93,18 +93,26 @@ function firstValue(...values) {
 }
 
 function normalizePosition(position) {
+  const underlyingEntryTs = firstValue(position.underlying_entry_ts, position.underlying_entry_timestamp, position.opened_at);
+  const optionEntryTs = firstValue(position.option_entry_ts, position.short_call_entry_ts, position.short_call_entry_timestamp, position.opened_at);
+  const hedgeEntryTs = firstValue(position.hedge_entry_ts, position.hedge_entry_timestamp, position.opened_at);
+  const optionEntryPremium = optionalNumber(position.option_entry_premium, position.short_call_entry_premium);
   return {
     ...position,
     position_status: firstValue(position.position_status, position.status),
     underlying_entry_price: optionalNumber(position.underlying_entry_price),
-    underlying_entry_timestamp: firstValue(position.underlying_entry_timestamp, position.opened_at),
+    underlying_entry_ts: underlyingEntryTs,
+    underlying_entry_timestamp: underlyingEntryTs,
     short_call_symbol: firstValue(position.short_call_symbol, position.option_instrument),
     short_call_qty: optionalNumber(position.short_call_qty, position.option_qty),
     short_call_expiry: firstValue(position.short_call_expiry, position.option_expiry),
     short_call_strike: optionalNumber(position.short_call_strike, position.option_strike),
-    short_call_entry_premium: optionalNumber(position.short_call_entry_premium, position.option_entry_premium),
-    short_call_entry_timestamp: firstValue(position.short_call_entry_timestamp, position.opened_at),
-    hedge_entry_timestamp: firstValue(position.hedge_entry_timestamp, position.opened_at),
+    short_call_entry_premium: optionEntryPremium,
+    option_entry_premium: optionEntryPremium,
+    option_entry_ts: optionEntryTs,
+    short_call_entry_timestamp: optionEntryTs,
+    hedge_entry_ts: hedgeEntryTs,
+    hedge_entry_timestamp: hedgeEntryTs,
     accumulated_fees: optionalNumber(position.accumulated_fees)
   };
 }
