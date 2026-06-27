@@ -11,6 +11,7 @@ const {
   roundNumber,
   sampleStdDev
 } = require('./btc_deep_risk_utils');
+const { buildAccountingViews } = require('./live_accounting');
 const { logCcwEnvStartup } = require('./ccw_env_diagnostics');
 
 const LIVE_DIR = path.join(REPO_ROOT, 'live');
@@ -243,6 +244,7 @@ function normalizePositionRegisterRow(position) {
     short_call_entry_timestamp: optionEntryTs,
     hedge_entry_ts: hedgeEntryTs,
     hedge_entry_timestamp: hedgeEntryTs,
+    cycle_accounting: position.cycle_accounting || null,
     accumulated_fees: optionalNumber(position.accumulated_fees)
   };
 }
@@ -390,6 +392,25 @@ function accountingFields(positionRow, positionMonitoringRow, spotPrice, snapsho
   const hedgeUnrealizedPnl = hedgeQty === null || hedgeEntryPrice === null || hedgeMarkPrice === null
     ? null
     : roundNumber((hedgeMarkPrice - hedgeEntryPrice) * hedgeQty);
+  const accountingViews = positionRow
+    ? buildAccountingViews({
+      position: positionRow,
+      currentSpotPrice,
+      optionMarkPrice,
+      hedgeMarkPrice
+    })
+    : {
+      current_cycle_accounting: null,
+      portfolio_lifetime_accounting: null,
+      legacy_accounting: {
+        underlying_unrealized_pnl: underlyingUnrealizedPnl,
+        option_unrealized_pnl_approx: optionUnrealizedPnl,
+        hedge_unrealized_pnl_approx: hedgeUnrealizedPnl,
+        net_unrealized_pnl_approx: sumIfComplete(underlyingUnrealizedPnl, optionUnrealizedPnl, hedgeUnrealizedPnl),
+        note: null
+      },
+      accounting_warnings: []
+    };
 
   if (underlyingEntryPrice === null) warnings.push('Underlying entry price unavailable; underlying and net PnL are not currently calculable.');
   if (underlyingQty === null) warnings.push('Underlying quantity unavailable; underlying and net PnL are not currently calculable.');
@@ -407,7 +428,8 @@ function accountingFields(positionRow, positionMonitoringRow, spotPrice, snapsho
     underlying_entry_ts: positionRow ? positionRow.underlying_entry_ts || null : null,
     underlying_cost_basis: positionRow ? positionRow.underlying_cost_basis || null : null,
     underlying_market_value: underlyingMarketValue,
-    underlying_unrealized_pnl: underlyingUnrealizedPnl,
+    cycle_accounting: positionRow ? positionRow.cycle_accounting || null : null,
+    underlying_unrealized_pnl: accountingViews.legacy_accounting.underlying_unrealized_pnl,
     premium_received: shortCallQty === null || shortCallEntryPremium === null ? null : roundNumber(Math.abs(shortCallQty) * shortCallEntryPremium),
     short_call_symbol: positionRow ? firstValue(positionRow.short_call_symbol, positionRow.option_instrument) : null,
     short_call_qty: shortCallQty,
@@ -416,16 +438,31 @@ function accountingFields(positionRow, positionMonitoringRow, spotPrice, snapsho
     short_call_entry_premium: shortCallEntryPremium,
     short_call_entry_timestamp: positionRow ? positionRow.short_call_entry_timestamp || null : null,
     option_mark_price: roundNumber(optionMarkPrice),
-    option_unrealized_pnl_approx: optionUnrealizedPnl,
+    option_unrealized_pnl_approx: accountingViews.legacy_accounting.option_unrealized_pnl_approx,
     hedge_entry_timestamp: positionRow ? positionRow.hedge_entry_timestamp || null : null,
     hedge_cost_basis: positionRow ? positionRow.hedge_cost_basis || null : null,
     hedge_mark_price: roundNumber(hedgeMarkPrice),
-    hedge_unrealized_pnl_approx: hedgeUnrealizedPnl,
+    hedge_unrealized_pnl_approx: accountingViews.legacy_accounting.hedge_unrealized_pnl_approx,
     accumulated_fees: optionalNumber(positionRow && positionRow.accumulated_fees),
-    net_unrealized_pnl_approx: sumIfComplete(underlyingUnrealizedPnl, optionUnrealizedPnl, hedgeUnrealizedPnl),
+    net_unrealized_pnl_approx: accountingViews.legacy_accounting.net_unrealized_pnl_approx,
+    current_cycle_accounting: accountingViews.current_cycle_accounting,
+    portfolio_lifetime_accounting: accountingViews.portfolio_lifetime_accounting,
+    legacy_accounting_note: accountingViews.legacy_accounting.note,
+    cycle_underlying_pnl: accountingViews.current_cycle_accounting && accountingViews.current_cycle_accounting.underlying_pnl_since_cycle_open,
+    cycle_option_pnl: accountingViews.current_cycle_accounting && accountingViews.current_cycle_accounting.option_pnl_current_cycle,
+    cycle_hedge_pnl: accountingViews.current_cycle_accounting && accountingViews.current_cycle_accounting.hedge_pnl_current_cycle,
+    net_cycle_pnl: accountingViews.current_cycle_accounting && accountingViews.current_cycle_accounting.net_cycle_pnl,
+    net_cycle_pnl_pct: accountingViews.current_cycle_accounting && accountingViews.current_cycle_accounting.net_cycle_pnl_pct,
+    cycle_capital_base: accountingViews.current_cycle_accounting && accountingViews.current_cycle_accounting.capital_base,
+    portfolio_underlying_pnl: accountingViews.portfolio_lifetime_accounting && accountingViews.portfolio_lifetime_accounting.underlying_pnl_since_original_spot_purchase,
+    portfolio_option_pnl: accountingViews.portfolio_lifetime_accounting && accountingViews.portfolio_lifetime_accounting.current_option_pnl,
+    portfolio_hedge_pnl: accountingViews.portfolio_lifetime_accounting && accountingViews.portfolio_lifetime_accounting.current_hedge_pnl,
+    portfolio_net_pnl: accountingViews.portfolio_lifetime_accounting && accountingViews.portfolio_lifetime_accounting.portfolio_net_pnl,
+    portfolio_net_pnl_pct: accountingViews.portfolio_lifetime_accounting && accountingViews.portfolio_lifetime_accounting.portfolio_net_pnl_pct,
+    portfolio_capital_base: accountingViews.portfolio_lifetime_accounting && accountingViews.portfolio_lifetime_accounting.capital_base,
     days_since_entry: entryTimestamp ? daysBetween(String(entryTimestamp).slice(0, 10), snapshotDate) : null,
     days_to_expiry: expiry ? daysBetween(snapshotDate, expiry) : null,
-    accounting_warnings: warnings
+    accounting_warnings: dedupeWarnings([...warnings, ...accountingViews.accounting_warnings])
   };
 }
 
@@ -669,6 +706,7 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoring
     underlying_entry_timestamp: accounting.underlying_entry_timestamp,
     underlying_entry_ts: accounting.underlying_entry_ts,
     underlying_cost_basis: accounting.underlying_cost_basis,
+    cycle_accounting: accounting.cycle_accounting,
     current_spot_price: accounting.current_spot_price,
     underlying_market_value: accounting.underlying_market_value,
     underlying_unrealized_pnl: accounting.underlying_unrealized_pnl,
@@ -701,6 +739,21 @@ function buildAssetSnapshot(assetConfig, args, now, snapshotDate, liveMonitoring
     hedge_mark_price: accounting.hedge_mark_price,
     hedge_unrealized_pnl_approx: accounting.hedge_unrealized_pnl_approx,
     net_unrealized_pnl_approx: accounting.net_unrealized_pnl_approx,
+    current_cycle_accounting: accounting.current_cycle_accounting,
+    portfolio_lifetime_accounting: accounting.portfolio_lifetime_accounting,
+    legacy_accounting_note: accounting.legacy_accounting_note,
+    cycle_underlying_pnl: accounting.cycle_underlying_pnl,
+    cycle_option_pnl: accounting.cycle_option_pnl,
+    cycle_hedge_pnl: accounting.cycle_hedge_pnl,
+    net_cycle_pnl: accounting.net_cycle_pnl,
+    net_cycle_pnl_pct: accounting.net_cycle_pnl_pct,
+    cycle_capital_base: accounting.cycle_capital_base,
+    portfolio_underlying_pnl: accounting.portfolio_underlying_pnl,
+    portfolio_option_pnl: accounting.portfolio_option_pnl,
+    portfolio_hedge_pnl: accounting.portfolio_hedge_pnl,
+    portfolio_net_pnl: accounting.portfolio_net_pnl,
+    portfolio_net_pnl_pct: accounting.portfolio_net_pnl_pct,
+    portfolio_capital_base: accounting.portfolio_capital_base,
     accumulated_fees: accounting.accumulated_fees,
     option_warnings: dedupeWarnings([...optionWarnings, ...accounting.accounting_warnings]),
     current_hedge_pct: currentHedge,
@@ -819,8 +872,8 @@ function renderMarkdown(snapshot) {
       `- OTM05 target strike: ${formatPrice(asset.OTM05_target_strike)}.`,
       `- Distance to strike: ${formatPct(asset.distance_to_strike_pct)}.`,
       `- Underlying qty: ${value(asset.underlying_qty)}.`,
-      `- Underlying entry price: ${formatPrice(asset.underlying_entry_price)}.`,
-      `- Underlying unrealized PnL: ${formatPrice(asset.underlying_unrealized_pnl)}.`,
+      `- Underlying original entry price: ${formatPrice(asset.underlying_entry_price)}.`,
+      `- Underlying cycle reference price: ${formatPrice(asset.current_cycle_accounting && asset.current_cycle_accounting.underlying_reference_price)}.`,
       `- Option qty: ${value(asset.option_qty)}.`,
       `- Option entry premium: ${formatPrice(asset.option_entry_premium)}.`,
       `- Premium received: ${formatPrice(asset.premium_received)}.`,
@@ -835,15 +888,24 @@ function renderMarkdown(snapshot) {
       `- Hedge qty: ${value(asset.hedge_qty)}.`,
       `- Hedge entry price: ${formatPrice(asset.hedge_entry_price)}.`,
       `- Hedge mark price: ${formatPrice(asset.hedge_mark_price)}.`,
-      `- Hedge unrealized PnL approx: ${formatPrice(asset.hedge_unrealized_pnl_approx)}.`,
-      `- Net unrealized PnL approx: ${formatPrice(asset.net_unrealized_pnl_approx)}.`,
       '',
-      'PnL Summary',
+      'Current Cycle Accounting',
       '',
-      `- Underlying PnL: ${formatPrice(asset.underlying_unrealized_pnl)}.`,
-      `- Option PnL: ${formatPrice(asset.option_unrealized_pnl_approx)}.`,
-      `- Hedge PnL: ${formatPrice(asset.hedge_unrealized_pnl_approx)}.`,
-      `- Net PnL: ${formatPrice(asset.net_unrealized_pnl_approx)}.`,
+      `- Underlying PnL since cycle open: ${formatPrice(asset.cycle_underlying_pnl)}.`,
+      `- Option PnL current cycle: ${formatPrice(asset.cycle_option_pnl)}.`,
+      `- Hedge PnL current cycle: ${formatPrice(asset.cycle_hedge_pnl)}.`,
+      `- Net Cycle PnL: ${formatPrice(asset.net_cycle_pnl)}.`,
+      `- Net Cycle PnL %: ${formatPct(asset.net_cycle_pnl_pct)}.`,
+      `- Capital Base: ${formatPrice(asset.cycle_capital_base)}.`,
+      '',
+      'Portfolio / Lifetime Accounting',
+      '',
+      `- Underlying PnL since original spot purchase: ${formatPrice(asset.portfolio_underlying_pnl)}.`,
+      `- Current Option PnL: ${formatPrice(asset.portfolio_option_pnl)}.`,
+      `- Current Hedge PnL: ${formatPrice(asset.portfolio_hedge_pnl)}.`,
+      `- Portfolio Net PnL: ${formatPrice(asset.portfolio_net_pnl)}.`,
+      `- Portfolio Net PnL %: ${formatPct(asset.portfolio_net_pnl_pct)}.`,
+      `- Capital Base: ${formatPrice(asset.portfolio_capital_base)}.`,
       ...optionWarningsMarkdown(asset),
       `- Normal counter: ${value(asset.normal_counter)}.`,
       `- Comments: ${asset.comments}`,
@@ -907,15 +969,31 @@ function renderActiveMonitoringReport(snapshot) {
       `- Expiry / DTE: ${asset.option_expiry || 'N/A'} / ${valueOrNa(asset.days_to_expiration)}.`,
       `- Strike: ${formatPrice(asset.OTM05_target_strike)}.`,
       `- Days since entry: ${valueOrNa(asset.days_since_entry)}.`,
-      `- Underlying entry / unrealized PnL: ${formatPrice(asset.underlying_entry_price)} / ${formatPrice(asset.underlying_unrealized_pnl)}.`,
+      `- Underlying original entry: ${formatPrice(asset.underlying_entry_price)}.`,
       `- Premium: ${formatPremium(asset)}.`,
       `- Premium received: ${formatPrice(asset.premium_received)}.`,
       `- Premium status / source: ${asset.premium_status || 'N/A'} / ${asset.option_premium_source || 'N/A'}.`,
       `- Option bid / ask / mark / last: ${formatPrice(asset.option_bid)} / ${formatPrice(asset.option_ask)} / ${formatPrice(asset.option_mark_price)} / ${formatPrice(asset.option_last_price)}.`,
-      `- Option unrealized PnL approx: ${formatPrice(asset.option_unrealized_pnl_approx)}.`,
-      `- Hedge mark / unrealized PnL approx: ${formatPrice(asset.hedge_mark_price)} / ${formatPrice(asset.hedge_unrealized_pnl_approx)}.`,
-      `- Net unrealized PnL approx: ${formatPrice(asset.net_unrealized_pnl_approx)}.`,
-      `- PnL summary: underlying ${formatPrice(asset.underlying_unrealized_pnl)} / option ${formatPrice(asset.option_unrealized_pnl_approx)} / hedge ${formatPrice(asset.hedge_unrealized_pnl_approx)} / net ${formatPrice(asset.net_unrealized_pnl_approx)}.`,
+      `- Hedge mark: ${formatPrice(asset.hedge_mark_price)}.`,
+      '',
+      'Current Cycle Accounting',
+      '',
+      `- Underlying reference / source: ${formatPrice(asset.current_cycle_accounting && asset.current_cycle_accounting.underlying_reference_price)} / ${asset.current_cycle_accounting && asset.current_cycle_accounting.underlying_reference_source || 'N/A'}.`,
+      `- Underlying PnL since cycle open: ${formatPrice(asset.cycle_underlying_pnl)}.`,
+      `- Option PnL current cycle: ${formatPrice(asset.cycle_option_pnl)}.`,
+      `- Hedge PnL current cycle: ${formatPrice(asset.cycle_hedge_pnl)}.`,
+      `- Net Cycle PnL: ${formatPrice(asset.net_cycle_pnl)}.`,
+      `- Net Cycle PnL %: ${formatPct(asset.net_cycle_pnl_pct)}.`,
+      `- Capital Base: ${formatPrice(asset.cycle_capital_base)}.`,
+      '',
+      'Portfolio / Lifetime Accounting',
+      '',
+      `- Underlying PnL since original spot purchase: ${formatPrice(asset.portfolio_underlying_pnl)}.`,
+      `- Current Option PnL: ${formatPrice(asset.portfolio_option_pnl)}.`,
+      `- Current Hedge PnL: ${formatPrice(asset.portfolio_hedge_pnl)}.`,
+      `- Portfolio Net PnL: ${formatPrice(asset.portfolio_net_pnl)}.`,
+      `- Portfolio Net PnL %: ${formatPct(asset.portfolio_net_pnl_pct)}.`,
+      `- Capital Base: ${formatPrice(asset.portfolio_capital_base)}.`,
       `- Circuit breaker: ${asset.circuit_breaker_status || 'N/A'}.`,
       ...reportWarningsMarkdown(asset),
       ''
@@ -1001,8 +1079,8 @@ function renderActiveAssetCard(asset) {
       <div class="block">
         <h3>Underlying</h3>
         ${htmlMetric('Quantity', valueOrNa(asset.underlying_qty))}
-        ${htmlMetric('Entry price', formatPrice(asset.underlying_entry_price))}
-        ${htmlMetric('Unrealized PnL', formatPrice(asset.underlying_unrealized_pnl), pnlClass(asset.underlying_unrealized_pnl))}
+        ${htmlMetric('Original entry price', formatPrice(asset.underlying_entry_price))}
+        ${htmlMetric('Cycle reference', formatPrice(asset.current_cycle_accounting && asset.current_cycle_accounting.underlying_reference_price))}
       </div>
       <div class="block">
         <h3>Short Call</h3>
@@ -1022,11 +1100,20 @@ function renderActiveAssetCard(asset) {
         ${htmlMetric('Source', asset.source_files && asset.source_files.position_monitoring ? asset.source_files.position_monitoring : 'N/A')}
       </div>
       <div class="block">
-        <h3>PnL Summary</h3>
-        ${htmlMetric('Underlying PnL', formatPrice(asset.underlying_unrealized_pnl), pnlClass(asset.underlying_unrealized_pnl))}
-        ${htmlMetric('Option PnL', formatPrice(asset.option_unrealized_pnl_approx), pnlClass(asset.option_unrealized_pnl_approx))}
-        ${htmlMetric('Hedge PnL', formatPrice(asset.hedge_unrealized_pnl_approx), pnlClass(asset.hedge_unrealized_pnl_approx))}
-        ${htmlMetric('Net PnL', formatPrice(asset.net_unrealized_pnl_approx), pnlClass(asset.net_unrealized_pnl_approx))}
+        <h3>Current Cycle Accounting</h3>
+        ${htmlMetric('Underlying PnL since cycle open', formatPrice(asset.cycle_underlying_pnl), pnlClass(asset.cycle_underlying_pnl))}
+        ${htmlMetric('Option PnL current cycle', formatPrice(asset.cycle_option_pnl), pnlClass(asset.cycle_option_pnl))}
+        ${htmlMetric('Hedge PnL current cycle', formatPrice(asset.cycle_hedge_pnl), pnlClass(asset.cycle_hedge_pnl))}
+        ${htmlMetric('Net Cycle PnL', `${formatPrice(asset.net_cycle_pnl)} (${formatPct(asset.net_cycle_pnl_pct)})`, pnlClass(asset.net_cycle_pnl))}
+        ${htmlMetric('Capital Base', formatPrice(asset.cycle_capital_base))}
+      </div>
+      <div class="block">
+        <h3>Portfolio / Lifetime Accounting</h3>
+        ${htmlMetric('Underlying PnL since original spot purchase', formatPrice(asset.portfolio_underlying_pnl), pnlClass(asset.portfolio_underlying_pnl))}
+        ${htmlMetric('Current Option PnL', formatPrice(asset.portfolio_option_pnl), pnlClass(asset.portfolio_option_pnl))}
+        ${htmlMetric('Current Hedge PnL', formatPrice(asset.portfolio_hedge_pnl), pnlClass(asset.portfolio_hedge_pnl))}
+        ${htmlMetric('Portfolio Net PnL', `${formatPrice(asset.portfolio_net_pnl)} (${formatPct(asset.portfolio_net_pnl_pct)})`, pnlClass(asset.portfolio_net_pnl))}
+        ${htmlMetric('Capital Base', formatPrice(asset.portfolio_capital_base))}
       </div>
     </div>
   </div>
@@ -1537,10 +1624,14 @@ function buildTimelineRows(archives) {
         strike: optionalNumber(asset.short_call_strike, asset.OTM05_target_strike),
         premium_status: asset.premium_status || null,
         premium_source: asset.option_premium_source || null,
-        underlying_unrealized_pnl: optionalNumber(asset.underlying_unrealized_pnl),
-        option_unrealized_pnl_approx: optionalNumber(asset.option_unrealized_pnl_approx, asset.option_mtm_pnl),
-        hedge_unrealized_pnl_approx: optionalNumber(asset.hedge_unrealized_pnl_approx),
-        net_unrealized_pnl_approx: optionalNumber(asset.net_unrealized_pnl_approx),
+        cycle_underlying_pnl: optionalNumber(asset.cycle_underlying_pnl, asset.current_cycle_accounting && asset.current_cycle_accounting.underlying_pnl_since_cycle_open),
+        cycle_option_pnl: optionalNumber(asset.cycle_option_pnl, asset.current_cycle_accounting && asset.current_cycle_accounting.option_pnl_current_cycle),
+        cycle_hedge_pnl: optionalNumber(asset.cycle_hedge_pnl, asset.current_cycle_accounting && asset.current_cycle_accounting.hedge_pnl_current_cycle),
+        net_cycle_pnl: optionalNumber(asset.net_cycle_pnl, asset.current_cycle_accounting && asset.current_cycle_accounting.net_cycle_pnl),
+        portfolio_underlying_pnl: optionalNumber(asset.portfolio_underlying_pnl, asset.portfolio_lifetime_accounting && asset.portfolio_lifetime_accounting.underlying_pnl_since_original_spot_purchase, asset.underlying_unrealized_pnl),
+        portfolio_option_pnl: optionalNumber(asset.portfolio_option_pnl, asset.portfolio_lifetime_accounting && asset.portfolio_lifetime_accounting.current_option_pnl, asset.option_unrealized_pnl_approx, asset.option_mtm_pnl),
+        portfolio_hedge_pnl: optionalNumber(asset.portfolio_hedge_pnl, asset.portfolio_lifetime_accounting && asset.portfolio_lifetime_accounting.current_hedge_pnl, asset.hedge_unrealized_pnl_approx),
+        portfolio_net_pnl: optionalNumber(asset.portfolio_net_pnl, asset.portfolio_lifetime_accounting && asset.portfolio_lifetime_accounting.portfolio_net_pnl, asset.net_unrealized_pnl_approx),
         warnings: timelineWarnings(asset),
         source: archive.source
       });
@@ -1564,7 +1655,7 @@ function renderTimelineAssetTable(rows, asset) {
     `### ${asset}`,
     '',
     ...markdownTable(
-      ['Date', 'Price', 'Regime', 'Target', 'Current', 'Action', 'Exec', 'DTE', 'Strike', 'Option PnL', 'Hedge PnL', 'Net PnL', 'Warnings'],
+      ['Date', 'Price', 'Regime', 'Target', 'Current', 'Action', 'Exec', 'DTE', 'Strike', 'Net Cycle PnL', 'Portfolio Net PnL', 'Warnings'],
       assetRows.map(row => [
         row.date,
         formatPrice(row.current_price),
@@ -1575,9 +1666,8 @@ function renderTimelineAssetTable(rows, asset) {
         row.execution_state || 'N/A',
         valueOrNa(row.dte),
         formatPrice(row.strike),
-        formatPrice(row.option_unrealized_pnl_approx),
-        formatPrice(row.hedge_unrealized_pnl_approx),
-        formatPrice(row.net_unrealized_pnl_approx),
+        formatPrice(row.net_cycle_pnl),
+        formatPrice(row.portfolio_net_pnl),
         row.warnings.length ? row.warnings.join('; ') : 'N/A'
       ])
     ),
@@ -1600,10 +1690,14 @@ function timelineCsvRows(rows) {
     strike: row.strike,
     premium_status: row.premium_status,
     premium_source: row.premium_source,
-    underlying_unrealized_pnl: row.underlying_unrealized_pnl,
-    option_unrealized_pnl_approx: row.option_unrealized_pnl_approx,
-    hedge_unrealized_pnl_approx: row.hedge_unrealized_pnl_approx,
-    net_unrealized_pnl_approx: row.net_unrealized_pnl_approx,
+    cycle_underlying_pnl: row.cycle_underlying_pnl,
+    cycle_option_pnl: row.cycle_option_pnl,
+    cycle_hedge_pnl: row.cycle_hedge_pnl,
+    net_cycle_pnl: row.net_cycle_pnl,
+    portfolio_underlying_pnl: row.portfolio_underlying_pnl,
+    portfolio_option_pnl: row.portfolio_option_pnl,
+    portfolio_hedge_pnl: row.portfolio_hedge_pnl,
+    portfolio_net_pnl: row.portfolio_net_pnl,
     warnings: row.warnings.join('; '),
     source: row.source
   }));
@@ -1665,7 +1759,7 @@ function renderPositionTimeline() {
     '## Daily Overview',
     '',
     ...markdownTable(
-      ['Date', 'Asset', 'Price', 'Regime', 'Target', 'Current', 'Exec', 'DTE', 'Underlying PnL', 'Option PnL', 'Hedge PnL', 'Net PnL'],
+      ['Date', 'Asset', 'Price', 'Regime', 'Target', 'Current', 'Exec', 'DTE', 'Cycle Underlying PnL', 'Cycle Option PnL', 'Cycle Hedge PnL', 'Net Cycle PnL', 'Portfolio Underlying PnL', 'Portfolio Net PnL'],
       rows.map(row => [
         row.date,
         row.asset,
@@ -1675,10 +1769,12 @@ function renderPositionTimeline() {
         formatHedgePct(row.current_hedge_pct),
         row.execution_state || 'N/A',
         valueOrNa(row.dte),
-        formatPrice(row.underlying_unrealized_pnl),
-        formatPrice(row.option_unrealized_pnl_approx),
-        formatPrice(row.hedge_unrealized_pnl_approx),
-        formatPrice(row.net_unrealized_pnl_approx)
+        formatPrice(row.cycle_underlying_pnl),
+        formatPrice(row.cycle_option_pnl),
+        formatPrice(row.cycle_hedge_pnl),
+        formatPrice(row.net_cycle_pnl),
+        formatPrice(row.portfolio_underlying_pnl),
+        formatPrice(row.portfolio_net_pnl)
       ])
     ),
     '',
@@ -1701,7 +1797,8 @@ function renderPositionTimeline() {
     '',
     '## Notes',
     '',
-    '- Approximate PnL is populated only when the required accounting entry fields and market marks are available.',
+    '- Current Cycle Accounting uses the cycle underlying reference price plus current option and hedge marks.',
+    '- Portfolio / Lifetime Accounting uses the original spot purchase cost basis plus current option and hedge marks.',
     '- Option marks come from archived live position monitoring when available; no theoretical option model is used.',
     '- Missing fields remain N/A.'
   ].join('\n');
@@ -1724,7 +1821,7 @@ function renderTimelineHtml() {
     '</div></section>',
     '<section class="section"><h2>Daily Position Timeline</h2><div class="section-body table-wrap">',
     '<table>',
-    '<thead><tr><th>Date</th><th>Asset</th><th class="num">Price</th><th>Regime</th><th class="num">Target</th><th class="num">Current</th><th>Today Action</th><th>Execution</th><th>Expiry</th><th class="num">DTE</th><th class="num">Strike</th><th>Premium Status/Source</th><th class="num">Underlying PnL</th><th class="num">Option PnL</th><th class="num">Hedge PnL</th><th class="num">Net PnL</th><th>Warnings</th></tr></thead>',
+    '<thead><tr><th>Date</th><th>Asset</th><th class="num">Price</th><th>Regime</th><th class="num">Target</th><th class="num">Current</th><th>Today Action</th><th>Execution</th><th>Expiry</th><th class="num">DTE</th><th class="num">Strike</th><th>Premium Status/Source</th><th class="num">Cycle Underlying PnL</th><th class="num">Cycle Option PnL</th><th class="num">Cycle Hedge PnL</th><th class="num">Net Cycle PnL</th><th class="num">Portfolio Underlying PnL</th><th class="num">Portfolio Net PnL</th><th>Warnings</th></tr></thead>',
     '<tbody>',
     ...rows.map(row => `<tr>
       <td>${escapeHtml(row.date)}</td>
@@ -1739,10 +1836,12 @@ function renderTimelineHtml() {
       <td class="num">${escapeHtml(valueOrNa(row.dte))}</td>
       <td class="num">${escapeHtml(formatPrice(row.strike))}</td>
       <td>${escapeHtml(`${row.premium_status || 'N/A'} / ${row.premium_source || 'N/A'}`)}</td>
-      <td class="num ${pnlClass(row.underlying_unrealized_pnl)}">${escapeHtml(formatPrice(row.underlying_unrealized_pnl))}</td>
-      <td class="num ${pnlClass(row.option_unrealized_pnl_approx)}">${escapeHtml(formatPrice(row.option_unrealized_pnl_approx))}</td>
-      <td class="num ${pnlClass(row.hedge_unrealized_pnl_approx)}">${escapeHtml(formatPrice(row.hedge_unrealized_pnl_approx))}</td>
-      <td class="num ${pnlClass(row.net_unrealized_pnl_approx)}">${escapeHtml(formatPrice(row.net_unrealized_pnl_approx))}</td>
+      <td class="num ${pnlClass(row.cycle_underlying_pnl)}">${escapeHtml(formatPrice(row.cycle_underlying_pnl))}</td>
+      <td class="num ${pnlClass(row.cycle_option_pnl)}">${escapeHtml(formatPrice(row.cycle_option_pnl))}</td>
+      <td class="num ${pnlClass(row.cycle_hedge_pnl)}">${escapeHtml(formatPrice(row.cycle_hedge_pnl))}</td>
+      <td class="num ${pnlClass(row.net_cycle_pnl)}">${escapeHtml(formatPrice(row.net_cycle_pnl))}</td>
+      <td class="num ${pnlClass(row.portfolio_underlying_pnl)}">${escapeHtml(formatPrice(row.portfolio_underlying_pnl))}</td>
+      <td class="num ${pnlClass(row.portfolio_net_pnl)}">${escapeHtml(formatPrice(row.portfolio_net_pnl))}</td>
       <td class="${row.warnings.length ? 'warn' : 'muted'}">${escapeHtml(row.warnings.length ? row.warnings.join('; ') : 'N/A')}</td>
     </tr>`),
     '</tbody></table></div></section>'
@@ -1770,10 +1869,14 @@ function writePositionTimeline() {
     'strike',
     'premium_status',
     'premium_source',
-    'underlying_unrealized_pnl',
-    'option_unrealized_pnl_approx',
-    'hedge_unrealized_pnl_approx',
-    'net_unrealized_pnl_approx',
+    'cycle_underlying_pnl',
+    'cycle_option_pnl',
+    'cycle_hedge_pnl',
+    'net_cycle_pnl',
+    'portfolio_underlying_pnl',
+    'portfolio_option_pnl',
+    'portfolio_hedge_pnl',
+    'portfolio_net_pnl',
     'warnings',
     'source'
   ])}\n`, 'utf8');

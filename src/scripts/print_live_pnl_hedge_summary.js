@@ -126,13 +126,18 @@ function circuitWarnings(position, row, signal) {
   if (!signal) warnings.push('Live monitoring signal unavailable.');
   if (row && Array.isArray(row.warnings)) warnings.push(...row.warnings);
   if (optionalNumber(row && row.current_spot_price) === null) warnings.push('Spot price unavailable.');
-  if (optionalNumber(row && row.option_mtm_pnl, row && row.option_unrealized_pnl_approx) === null) warnings.push('Option PnL unavailable.');
-  if (optionalNumber(row && row.hedge_unrealized_pnl_approx) === null) warnings.push('Hedge PnL unavailable.');
-  if (optionalNumber(row && row.underlying_unrealized_pnl) === null) warnings.push('Underlying PnL unavailable.');
+  if (optionalNumber(row && row.cycle_option_pnl, row && row.current_cycle_accounting && row.current_cycle_accounting.option_pnl_current_cycle) === null) warnings.push('Current cycle option PnL unavailable.');
+  if (optionalNumber(row && row.cycle_hedge_pnl, row && row.current_cycle_accounting && row.current_cycle_accounting.hedge_pnl_current_cycle) === null) warnings.push('Current cycle hedge PnL unavailable.');
+  if (optionalNumber(row && row.cycle_underlying_pnl, row && row.current_cycle_accounting && row.current_cycle_accounting.underlying_pnl_since_cycle_open) === null) warnings.push('Current cycle underlying PnL unavailable.');
+  if (optionalNumber(row && row.portfolio_net_pnl, row && row.portfolio_lifetime_accounting && row.portfolio_lifetime_accounting.portfolio_net_pnl) === null) warnings.push('Portfolio / Lifetime PnL unavailable.');
   if (position && row && row.option_instrument && position.option_instrument && row.option_instrument !== position.option_instrument) {
     warnings.push(`Option instrument mismatch: register=${position.option_instrument}; monitoring=${row.option_instrument}.`);
   }
   return warnings;
+}
+
+function rowValue(row, flatField, nestedField, nestedKey) {
+  return optionalNumber(row && row[flatField], row && row[nestedField] && row[nestedField][nestedKey]);
 }
 
 function printAsset(position, rows, signals) {
@@ -142,25 +147,34 @@ function printAsset(position, rows, signals) {
   const currentHedge = currentHedgePct(row, position);
   const targetHedge = signal ? (HEDGE_BY_STATE[signal.alert_state] ?? 0) : null;
   const hedgeDelta = hedgeDeltaPct(currentHedge, targetHedge);
-  const underlyingPnl = optionalNumber(row && row.underlying_unrealized_pnl);
-  const optionPnl = optionalNumber(row && row.option_mtm_pnl, row && row.option_unrealized_pnl_approx);
-  const hedgePnl = optionalNumber(row && row.hedge_unrealized_pnl_approx);
-  const netPnl = optionalNumber(row && row.net_unrealized_pnl_approx);
-  const underlyingQty = optionalNumber(row && row.underlying_qty, position && position.underlying_qty);
-  const underlyingEntry = underlyingEntryPrice(row, position);
-  const initialCapital = underlyingQty === null || underlyingEntry === null
-    ? null
-    : Math.abs(underlyingQty) * underlyingEntry;
+  const cycleUnderlyingPnl = rowValue(row, 'cycle_underlying_pnl', 'current_cycle_accounting', 'underlying_pnl_since_cycle_open');
+  const cycleOptionPnl = rowValue(row, 'cycle_option_pnl', 'current_cycle_accounting', 'option_pnl_current_cycle');
+  const cycleHedgePnl = rowValue(row, 'cycle_hedge_pnl', 'current_cycle_accounting', 'hedge_pnl_current_cycle');
+  const netCyclePnl = rowValue(row, 'net_cycle_pnl', 'current_cycle_accounting', 'net_cycle_pnl');
+  const cycleCapitalBase = rowValue(row, 'cycle_capital_base', 'current_cycle_accounting', 'capital_base');
+  const portfolioUnderlyingPnl = rowValue(row, 'portfolio_underlying_pnl', 'portfolio_lifetime_accounting', 'underlying_pnl_since_original_spot_purchase');
+  const portfolioOptionPnl = rowValue(row, 'portfolio_option_pnl', 'portfolio_lifetime_accounting', 'current_option_pnl');
+  const portfolioHedgePnl = rowValue(row, 'portfolio_hedge_pnl', 'portfolio_lifetime_accounting', 'current_hedge_pnl');
+  const portfolioNetPnl = rowValue(row, 'portfolio_net_pnl', 'portfolio_lifetime_accounting', 'portfolio_net_pnl');
+  const portfolioCapitalBase = rowValue(row, 'portfolio_capital_base', 'portfolio_lifetime_accounting', 'capital_base');
   const warnings = circuitWarnings(position, row, signal);
 
   console.log(asset);
   console.log('----------------------------------------');
   console.log(`Option instrument: ${firstValue(row && row.option_instrument, position.option_instrument)}`);
   console.log(`Hedge instrument: ${firstValue(row && row.hedge_instrument, position.hedge_instrument)}`);
-  console.log(`Underlying PnL: ${formatMoney(underlyingPnl)}`);
-  console.log(`Option PnL: ${formatMoney(optionPnl)}`);
-  console.log(`Hedge PnL: ${formatMoney(hedgePnl)}`);
-  console.log(`Net PnL: ${formatPnlWithPct(netPnl, initialCapital)}`);
+  console.log('CURRENT CYCLE');
+  console.log(`Underlying PnL since cycle open: ${formatMoney(cycleUnderlyingPnl)}`);
+  console.log(`Option PnL current cycle: ${formatMoney(cycleOptionPnl)}`);
+  console.log(`Hedge PnL current cycle: ${formatMoney(cycleHedgePnl)}`);
+  console.log(`Net Cycle PnL: ${formatPnlWithPct(netCyclePnl, cycleCapitalBase)}`);
+  console.log(`Capital Base: ${formatMoney(cycleCapitalBase)}`);
+  console.log('PORTFOLIO / LIFETIME');
+  console.log(`Underlying PnL since original spot purchase: ${formatMoney(portfolioUnderlyingPnl)}`);
+  console.log(`Current Option PnL: ${formatMoney(portfolioOptionPnl)}`);
+  console.log(`Current Hedge PnL: ${formatMoney(portfolioHedgePnl)}`);
+  console.log(`Portfolio Net PnL: ${formatPnlWithPct(portfolioNetPnl, portfolioCapitalBase)}`);
+  console.log(`Capital Base: ${formatMoney(portfolioCapitalBase)}`);
   console.log(`Current hedge: ${formatPct(currentHedge)}`);
   console.log(`Target hedge: ${formatPct(targetHedge)}`);
   console.log(`Hedge delta: ${formatPct(hedgeDelta)}`);
@@ -170,25 +184,37 @@ function printAsset(position, rows, signals) {
   console.log('');
 
   return {
-    netPnl,
-    initialCapital,
-    hasValidCapital: initialCapital !== null
+    netCyclePnl,
+    cycleCapitalBase,
+    hasValidCycleCapital: cycleCapitalBase !== null,
+    portfolioNetPnl,
+    portfolioCapitalBase,
+    hasValidPortfolioCapital: portfolioCapitalBase !== null
   };
 }
 
 function printTotal(summaries) {
-  const validPnls = summaries.map(row => row.netPnl).filter(row => row !== null);
-  const totalNetPnl = validPnls.length === summaries.length
-    ? validPnls.reduce((sum, row) => sum + row, 0)
+  const validCyclePnls = summaries.map(row => row.netCyclePnl).filter(row => row !== null);
+  const totalNetCyclePnl = validCyclePnls.length === summaries.length
+    ? validCyclePnls.reduce((sum, row) => sum + row, 0)
     : null;
-  const allCapitalValid = summaries.every(row => row.hasValidCapital);
-  const totalInitialCapital = allCapitalValid
-    ? summaries.reduce((sum, row) => sum + row.initialCapital, 0)
+  const allCycleCapitalValid = summaries.every(row => row.hasValidCycleCapital);
+  const totalCycleCapital = allCycleCapitalValid
+    ? summaries.reduce((sum, row) => sum + row.cycleCapitalBase, 0)
+    : null;
+  const validPortfolioPnls = summaries.map(row => row.portfolioNetPnl).filter(row => row !== null);
+  const totalPortfolioNetPnl = validPortfolioPnls.length === summaries.length
+    ? validPortfolioPnls.reduce((sum, row) => sum + row, 0)
+    : null;
+  const allPortfolioCapitalValid = summaries.every(row => row.hasValidPortfolioCapital);
+  const totalPortfolioCapital = allPortfolioCapitalValid
+    ? summaries.reduce((sum, row) => sum + row.portfolioCapitalBase, 0)
     : null;
 
   console.log('TOTAL');
   console.log('----------------------------------------');
-  console.log(`Net PnL: ${formatPnlWithPct(totalNetPnl, totalInitialCapital)}`);
+  console.log(`Net Cycle PnL: ${formatPnlWithPct(totalNetCyclePnl, totalCycleCapital)}`);
+  console.log(`Portfolio Net PnL: ${formatPnlWithPct(totalPortfolioNetPnl, totalPortfolioCapital)}`);
 }
 
 function main() {

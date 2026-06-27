@@ -11,6 +11,7 @@ const {
   fetchBybitAccountSync,
   mergeAccountSyncIntoRegister
 } = require('./bybit_account_sync');
+const { buildAccountingViews } = require('./live_accounting');
 const { logCcwEnvStartup } = require('./ccw_env_diagnostics');
 
 const LIVE_DIR = path.join(REPO_ROOT, 'live');
@@ -113,6 +114,7 @@ function normalizePosition(position) {
     short_call_entry_timestamp: optionEntryTs,
     hedge_entry_ts: hedgeEntryTs,
     hedge_entry_timestamp: hedgeEntryTs,
+    cycle_accounting: position.cycle_accounting || null,
     accumulated_fees: optionalNumber(position.accumulated_fees)
   };
 }
@@ -248,6 +250,16 @@ async function monitorPosition(position, snapshotDate, accountSync) {
   const underlyingValue = underlyingMarketValue(position, currentSpot.price);
   const optionUnrealizedPnl = optionMtmPnl(position, ticker.option_mark_price);
   const hedgeUnrealizedPnl = hedgePnl(position, hedgeMarkPrice);
+  const accounting = buildAccountingViews({
+    position,
+    currentSpotPrice: currentSpot.price,
+    optionMarkPrice: ticker.option_mark_price,
+    hedgeMarkPrice
+  });
+  warnings.push(...accounting.accounting_warnings);
+  const cycleAccounting = accounting.current_cycle_accounting;
+  const portfolioAccounting = accounting.portfolio_lifetime_accounting;
+  const legacyAccounting = accounting.legacy_accounting;
 
   return {
     asset: position.asset,
@@ -274,9 +286,10 @@ async function monitorPosition(position, snapshotDate, accountSync) {
     underlying_entry_timestamp: position.underlying_entry_timestamp || null,
     underlying_entry_ts: position.underlying_entry_ts || null,
     underlying_cost_basis: position.underlying_cost_basis || null,
+    cycle_accounting: position.cycle_accounting || null,
     current_spot_price: roundNumber(currentSpot.price),
     underlying_market_value: underlyingValue,
-    underlying_unrealized_pnl: underlyingUnrealizedPnl,
+    underlying_unrealized_pnl: legacyAccounting.underlying_unrealized_pnl,
     short_call_symbol: instrument || null,
     short_call_qty: optionalNumber(position.short_call_qty),
     short_call_expiry: position.short_call_expiry || null,
@@ -299,7 +312,7 @@ async function monitorPosition(position, snapshotDate, accountSync) {
     hedge_entry_timestamp: position.hedge_entry_timestamp || null,
     hedge_cost_basis: position.hedge_cost_basis || null,
     hedge_mark_price: roundNumber(hedgeMarkPrice),
-    hedge_unrealized_pnl_approx: hedgeUnrealizedPnl,
+    hedge_unrealized_pnl_approx: legacyAccounting.hedge_unrealized_pnl_approx,
     accumulated_fees: optionalNumber(position.accumulated_fees),
     option_bid: roundNumber(ticker.option_bid),
     option_ask: roundNumber(ticker.option_ask),
@@ -312,9 +325,24 @@ async function monitorPosition(position, snapshotDate, accountSync) {
       vega: roundNumber(ticker.vega),
       theta: roundNumber(ticker.theta)
     },
-    option_mtm_pnl: optionUnrealizedPnl,
-    option_unrealized_pnl_approx: optionUnrealizedPnl,
-    net_unrealized_pnl_approx: sumIfComplete(underlyingUnrealizedPnl, optionUnrealizedPnl, hedgeUnrealizedPnl),
+    option_mtm_pnl: legacyAccounting.option_unrealized_pnl_approx,
+    option_unrealized_pnl_approx: legacyAccounting.option_unrealized_pnl_approx,
+    net_unrealized_pnl_approx: legacyAccounting.net_unrealized_pnl_approx,
+    current_cycle_accounting: cycleAccounting,
+    portfolio_lifetime_accounting: portfolioAccounting,
+    legacy_accounting_note: legacyAccounting.note,
+    cycle_underlying_pnl: cycleAccounting.underlying_pnl_since_cycle_open,
+    cycle_option_pnl: cycleAccounting.option_pnl_current_cycle,
+    cycle_hedge_pnl: cycleAccounting.hedge_pnl_current_cycle,
+    net_cycle_pnl: cycleAccounting.net_cycle_pnl,
+    net_cycle_pnl_pct: cycleAccounting.net_cycle_pnl_pct,
+    cycle_capital_base: cycleAccounting.capital_base,
+    portfolio_underlying_pnl: portfolioAccounting.underlying_pnl_since_original_spot_purchase,
+    portfolio_option_pnl: portfolioAccounting.current_option_pnl,
+    portfolio_hedge_pnl: portfolioAccounting.current_hedge_pnl,
+    portfolio_net_pnl: portfolioAccounting.portfolio_net_pnl,
+    portfolio_net_pnl_pct: portfolioAccounting.portfolio_net_pnl_pct,
+    portfolio_capital_base: portfolioAccounting.capital_base,
     warnings,
     notes: position.notes || '',
     endpoints: {

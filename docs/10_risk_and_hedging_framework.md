@@ -84,6 +84,13 @@ This separation became necessary because the first threshold sets produced exces
 
 The current research baseline is `v0.4b`, selected after threshold calibration on BTC Weekly OTM05 Daily MTM multi-year artifacts. It is considered sufficiently useful for future partial-hedge simulation research, but it is not a final operational policy and it does not authorize or execute any hedge.
 
+Live pilot accounting reports are presentation and audit aids for the active position, not changes to hedge methodology. They separate:
+
+- Current Cycle Accounting, which measures underlying, option, and hedge PnL against the active cycle reference and reports Net Cycle PnL.
+- Portfolio / Lifetime Accounting, which measures the underlying leg from original spot purchase cost basis and reports Portfolio Net PnL.
+
+This split prevents the live monitoring layer from presenting a hybrid net PnL while preserving the existing hedge-state rules and thresholds.
+
 Current interpretation:
 
 - `normal`: no material actionable alert.

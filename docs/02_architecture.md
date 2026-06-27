@@ -89,6 +89,13 @@ The Live Research Operations Layer is an auxiliary research/pilot layer outside 
 
 This layer supports the current live pilot by translating research outputs into auditable manual operating artifacts while preserving the separation between research, monitoring, and actual trade execution.
 
+Live reports expose two accounting views and must not present an ambiguous standalone Net PnL:
+
+- Current Cycle Accounting: underlying PnL since the active cycle reference price, option PnL for the current cycle, hedge PnL for the current cycle, Net Cycle PnL, Net Cycle PnL %, and capital base.
+- Portfolio / Lifetime Accounting: underlying PnL since original spot purchase, current option PnL, current hedge PnL, Portfolio Net PnL, Portfolio Net PnL %, and capital base.
+
+The minimal cycle reference lives in the active Position Register under `cycle_accounting`. This is operational state for current reporting only. Historical cycle storage, realized accounting, fees, funding, and multi-cycle analytics remain outside this layer for now.
+
 ---
 
 ## 4. Data Flow

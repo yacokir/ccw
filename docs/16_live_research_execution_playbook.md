@@ -198,16 +198,10 @@ base_url=https://api-demo.bybit.com
 
 The live accounting layer reconstructs current approximate PnL from synchronized account data and public marks. It is operational monitoring, not a production ledger.
 
-For each active BTC or ETH position, the system attempts to reconstruct:
+For each active BTC or ETH position, the system attempts to reconstruct two explicit accounting views:
 
-- `underlying_entry_price`
-- `underlying_entry_ts`
-- `underlying_cost_basis`
-- `underlying_market_value`
-- `underlying_unrealized_pnl`
-- `option_unrealized_pnl`
-- `hedge_unrealized_pnl`
-- `net_unrealized_pnl`
+- Current Cycle Accounting.
+- Portfolio / Lifetime Accounting.
 
 Underlying cost basis is reconstructed from synced spot buy executions using weighted average acquisition cost:
 
@@ -224,15 +218,33 @@ The first implementation is deliberately simple and auditable. It assumes:
 
 If spot executions are unavailable, the workflow falls back to existing Position Register values. If neither account data nor local values can provide an entry price, the report preserves `N/A` and emits the existing warning.
 
-Approximate current net unrealized PnL is:
+Current Cycle Accounting is:
 
 ```text
-underlying_unrealized_pnl
-+ option_unrealized_pnl
-+ hedge_unrealized_pnl
+underlying PnL since cycle open
++ option PnL current cycle
++ hedge PnL current cycle
+= Net Cycle PnL
 ```
 
-The optional accounting fields in `live/position_register.json` are persistence/fallback fields only. They should not be interpreted as a full historical ledger.
+Portfolio / Lifetime Accounting is:
+
+```text
+underlying PnL since original spot purchase
++ current option PnL
++ current hedge PnL
+= Portfolio Net PnL
+```
+
+Reports must not present a standalone ambiguous `Net PnL`. The optional `cycle_accounting` block in `live/position_register.json` stores the minimum current-cycle reference fields:
+
+- `cycle_opened_at`
+- `underlying_reference_price`
+- `underlying_reference_timestamp`
+- `underlying_reference_source`
+- `capital_base`
+
+These fields are persistence/fallback fields only. They should not be interpreted as a full historical ledger, realized accounting, fees accounting, or funding accounting.
 
 ## Position Register
 
@@ -289,11 +301,18 @@ The HTML reports are intended for the daily one-minute operator review. Markdown
 
 Current reports expose both monitoring state and live accounting context, including:
 
-- Underlying entry price.
-- Underlying PnL.
-- Option PnL.
-- Hedge PnL.
-- Net PnL.
+- Current Cycle Accounting.
+- Underlying PnL since cycle open.
+- Option PnL current cycle.
+- Hedge PnL current cycle.
+- Net Cycle PnL.
+- Net Cycle PnL %.
+- Portfolio / Lifetime Accounting.
+- Underlying PnL since original spot purchase.
+- Current Option PnL.
+- Current Hedge PnL.
+- Portfolio Net PnL.
+- Portfolio Net PnL %.
 - Account-sync environment.
 - Account-sync availability.
 - Account-sync base URL.

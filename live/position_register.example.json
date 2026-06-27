@@ -31,6 +31,13 @@
       "option_qty": 0,
       "option_entry_premium": 0,
       "option_entry_ts": null,
+      "cycle_accounting": {
+        "cycle_opened_at": "YYYY-MM-DD HH:MM America/New_York",
+        "underlying_reference_price": null,
+        "underlying_reference_timestamp": null,
+        "underlying_reference_source": null,
+        "capital_base": null
+      },
       "hedge_instrument": "BTCUSDT",
       "hedge_qty": 0,
       "hedge_entry_price": null,
@@ -68,6 +75,13 @@
       "option_qty": 0,
       "option_entry_premium": 0,
       "option_entry_ts": null,
+      "cycle_accounting": {
+        "cycle_opened_at": "YYYY-MM-DD HH:MM America/New_York",
+        "underlying_reference_price": null,
+        "underlying_reference_timestamp": null,
+        "underlying_reference_source": null,
+        "capital_base": null
+      },
       "hedge_instrument": "ETHUSDT",
       "hedge_qty": 0,
       "hedge_entry_price": null,

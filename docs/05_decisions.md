@@ -326,3 +326,27 @@ A automacao diaria deve evitar snapshots duplicados e reduzir risco operacional,
 
 **Impacto:**
 A execucao diaria pode ser testada e agendada com menor friccao operacional, sem alterar metodologia, hedge logic, monitoring logic ou assumptions de pesquisa.
+
+---
+
+### [2026-06-27] Separar accounting live entre ciclo atual e portfolio/lifetime
+
+**Descricao:**
+Os relatorios live passam a separar explicitamente duas leituras contabeis:
+
+- Current Cycle Accounting.
+- Portfolio / Lifetime Accounting.
+
+Decisao:
+
+- Current Cycle Accounting usa o preco de referencia do ciclo em `cycle_accounting.underlying_reference_price`, a opcao atual e o hedge atual.
+- Portfolio / Lifetime Accounting usa o custo original de compra do spot, a opcao atual e o hedge atual.
+- Relatorios live nao devem exibir um `Net PnL` generico ou ambiguo.
+- Campos legados de PnL permanecem para compatibilidade, mas espelham a leitura Portfolio / Lifetime em vez de um net hibrido.
+- `cycle_accounting` e estado operacional minimo do ciclo ativo, nao ledger historico.
+
+**Racional:**
+O primeiro rollover semanal mostrou que somar underlying PnL desde a compra original do UA com option/hedge PnL do ciclo atual cria um resultado hibrido que nao representa corretamente nem o ciclo atual nem a carteira consolidada.
+
+**Impacto:**
+`ACTIVE_MONITORING_DAILY`, `LIVE_POSITION_TIMELINE` e a opcao 5 do menu passam a reportar Net Cycle PnL e Portfolio Net PnL separadamente, sem alterar estrategia, hedge rules, option discovery, execution ou scheduler.
