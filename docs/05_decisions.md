@@ -350,3 +350,38 @@ O primeiro rollover semanal mostrou que somar underlying PnL desde a compra orig
 
 **Impacto:**
 `ACTIVE_MONITORING_DAILY`, `LIVE_POSITION_TIMELINE` e a opcao 5 do menu passam a reportar Net Cycle PnL e Portfolio Net PnL separadamente, sem alterar estrategia, hedge rules, option discovery, execution ou scheduler.
+
+---
+
+### [2026-07-07] Validar cash settlement de opcoes Bybit no primeiro ciclo operacional
+
+**Descricao:**
+O primeiro ciclo operacional real do piloto live, `2026-06-26_weekly_otm05_bybit`, validou empiricamente o comportamento de expiry/settlement das opcoes Bybit USDT usadas pelo projeto.
+
+Evidencia observada:
+
+- O `EXPIRY_CLOSE_CHECK` encontrou delivery price publico para os instrumentos vencidos.
+- O account transaction log da Bybit Demo registrou evento `DELIVERY`.
+- O settlement foi registrado como fluxo financeiro em USDT (`cashFlow`, `fee`, `change`), nao como entrega fisica do underlying.
+- O UA spot permaneceu integralmente na carteira apos expiry.
+- BTC OTM resultou em delivery cashFlow zero e PnL de opcao igual ao premio recebido, antes de fees.
+- ETH ITM resultou em cash settlement financeiro em USDT, com o spot ETH preservado.
+
+Decisao:
+
+- Opcoes Bybit USDT devem ser tratadas no live accounting como cash-settled.
+- Assignment/exercise/settlement nao reduz automaticamente o UA spot no modelo operacional.
+- O modelo correto de Current Cycle Accounting para fechamento de ciclo e:
+
+```text
+Underlying PnL
++ Option Settlement PnL
++ Hedge PnL
+= Net Cycle PnL
+```
+
+- `Option Settlement PnL` inclui premio recebido e, quando ITM, o cashFlow financeiro de delivery/settlement; fees devem ser apresentadas separadamente quando disponiveis.
+- O hedge continua sendo analisado contra a exposicao economica ao UA, que permanece na carteira apos settlement.
+
+**Impacto:**
+Esta decisao transforma uma premissa operacional em evidencia validada pelo piloto. `EXPIRY_CLOSE_CHECK` e `CYCLE_FINAL_RESULT` interpretam expiry de opcoes Bybit como evento financeiro cash-settled, preservando a separacao entre Current Cycle Accounting e Portfolio / Lifetime Accounting. Um futuro `CYCLE_CLOSE_SUMMARY`, quando implementado, deve usar a mesma interpretacao. A decisao nao altera hedge rules, option discovery, scheduler, execution ou metodologia de pesquisa; ela fixa a interpretacao contabil correta do settlement observado.

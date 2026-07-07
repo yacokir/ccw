@@ -246,6 +246,58 @@ Reports must not present a standalone ambiguous `Net PnL`. The optional `cycle_a
 
 These fields are persistence/fallback fields only. They should not be interpreted as a full historical ledger, realized accounting, fees accounting, or funding accounting.
 
+## Expiry And Cycle Close Procedure
+
+The live pilot now treats expiry close as an explicit operational phase between active monitoring and the next T0. The validated flow is:
+
+```text
+T0
+-> Monitoring
+-> Expiry
+-> Delivery Price
+-> Transaction Log
+-> Settlement Classification
+-> Expiry Close Check
+-> Cycle Close Summary (when available)
+-> Next T0
+```
+
+At expiry, the operator or read-only helper should reconcile three sources:
+
+- The registered option instrument and strike from the Position Register.
+- The public Bybit option delivery price at expiry.
+- The Bybit account transaction log for `DELIVERY` entries matching the instrument.
+
+Settlement classification:
+
+- OTM: delivery cash flow is zero; option PnL is the received premium, before fees.
+- ITM: option is cash-settled; option PnL is premium received plus the delivery/settlement cash flow, before fees unless fees are explicitly included.
+- The UA spot remains in the wallet. Settlement does not imply physical delivery of BTC or ETH spot.
+
+The first operationally validated cycle, `2026-06-26_weekly_otm05_bybit`, confirmed this behavior on Bybit Demo:
+
+- `EXPIRY_CLOSE_CHECK` classified BTC OTM and ETH ITM using public delivery prices plus account transaction log evidence.
+- The transaction log recorded `DELIVERY` events.
+- ETH ITM settlement was recorded as USDT cash flow and fee.
+- BTC/ETH spot balances remained intact after expiry.
+
+The close workflow is read-only and must not place orders or mutate the Position Register. It produces decision-support artifacts such as:
+
+- `EXPIRY_CLOSE_CHECK` for settlement classification and hedge bridge context.
+- `CYCLE_CLOSE_SUMMARY` when available for operator review of the closed cycle.
+- `CYCLE_FINAL_RESULT` for final Current Cycle Accounting using cycle references.
+
+Cycle close accounting should keep the same explicit decomposition used by live accounting:
+
+```text
+Underlying PnL
++ Option Settlement PnL
++ Hedge PnL
+= Net Cycle PnL
+```
+
+This procedure does not alter hedge rules, option discovery, scheduler behavior, or execution assumptions. It documents the operational evidence required before moving from an expired cycle to the next T0.
+
 ## Position Register
 
 The active live pilot uses:

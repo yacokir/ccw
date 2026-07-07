@@ -96,6 +96,40 @@ Live reports expose two accounting views and must not present an ambiguous stand
 
 The minimal cycle reference lives in the active Position Register under `cycle_accounting`. This is operational state for current reporting only. Historical cycle storage, realized accounting, fees, funding, and multi-cycle analytics remain outside this layer for now.
 
+#### Accounting Layer
+
+The Live Research Operations Layer includes an explicit Accounting Layer for operator reporting and cycle reconciliation. This layer is not a production ledger and does not change execution logic, but it defines the official live pilot accounting views.
+
+Current Cycle Accounting:
+
+- Measures only the active or recently closed cycle.
+- Uses the cycle opening reference for UA/underlying PnL.
+- Uses current-cycle option premium and settlement cash flow for Option Settlement PnL.
+- Uses the hedge entry and cycle final hedge reference for Hedge PnL.
+- Produces Net Cycle PnL and Net Cycle PnL %.
+- Is the correct view for `EXPIRY_CLOSE_CHECK` and `CYCLE_FINAL_RESULT`.
+- Future `CYCLE_CLOSE_SUMMARY` artifacts, when implemented, should use the same view.
+
+Portfolio / Lifetime Accounting:
+
+- Measures the broader portfolio from original spot acquisition where cost basis is available.
+- Keeps underlying cost basis separate from the current option cycle.
+- Reports Portfolio Net PnL without mixing it into cycle result.
+- Coexists with Current Cycle Accounting because the two views answer different questions.
+
+The two views must remain separate. Reports should not present a standalone ambiguous `Net PnL` that mixes original spot cost basis with current-cycle option or hedge PnL.
+
+The first live pilot cycle validated that Bybit USDT options settle through financial cash flow rather than physical delivery of the UA. Therefore the Accounting Layer treats option expiry as:
+
+```text
+Underlying PnL
++ Option Settlement PnL
++ Hedge PnL
+= Net Cycle PnL
+```
+
+The UA spot remains in the wallet after settlement and continues to be the exposure protected by the hedge overlay.
+
 ---
 
 ## 4. Data Flow

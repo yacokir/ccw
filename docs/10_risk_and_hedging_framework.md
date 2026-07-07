@@ -100,6 +100,34 @@ Current interpretation:
 
 The thresholds and state rules remain preliminary research assumptions. They should be validated against hedge economics, funding, basis, slippage, liquidity, and implementation constraints before any live risk action is considered.
 
+### Live Option Settlement And UA Exposure
+
+The first live pilot cycle, `2026-06-26_weekly_otm05_bybit`, validated that Bybit USDT options used by the pilot settle financially rather than through physical delivery of the underlying asset.
+
+Operational evidence:
+
+- The Bybit account transaction log recorded `DELIVERY` events for expired options.
+- ITM settlement was represented as USDT cash flow, fee, and balance change.
+- OTM settlement had zero delivery cash flow and preserved the received premium, before fees.
+- BTC/ETH spot UA remained in the wallet after expiry.
+
+Risk interpretation:
+
+- Assignment/exercise in this venue does not imply physical delivery of BTC or ETH spot.
+- The underlying remains the asset being protected by the hedge.
+- Hedge decisions continue to be made against economic UA exposure, not against a mechanically reduced spot balance after option settlement.
+- Option settlement cash flow belongs to Option PnL for Current Cycle Accounting.
+- The risk model should read expiry as:
+
+```text
+Underlying PnL
++ Option Settlement PnL
++ Hedge PnL
+= Net Cycle PnL
+```
+
+This does not change hedge states, hedge ratios, monitoring thresholds, option discovery, or execution assumptions. It clarifies the accounting treatment and exposure interpretation supported by live operational evidence.
+
 ### BTC Overlay Hedge Versus Option Delta Hedge
 
 The current hedge research should be interpreted as a BTC overlay hedge, not as a true option delta-aware hedge.
