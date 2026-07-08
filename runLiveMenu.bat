@@ -136,8 +136,8 @@ echo ========================================
 echo Reports
 echo ========================================
 echo.
-echo 1 - Open ACTIVE_MONITORING_DAILY.html
-echo 2 - Open LIVE_POSITION_TIMELINE.html
+echo 1 - Open latest ACTIVE_MONITORING_DAILY report
+echo 2 - Open latest LIVE_POSITION_TIMELINE report
 echo 3 - Open latest EXPIRY_CLOSE_CHECK html/md/json
 echo 4 - Open latest CYCLE_FINAL_RESULT md/json
 echo 0 - Back
@@ -145,11 +145,11 @@ echo.
 call :read_choice "Select an option: "
 
 if "%CHOICE%"=="1" (
-  call :open_file "live\reports\ACTIVE_MONITORING_DAILY.html"
+  call :open_operator_report "ACTIVE_MONITORING_DAILY" "html md"
   goto menu_reports
 )
 if "%CHOICE%"=="2" (
-  call :open_file "live\reports\LIVE_POSITION_TIMELINE.html"
+  call :open_operator_report "LIVE_POSITION_TIMELINE" "html md csv"
   goto menu_reports
 )
 if "%CHOICE%"=="3" (
@@ -165,7 +165,6 @@ if /i "%CHOICE%"=="ESC" goto main_menu
 
 call :invalid "1, 2, 3, 4, or 0"
 goto menu_reports
-
 :menu_maintenance
 cls
 echo ========================================
@@ -298,6 +297,40 @@ echo.
 call :wait
 exit /b 0
 
+:open_operator_report
+cls
+echo ========================================
+echo Open Latest %~1 Report
+echo ========================================
+echo.
+set "LATEST_REPORT="
+for %%E in (%~2) do (
+  if not defined LATEST_REPORT if exist "live\reports\%~1.%%E" set "LATEST_REPORT=live\reports\%~1.%%E"
+)
+for %%E in (%~2) do (
+  if not defined LATEST_REPORT if exist "live\%~1.%%E" set "LATEST_REPORT=live\%~1.%%E"
+)
+for /f "delims=" %%D in ('dir /b /ad /o-d "live\snapshots" 2^>nul') do (
+  if not defined LATEST_REPORT (
+    for %%E in (%~2) do (
+      if not defined LATEST_REPORT if exist "live\snapshots\%%D\%~1.%%E" set "LATEST_REPORT=live\snapshots\%%D\%~1.%%E"
+    )
+  )
+)
+
+if defined LATEST_REPORT (
+  echo Opening !LATEST_REPORT!
+  if defined CCW_MENU_DRY_OPEN (
+    echo DRY OPEN: start "" "!LATEST_REPORT!"
+  ) else (
+    start "" "!LATEST_REPORT!"
+  )
+) else (
+  echo Not available yet: no %~1 report found.
+)
+echo.
+call :wait
+exit /b 0
 :open_latest
 cls
 echo ========================================
