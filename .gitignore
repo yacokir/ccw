@@ -29,6 +29,9 @@ pirulo.js
 live/position_register.json
 .env
 
+# Local execution laboratory credentials
+src/execution_lab/execution_lab_config.json
+
 _chat_upload/
 _chat_upload.zip
 chat_context_*.zip
