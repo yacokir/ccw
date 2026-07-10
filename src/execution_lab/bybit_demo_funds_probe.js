@@ -21,6 +21,8 @@ const BASELINE_TARGETS = {
   USDT: 2000
 };
 const BASELINE_COINS = Object.keys(BASELINE_TARGETS);
+const OPTION_BASE_COINS = ['BTC', 'ETH'];
+const PRIMARY_WALLET_COINS = ['USDT', 'USDC', 'BTC', 'ETH'];
 const ADD_ADJUST_TYPE = 0;
 const REDUCE_ADJUST_TYPE = 1;
 const DEFAULT_CONFIG = {
@@ -254,6 +256,15 @@ function optionalNumber(value) {
   return Number.isFinite(number) ? number : null;
 }
 
+function printableValue(value) {
+  return value === null || value === undefined || value === '' ? 'N/A' : String(value);
+}
+
+function nonZeroNumber(value) {
+  const number = optionalNumber(value);
+  return number !== null && Math.abs(number) > 1e-12;
+}
+
 function numericWalletBalance(wallet, coin) {
   const row = findCoin(wallet, coin);
   if (!row) return null;
@@ -313,32 +324,48 @@ async function accountState(config, warnings) {
   const positions = [];
   const openOrders = [];
 
-  for (const category of ['linear', 'option']) {
-    const params = category === 'option'
-      ? { category, baseCoin: 'BTC' }
-      : { category, settleCoin: 'USDT' };
+  const linearPositionsPayload = await capture(
+    'linear positions',
+    warnings,
+    () => bybitGet(config, '/v5/position/list', { category: 'linear', settleCoin: 'USDT' }),
+    null
+  );
+  positions.push(...nonZeroPositions(linearPositionsPayload, 'linear'));
+
+  for (const baseCoin of OPTION_BASE_COINS) {
     const payload = await capture(
-      `${category} positions`,
+      `option ${baseCoin} positions`,
       warnings,
-      () => bybitGet(config, '/v5/position/list', params),
+      () => bybitGet(config, '/v5/position/list', { category: 'option', baseCoin }),
       null
     );
-    positions.push(...nonZeroPositions(payload, category));
+    positions.push(...nonZeroPositions(payload, `option:${baseCoin}`));
   }
 
-  for (const category of ['spot', 'linear', 'option']) {
-    const params = category === 'spot'
-      ? { category, limit: 50 }
-      : category === 'option'
-        ? { category, baseCoin: 'BTC', limit: 50 }
-        : { category, settleCoin: 'USDT', limit: 50 };
+  const spotOrdersPayload = await capture(
+    'spot open orders',
+    warnings,
+    () => bybitGet(config, '/v5/order/realtime', { category: 'spot', limit: 50 }),
+    null
+  );
+  openOrders.push(...compactOrders(spotOrdersPayload, 'spot'));
+
+  const linearOrdersPayload = await capture(
+    'linear open orders',
+    warnings,
+    () => bybitGet(config, '/v5/order/realtime', { category: 'linear', settleCoin: 'USDT', limit: 50 }),
+    null
+  );
+  openOrders.push(...compactOrders(linearOrdersPayload, 'linear'));
+
+  for (const baseCoin of OPTION_BASE_COINS) {
     const payload = await capture(
-      `${category} open orders`,
+      `option ${baseCoin} open orders`,
       warnings,
-      () => bybitGet(config, '/v5/order/realtime', params),
+      () => bybitGet(config, '/v5/order/realtime', { category: 'option', baseCoin, limit: 50 }),
       null
     );
-    openOrders.push(...compactOrders(payload, category));
+    openOrders.push(...compactOrders(payload, `option:${baseCoin}`));
   }
 
   return {
@@ -385,11 +412,26 @@ function writeBaselineReport(report) {
 
 function buildBaselineMarkdown(report) {
   const final = report.finalState || report.beforeState;
+  const before = report.beforeState;
   const lines = [];
   lines.push('# Execution Laboratory Baseline');
   lines.push('');
   lines.push(`Generated at: ${report.metadata.generatedAt}`);
   lines.push(`Mode: ${report.mode}`);
+  lines.push('');
+  lines.push('## Account Readiness View');
+  lines.push('');
+  lines.push('USDT wallet balance is not total account capital.');
+  lines.push('Use total equity / total wallet balance for pilot readiness.');
+  lines.push('');
+  if (before) {
+    lines.push(`Before Total Equity: ${before.account.totalEquity}`);
+    lines.push(`Before Total Wallet Balance: ${before.account.totalWalletBalance}`);
+    lines.push(`Before Total Available Balance: ${before.account.totalAvailableBalance}`);
+    lines.push(`Before Margin Used: ${before.account.marginUsed}`);
+    lines.push('');
+  }
+  lines.push('## Baseline Coin Balances');
   lines.push('');
   lines.push(`BTC: ${final.balances.BTC}`);
   lines.push(`ETH: ${final.balances.ETH}`);
@@ -402,6 +444,39 @@ function buildBaselineMarkdown(report) {
   lines.push('');
   lines.push(`Baseline Clean: ${report.baselineClean ? 'YES' : 'NO'}`);
   lines.push('');
+  if (before) {
+    lines.push('## Before Wallet Detail');
+    lines.push('');
+    for (const coin of PRIMARY_WALLET_COINS) {
+      const row = findCoin(before.wallet, coin);
+      lines.push(`- ${coin}: wallet=${row ? printableValue(row.walletBalance) : 'N/A'}, equity=${row ? printableValue(row.equity) : 'N/A'}, usdValue=${row ? printableValue(row.usdValue) : 'N/A'}`);
+    }
+    const otherCoins = before.wallet
+      .filter(row => row.coin && !PRIMARY_WALLET_COINS.includes(row.coin))
+      .filter(row => nonZeroNumber(row.walletBalance) || nonZeroNumber(row.equity) || nonZeroNumber(row.usdValue));
+    if (otherCoins.length) {
+      lines.push('');
+      lines.push('Other non-zero coins:');
+      for (const row of otherCoins) {
+        lines.push(`- ${row.coin}: wallet=${printableValue(row.walletBalance)}, equity=${printableValue(row.equity)}, usdValue=${printableValue(row.usdValue)}`);
+      }
+    }
+    lines.push('');
+    lines.push('## Before Positions And Orders');
+    lines.push('');
+    lines.push(`Positions: ${before.positions.length}`);
+    for (const position of before.positions) {
+      lines.push(`- ${position.category} ${position.symbol}: ${position.side} size=${position.size}, avg=${position.avgPrice}, mark=${position.markPrice}, value=${position.positionValue}, uPnL=${position.unrealisedPnl}`);
+    }
+    if (!before.positions.length) lines.push('- None.');
+    lines.push('');
+    lines.push(`Open Orders: ${before.openOrders.length}`);
+    for (const order of before.openOrders) {
+      lines.push(`- ${order.category} ${order.symbol}: ${order.side} ${order.orderType} qty=${order.qty}, price=${order.price}, status=${order.orderStatus}`);
+    }
+    if (!before.openOrders.length) lines.push('- None.');
+    lines.push('');
+  }
   lines.push('## Planned Reductions');
   lines.push('');
   if (report.plannedBaselineReductions.length) {
@@ -443,9 +518,45 @@ function buildBaselineMarkdown(report) {
 }
 
 function printWalletSummary(label, wallet) {
-  const usdt = findCoin(wallet, 'USDT');
-  console.log(`${label} USDT wallet balance: ${usdt ? usdt.walletBalance : 'N/A'}`);
-  console.log(`${label} USDT equity: ${usdt ? usdt.equity : 'N/A'}`);
+  for (const coin of PRIMARY_WALLET_COINS) {
+    const row = findCoin(wallet, coin);
+    console.log(`${label} ${coin} wallet balance: ${row ? printableValue(row.walletBalance) : 'N/A'}`);
+    console.log(`${label} ${coin} equity: ${row ? printableValue(row.equity) : 'N/A'}`);
+    if (coin === 'BTC' || coin === 'ETH') {
+      console.log(`${label} ${coin} USD value: ${row ? printableValue(row.usdValue) : 'N/A'}`);
+    }
+  }
+  const otherCoins = (wallet || [])
+    .filter(row => row.coin && !PRIMARY_WALLET_COINS.includes(row.coin))
+    .filter(row => nonZeroNumber(row.walletBalance) || nonZeroNumber(row.equity) || nonZeroNumber(row.usdValue));
+  if (otherCoins.length) {
+    console.log(`${label} other non-zero coins:`);
+    for (const row of otherCoins) {
+      console.log(`- ${row.coin}: wallet=${printableValue(row.walletBalance)}, equity=${printableValue(row.equity)}, usdValue=${printableValue(row.usdValue)}`);
+    }
+  } else {
+    console.log(`${label} other non-zero coins: none`);
+  }
+}
+
+function printStateSummary(label, state) {
+  if (!state) return;
+  console.log(`${label} total equity: ${printableValue(state.account.totalEquity)}`);
+  console.log(`${label} total wallet balance: ${printableValue(state.account.totalWalletBalance)}`);
+  console.log(`${label} total available balance: ${printableValue(state.account.totalAvailableBalance)}`);
+  console.log(`${label} margin used: ${printableValue(state.account.marginUsed)}`);
+  console.log(`${label} positions count: ${state.positions.length}`);
+  if (state.positions.length) {
+    for (const position of state.positions) {
+      console.log(`- ${position.category} ${position.symbol}: ${position.side} size=${position.size}, avg=${position.avgPrice}, mark=${position.markPrice}, value=${position.positionValue}, uPnL=${position.unrealisedPnl}`);
+    }
+  }
+  console.log(`${label} open orders count: ${state.openOrders.length}`);
+  if (state.openOrders.length) {
+    for (const order of state.openOrders) {
+      console.log(`- ${order.category} ${order.symbol}: ${order.side} ${order.orderType} qty=${order.qty}, price=${order.price}, status=${order.orderStatus}`);
+    }
+  }
 }
 
 function printSummary(snapshot, outputPath) {
@@ -456,7 +567,11 @@ function printSummary(snapshot, outputPath) {
   console.log(`Requested reduction: ${snapshot.requestedReduction === null ? 'none' : `${snapshot.requestedReduction} USDT`}`);
   console.log(`Target USDT: ${snapshot.targetUsdt === null ? 'none' : snapshot.targetUsdt}`);
   console.log(`Planned reduction: ${snapshot.plannedReduction === null ? 'none' : `${snapshot.plannedReduction} USDT`}`);
+  console.log('Readiness note: USDT wallet balance is not total account capital.');
+  console.log('Readiness note: Use total equity / total wallet balance for pilot readiness.');
+  printStateSummary('Before', snapshot.beforeState);
   printWalletSummary('Before', snapshot.beforeWallet);
+  if (snapshot.finalState && snapshot.finalState !== snapshot.beforeState) printStateSummary('After', snapshot.finalState);
   if (snapshot.afterWallet) printWalletSummary('After', snapshot.afterWallet);
   console.log(`POST called: ${snapshot.postCalled}`);
   console.log(`Warnings: ${snapshot.warnings.length}`);
