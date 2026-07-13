@@ -144,6 +144,7 @@ function underlyingMarketValue(position, spotPrice) {
 
 function hedgePnl(position, markPrice) {
   const qty = optionalNumber(position.hedge_qty);
+  if (qty === 0) return 0;
   const entry = optionalNumber(position.hedge_entry_price);
   const mark = optionalNumber(markPrice);
   if (qty === null || entry === null || mark === null) return null;
@@ -244,7 +245,7 @@ async function monitorPosition(position, snapshotDate, accountSync) {
   if (optionalNumber(ticker.option_mark_price) === null) warnings.push('Option mark price is unavailable; option PnL is N/A.');
   if (accountSync && Array.isArray(accountSync.warnings)) warnings.push(...accountSync.warnings);
   if (accountSync && accountSync.available && syncMeta && !syncMeta.matched_option_position) warnings.push('Bybit account sync did not find the registered option position; preserving local option fields.');
-  if (accountSync && accountSync.available && syncMeta && position.hedge_instrument && !syncMeta.matched_perpetual_position) warnings.push('Bybit account sync did not find the registered perpetual hedge; preserving local hedge fields.');
+  if (accountSync && accountSync.available && syncMeta && position.hedge_instrument && optionalNumber(position.hedge_qty) !== 0 && !syncMeta.matched_perpetual_position) warnings.push('Bybit account sync did not find the registered perpetual hedge; preserving local hedge fields.');
 
   const underlyingUnrealizedPnl = underlyingPnl(position, currentSpot.price);
   const underlyingValue = underlyingMarketValue(position, currentSpot.price);

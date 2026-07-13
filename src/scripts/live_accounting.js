@@ -39,6 +39,7 @@ function optionMtmPnl(qty, entryPremium, markPrice) {
 
 function signedPositionPnl(qty, entryPrice, markPrice) {
   const q = optionalNumber(qty);
+  if (q === 0) return 0;
   const entry = optionalNumber(entryPrice);
   const mark = optionalNumber(markPrice);
   if (q === null || entry === null || mark === null) return null;

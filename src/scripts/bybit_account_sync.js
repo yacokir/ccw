@@ -8,6 +8,12 @@ const {
 const DATA_SOURCE = 'BYBIT_ACCOUNT_API';
 const ACCOUNT_TYPE = 'UNIFIED';
 const SYNC_CATEGORIES = ['spot', 'linear', 'option'];
+const COST_BASIS_AUDIT_FIELDS = [
+  'spot_fee_qty',
+  'spot_fee_currency',
+  'order_id',
+  'exec_id'
+];
 
 function nyTimestamp(date = new Date()) {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -46,9 +52,32 @@ function normalizeWallet(payload) {
   return accounts.flatMap(account => (account.coin || []).map(coin => ({
     account_type: account.accountType || ACCOUNT_TYPE,
     coin: coin.coin,
-    wallet_balance: roundNumber(coin.walletBalance),
-    equity: roundNumber(coin.equity)
+    wallet_balance: roundNumber(coin.walletBalance, 12),
+    equity: roundNumber(coin.equity, 12)
   })));
+}
+
+function normalizeAccountIdentity(payload) {
+  const result = payload && payload.result ? payload.result : {};
+  return {
+    uid: optionalNumber(result.userID, result.userId, result.uid),
+    parent_uid: optionalNumber(result.parentUid, result.parentUID),
+    credential_read_only: result.readOnly === null || result.readOnly === undefined
+      ? null
+      : Boolean(Number(result.readOnly))
+  };
+}
+
+function normalizeWalletSummary(payload) {
+  const accounts = payload && payload.result && Array.isArray(payload.result.list)
+    ? payload.result.list
+    : [];
+  const account = accounts[0] || {};
+  return {
+    wallet_total_equity_usd: roundNumber(account.totalEquity, 12),
+    wallet_total_wallet_balance_usd: roundNumber(account.totalWalletBalance, 12),
+    wallet_total_available_balance_usd: roundNumber(account.totalAvailableBalance, 12)
+  };
 }
 
 function normalizeSpotHoldings(walletRows) {
@@ -80,8 +109,8 @@ function normalizeExecution(row, category) {
     category,
     symbol: row.symbol || null,
     fill_price: roundNumber(row.execPrice),
-    quantity: roundNumber(row.execQty),
-    fee: roundNumber(row.execFee),
+    quantity: roundNumber(row.execQty, 15),
+    fee: roundNumber(row.execFee, 15),
     timestamp: row.execTime ? new Date(Number(row.execTime)).toISOString() : null,
     side: row.side || null,
     order_id: row.orderId || null,
@@ -141,7 +170,13 @@ async function fetchBybitAccountSync(env = process.env) {
     environment: config.environment,
     base_url: config.baseUrl,
     testnet: config.testnet,
-    read_only: true
+    read_only: true,
+    uid: null,
+    parent_uid: null,
+    credential_read_only: null,
+    wallet_total_equity_usd: null,
+    wallet_total_wallet_balance_usd: null,
+    wallet_total_available_balance_usd: null
   };
 
   if (!hasCredentials(env)) {
@@ -159,7 +194,9 @@ async function fetchBybitAccountSync(env = process.env) {
   }
 
   const client = new BybitReadOnlyAccountClient(config);
+  const identityPayload = await captureStep(warnings, 'Account identity', () => client.get('/v5/user/query-api'), null);
   const walletPayload = await captureStep(warnings, 'Wallet balances', () => client.walletBalance(ACCOUNT_TYPE), null);
+  Object.assign(metadata, normalizeAccountIdentity(identityPayload), normalizeWalletSummary(walletPayload));
   const walletBalances = normalizeWallet(walletPayload);
 
   const linearPositionsPayload = await captureStep(warnings, 'Perpetual positions', () => client.positions('linear', { settleCoin: 'USDT' }), null);
@@ -200,7 +237,7 @@ function executionFeesBySymbol(executions) {
   for (const execution of executions || []) {
     const fee = optionalNumber(execution.fee);
     if (!execution.symbol || fee === null) continue;
-    fees.set(execution.symbol, roundNumber((fees.get(execution.symbol) || 0) + fee));
+    fees.set(execution.symbol, roundNumber((fees.get(execution.symbol) || 0) + fee, 12));
   }
   return fees;
 }
@@ -231,8 +268,8 @@ function reconstructSpotCostBasis(asset, executions) {
     source: 'BYBIT_ACCOUNT_API_EXECUTIONS',
     symbols: [...new Set(fills.map(fill => fill.symbol).filter(Boolean))],
     fill_count: fills.length,
-    acquired_qty: roundNumber(totalQuantity),
-    total_cost: roundNumber(totalCost),
+    acquired_qty: roundNumber(totalQuantity, 15),
+    total_cost: roundNumber(totalCost, 8),
     average_entry_price: roundNumber(totalCost / totalQuantity),
     first_fill_timestamp: timestamps[0] || null,
     last_fill_timestamp: timestamps[timestamps.length - 1] || null
@@ -251,6 +288,13 @@ function hedgeCostBasis(hedge) {
     average_entry_price: entry,
     notional_cost: roundNumber(Math.abs(qty) * entry)
   };
+}
+
+function preservedCostBasisAudit(costBasis) {
+  if (!costBasis || typeof costBasis !== 'object') return {};
+  return Object.fromEntries(COST_BASIS_AUDIT_FIELDS
+    .filter(field => costBasis[field] !== null && costBasis[field] !== undefined)
+    .map(field => [field, costBasis[field]]));
 }
 
 function mergeAccountSyncIntoRegister(register, accountSync) {
@@ -278,7 +322,7 @@ function mergeAccountSyncIntoRegister(register, accountSync) {
       const hedgeBasis = hedgeCostBasis(hedge);
       const symbolFees = [
         optionSymbol ? fees.get(optionSymbol) : null,
-        position.hedge_instrument ? fees.get(position.hedge_instrument) : null
+        hedge && position.hedge_instrument ? fees.get(position.hedge_instrument) : null
       ].filter(value => optionalNumber(value) !== null);
 
       return {
@@ -287,7 +331,11 @@ function mergeAccountSyncIntoRegister(register, accountSync) {
         underlying_entry_price: underlyingCostBasis ? underlyingCostBasis.average_entry_price : position.underlying_entry_price,
         underlying_entry_ts: underlyingCostBasis ? underlyingCostBasis.first_fill_timestamp : position.underlying_entry_ts,
         underlying_entry_timestamp: underlyingCostBasis ? underlyingCostBasis.first_fill_timestamp : position.underlying_entry_timestamp,
-        underlying_cost_basis: underlyingCostBasis || position.underlying_cost_basis || null,
+        underlying_cost_basis: underlyingCostBasis ? {
+          ...preservedCostBasisAudit(position.underlying_cost_basis),
+          ...underlyingCostBasis,
+          net_qty_at_sync: spot && optionalNumber(spot.quantity) !== null ? spot.quantity : null
+        } : position.underlying_cost_basis || null,
         short_call_qty: option && optionalNumber(option.size) !== null ? signedQty(option) : position.short_call_qty,
         option_qty: option && optionalNumber(option.size) !== null ? signedQty(option) : position.option_qty,
         short_call_entry_premium: option && optionalNumber(option.avg_entry_price) !== null ? option.avg_entry_price : position.short_call_entry_premium,
