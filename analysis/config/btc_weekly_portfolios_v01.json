@@ -1,0 +1,90 @@
+{
+  "analysisId": "btc_weekly_portfolios_v01",
+  "portfolios": [
+    {
+      "id": "atm100",
+      "name": "100% ATM",
+      "weights": {
+        "atm00": 1
+      }
+    },
+    {
+      "id": "otm05_100",
+      "name": "100% OTM05",
+      "weights": {
+        "otm05": 1
+      }
+    },
+    {
+      "id": "otm03_100",
+      "name": "100% OTM03",
+      "weights": {
+        "otm03": 1
+      }
+    },
+    {
+      "id": "otm07_100",
+      "name": "100% OTM07",
+      "weights": {
+        "otm07": 1
+      }
+    },
+    {
+      "id": "otm10_100",
+      "name": "100% OTM10",
+      "weights": {
+        "otm10": 1
+      }
+    },
+    {
+      "id": "atm50_otm05_50",
+      "name": "50% ATM + 50% OTM05",
+      "weights": {
+        "atm00": 0.5,
+        "otm05": 0.5
+      }
+    },
+    {
+      "id": "atm25_otm05_75",
+      "name": "25% ATM + 75% OTM05",
+      "weights": {
+        "atm00": 0.25,
+        "otm05": 0.75
+      }
+    },
+    {
+      "id": "atm25_otm03_25_otm05_25_otm10_25",
+      "name": "25% ATM + 25% OTM03 + 25% OTM05 + 25% OTM10",
+      "weights": {
+        "atm00": 0.25,
+        "otm03": 0.25,
+        "otm05": 0.25,
+        "otm10": 0.25
+      }
+    },
+    {
+      "id": "otm03_60_otm05_40",
+      "name": "60% OTM03 + 40% OTM05",
+      "weights": {
+        "otm03": 0.6,
+        "otm05": 0.4
+      }
+    },
+    {
+      "id": "otm03_50_otm05_50",
+      "name": "50% OTM03 + 50% OTM05",
+      "weights": {
+        "otm03": 0.5,
+        "otm05": 0.5
+      }
+    },
+    {
+      "id": "otm03_40_otm05_60",
+      "name": "40% OTM03 + 60% OTM05",
+      "weights": {
+        "otm03": 0.4,
+        "otm05": 0.6
+      }
+    }
+  ]
+}
